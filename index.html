@@ -3,412 +3,980 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#09090B">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Digital Gift Studio — Персональные цифровые подарки</title>
-    <link rel="stylesheet" href="css/style.css">
+    <meta name="theme-color" content="#000000">
+    <title>Digital Gift Studio</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #000000;
+            --surface: #0D0D0D;
+            --card: #141414;
+            --border: rgba(255, 255, 255, 0.04);
+            --text: #FFFFFF;
+            --text-secondary: rgba(255, 255, 255, 0.5);
+            --violet: #7C3AED;
+            --violet-light: #A78BFA;
+            --gold: #F59E0B;
+            --gradient: linear-gradient(135deg, #7C3AED, #A78BFA, #F59E0B);
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.06);
+            --radius: 28px;
+            --radius-sm: 18px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            min-height: 100dvh;
+            -webkit-font-smoothing: antialiased;
+            user-select: none;
+        }
+
+        .phone {
+            width: 100%;
+            max-width: 430px;
+            height: 100vh;
+            height: 100dvh;
+            background: var(--bg);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 48px 24px 16px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+        }
+
+        .header-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .header-btn:active {
+            transform: scale(0.94);
+            background: rgba(255, 255, 255, 0.06);
+        }
+        .header-btn.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .header-logo {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 0 20px 120px;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+        .content::-webkit-scrollbar {
+            display: none;
+        }
+
+        .screen {
+            display: none;
+            animation: appear 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes appear {
+            from {
+                opacity: 0;
+                transform: translateY(16px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Home */
+        .hero {
+            padding: 24px 0 32px;
+            text-align: center;
+        }
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 18px;
+            border-radius: 100px;
+            background: rgba(124, 58, 237, 0.12);
+            border: 1px solid rgba(124, 58, 237, 0.2);
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--violet-light);
+            margin-bottom: 24px;
+        }
+        .hero-badge::before {
+            content: '';
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--violet);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.6);
+            }
+            50% {
+                box-shadow: 0 0 0 8px rgba(124, 58, 237, 0);
+            }
+        }
+        .hero h1 {
+            font-size: 38px;
+            font-weight: 900;
+            letter-spacing: -1px;
+            line-height: 1.05;
+            margin-bottom: 12px;
+            background: linear-gradient(180deg, #FFFFFF 0%, #A78BFA 80%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero p {
+            font-size: 16px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            max-width: 280px;
+            margin: 0 auto 28px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 16px 32px;
+            border-radius: 100px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            font-family: inherit;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn:active {
+            transform: scale(0.96);
+        }
+        .btn-primary {
+            background: var(--violet);
+            color: white;
+            width: 100%;
+            font-size: 17px;
+            font-weight: 700;
+            letter-spacing: -0.2px;
+        }
+        .btn-primary::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), transparent);
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            margin-bottom: 16px;
+        }
+        .gifts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 28px;
+        }
+        .gift-chip {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s;
+        }
+        .gift-chip:active {
+            background: #1A1A1A;
+            border-color: rgba(124, 58, 237, 0.4);
+            transform: scale(0.97);
+        }
+        .gift-chip .emoji {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+        .gift-chip .name {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .gift-chip .price {
+            font-size: 17px;
+            font-weight: 800;
+            color: var(--violet-light);
+        }
+
+        .trust {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 28px 24px;
+            text-align: center;
+        }
+        .trust .stars {
+            font-size: 22px;
+            color: var(--gold);
+            letter-spacing: 4px;
+            margin-bottom: 8px;
+        }
+        .trust .quote {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        .trust .stats {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+        }
+        .trust .stat .num {
+            font-size: 20px;
+            font-weight: 800;
+            display: block;
+        }
+        .trust .stat .lbl {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* Catalog */
+        .catalog-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding-top: 8px;
+        }
+        .gift-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            cursor: pointer;
+            transition: all 0.25s;
+            display: flex;
+            gap: 16px;
+        }
+        .gift-card:active {
+            background: #1A1A1A;
+            border-color: rgba(124, 58, 237, 0.3);
+        }
+        .gift-card .icon {
+            font-size: 40px;
+            flex-shrink: 0;
+        }
+        .gift-card .info h3 {
+            font-size: 17px;
+            font-weight: 700;
+            letter-spacing: -0.2px;
+            margin-bottom: 4px;
+        }
+        .gift-card .info .desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+            margin-bottom: 10px;
+        }
+        .gift-card .info .price {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--violet-light);
+        }
+
+        /* Order Form */
+        .form {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 28px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .form .selected {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: rgba(124, 58, 237, 0.08);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+        }
+        .form .selected .s-emoji {
+            font-size: 32px;
+        }
+        .form .selected .s-name {
+            font-weight: 700;
+            font-size: 16px;
+        }
+        .form .selected .s-price {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--violet-light);
+        }
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .field label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .field input,
+        .field textarea {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 14px 16px;
+            color: white;
+            font-size: 16px;
+            font-family: inherit;
+            outline: none;
+            transition: all 0.2s;
+            resize: vertical;
+        }
+        .field input:focus,
+        .field textarea:focus {
+            border-color: var(--violet);
+            box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.08);
+        }
+        .occasions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .occasions button {
+            padding: 10px 16px;
+            border-radius: 100px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        .occasions button.active {
+            background: rgba(124, 58, 237, 0.15);
+            border-color: var(--violet);
+            color: var(--violet-light);
+        }
+
+        /* Payment */
+        .pay-block {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 28px 24px;
+        }
+        .pay-block h3 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+        .pay-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            font-size: 15px;
+            color: var(--text-secondary);
+        }
+        .pay-row.total {
+            border-top: 1px solid var(--border);
+            margin-top: 8px;
+            padding-top: 16px;
+            color: white;
+            font-weight: 700;
+            font-size: 18px;
+        }
+        .pay-row.total span:last-child {
+            font-size: 26px;
+            font-weight: 900;
+            color: var(--violet-light);
+        }
+        .methods {
+            margin-top: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .method {
+            padding: 16px;
+            border-radius: var(--radius-sm);
+            background: var(--card);
+            border: 2px solid var(--border);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .method.selected {
+            border-color: var(--violet);
+            background: rgba(124, 58, 237, 0.08);
+        }
+        .method .m-icon {
+            font-size: 24px;
+        }
+        .secure {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* Success */
+        .success {
+            text-align: center;
+            padding-top: 60px;
+        }
+        .success .check {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #7C3AED, #F59E0B);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            margin: 0 auto 24px;
+            animation: popIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes popIn {
+            from {
+                transform: scale(0);
+            }
+            to {
+                transform: scale(1);
+            }
+        }
+        .success h2 {
+            font-size: 28px;
+            font-weight: 900;
+            margin-bottom: 24px;
+        }
+        .success .details {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px 24px;
+            text-align: left;
+            margin-bottom: 24px;
+        }
+        .success .details .d-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 14px;
+        }
+        .success .details .d-row span:first-child {
+            color: var(--text-secondary);
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 700;
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--gold);
+        }
+        .status-badge.done {
+            background: rgba(34, 197, 94, 0.15);
+            color: #4ADE80;
+        }
+
+        /* Orders */
+        .profile-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .avatar {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #7C3AED, #F59E0B);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: 800;
+            flex-shrink: 0;
+        }
+        .profile-card .p-name {
+            font-weight: 700;
+            font-size: 17px;
+        }
+        .profile-card .p-id {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        .order-item {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px 24px;
+            margin-bottom: 10px;
+        }
+        .order-item .o-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .order-item .o-id {
+            font-weight: 700;
+            color: var(--violet-light);
+        }
+        .order-item .o-name {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .order-item .o-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+        .empty-state .big-emoji {
+            font-size: 56px;
+            margin-bottom: 16px;
+        }
+
+        /* Nav */
+        .nav {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 40px);
+            max-width: 390px;
+            background: rgba(20, 20, 20, 0.85);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid var(--glass-border);
+            border-radius: 100px;
+            display: flex;
+            padding: 6px;
+            z-index: 200;
+        }
+        .nav button {
+            flex: 1;
+            padding: 12px;
+            border-radius: 100px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.25s;
+        }
+        .nav button.active {
+            background: white;
+            color: black;
+        }
+    </style>
 </head>
 <body>
-    <!-- Splash Screen -->
-    <div id="splashScreen" class="splash-screen">
-        <div class="splash-content">
-            <div class="splash-icon">
-                <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
-                    <rect width="64" height="64" rx="20" fill="url(#splash-gradient)"/>
-                    <path d="M32 18L38 26H26L32 18Z" fill="white" opacity="0.9"/>
-                    <rect x="24" y="26" width="16" height="16" rx="4" fill="white" opacity="0.9"/>
-                    <path d="M28 38L24 46H40L36 38" fill="white" opacity="0.7"/>
-                    <defs>
-                        <linearGradient id="splash-gradient" x1="0" y1="0" x2="64" y2="64">
-                            <stop offset="0%" stop-color="#7C3AED"/>
-                            <stop offset="100%" stop-color="#F59E0B"/>
-                        </linearGradient>
-                    </defs>
-                </svg>
-            </div>
-            <div class="splash-title">Digital Gift Studio</div>
-            <div class="splash-loader">
-                <div class="loader-bar"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Main App Container -->
-    <div id="app" class="app-container">
-        <!-- Status Bar -->
-        <div class="status-bar">
-            <div class="status-bar-time">9:41</div>
-            <div class="status-bar-icons">
-                <svg width="17" height="11" viewBox="0 0 17 11" fill="none">
-                    <rect opacity="0.35" x="0.5" y="0.5" width="15" height="10" rx="2" stroke="white"/>
-                    <rect x="2" y="2" width="12" height="7" rx="1" fill="white"/>
-                    <rect x="15.5" y="3.5" width="1" height="4" rx="0.5" fill="white"/>
-                </svg>
-                <svg width="15" height="11" viewBox="0 0 15 11" fill="none">
-                    <path fill-rule="evenodd" clip-rule="evenodd" d="M7.5 2.5C10.5 2.5 13 4 14.5 5.5C13 7 10.5 8.5 7.5 8.5C4.5 8.5 2 7 0.5 5.5C2 4 4.5 2.5 7.5 2.5Z" stroke="white" fill="none"/>
-                    <circle cx="7.5" cy="5.5" r="2" fill="white"/>
-                </svg>
-            </div>
-        </div>
-
-        <!-- Header -->
-        <header class="app-header" id="appHeader">
-            <button class="header-back-btn" id="backButton" style="opacity: 0; pointer-events: none;">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <path d="M15 18L9 12L15 6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-            </button>
-            <h1 class="header-title" id="headerTitle">🎁 Digital Gift Studio</h1>
-            <button class="header-action-btn" id="headerAction">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="6" r="1.5" fill="white"/>
-                    <circle cx="12" cy="12" r="1.5" fill="white"/>
-                    <circle cx="12" cy="18" r="1.5" fill="white"/>
-                </svg>
-            </button>
+    <div class="phone">
+        <header class="header">
+            <button class="header-btn hidden" id="backBtn">←</button>
+            <span class="header-logo" id="headerTitle">Gift Studio</span>
+            <button class="header-btn" id="ordersBtn">📋</button>
         </header>
 
-        <!-- Main Content -->
-        <main class="main-content" id="mainContent">
-            <!-- Screen 1: Home -->
-            <div class="screen screen-home active" id="screenHome">
-                <div class="home-hero">
-                    <div class="hero-badge">
-                        <span class="badge-dot"></span>
-                        Премиум подарки
-                    </div>
-                    <h2 class="hero-title">Подарки, которые сохраняют эмоции</h2>
-                    <p class="hero-subtitle">Создайте уникальный подарок за несколько минут</p>
-                    <button class="btn-primary btn-hero" onclick="navigateTo('catalog')">
-                        <span>Создать подарок</span>
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                            <path d="M7.5 15L12.5 10L7.5 5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                    </button>
+        <div class="content" id="content">
+            <!-- HOME -->
+            <div class="screen active" id="home">
+                <div class="hero">
+                    <div class="hero-badge">Премиум подарки</div>
+                    <h1>Подарки, которые сохраняют эмоции</h1>
+                    <p>Создайте уникальный подарок за несколько минут</p>
+                    <button class="btn btn-primary" onclick="go('catalog')">Создать подарок</button>
                 </div>
-
-                <div class="section">
-                    <div class="section-header">
-                        <h3 class="section-title">Популярные подарки</h3>
-                        <button class="section-link" onclick="navigateTo('catalog')">Все</button>
-                    </div>
-                    <div class="gifts-scroll">
-                        <div class="gift-card-mini" onclick="selectGiftAndNavigate('song')">
-                            <div class="gift-emoji">🎵</div>
-                            <div class="gift-name">Песня на заказ</div>
-                            <div class="gift-price">990 ₽</div>
-                        </div>
-                        <div class="gift-card-mini" onclick="selectGiftAndNavigate('card')">
-                            <div class="gift-emoji">💌</div>
-                            <div class="gift-name">Именная открытка</div>
-                            <div class="gift-price">299 ₽</div>
-                        </div>
-                        <div class="gift-card-mini" onclick="selectGiftAndNavigate('story')">
-                            <div class="gift-emoji">📖</div>
-                            <div class="gift-name">Семейная история</div>
-                            <div class="gift-price">1490 ₽</div>
-                        </div>
-                        <div class="gift-card-mini" onclick="selectGiftAndNavigate('photo')">
-                            <div class="gift-emoji">📸</div>
-                            <div class="gift-name">AI-фотосессия</div>
-                            <div class="gift-price">990 ₽</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="trust-block">
-                    <div class="trust-stars">
-                        <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
-                    </div>
-                    <p class="trust-text">Создаем подарки, которые запоминаются</p>
-                    <div class="trust-stats">
-                        <div class="trust-stat">
-                            <span class="stat-number">2000+</span>
-                            <span class="stat-label">Подарков</span>
-                        </div>
-                        <div class="trust-divider"></div>
-                        <div class="trust-stat">
-                            <span class="stat-number">98%</span>
-                            <span class="stat-label">Довольных</span>
-                        </div>
-                        <div class="trust-divider"></div>
-                        <div class="trust-stat">
-                            <span class="stat-number">24ч</span>
-                            <span class="stat-label">Создание</span>
-                        </div>
+                <div class="section-title">Популярное</div>
+                <div class="gifts-row" id="popularGifts"></div>
+                <div class="trust">
+                    <div class="stars">★★★★★</div>
+                    <div class="quote">Создаем подарки, которые запоминаются</div>
+                    <div class="stats">
+                        <div class="stat"><span class="num">2000+</span><span class="lbl">Подарков</span></div>
+                        <div class="stat"><span class="num">98%</span><span class="lbl">Довольных</span></div>
+                        <div class="stat"><span class="num">24ч</span><span class="lbl">Создание</span></div>
                     </div>
                 </div>
             </div>
 
-            <!-- Screen 2: Catalog -->
-            <div class="screen screen-catalog" id="screenCatalog">
-                <div class="catalog-header">
-                    <h2 class="screen-title">Каталог подарков</h2>
-                    <p class="screen-description">Выберите идеальный подарок для ваших близких</p>
-                </div>
-                <div class="catalog-grid">
-                    <div class="gift-card-full glass-card" onclick="selectGiftAndNavigate('song')">
-                        <div class="gift-card-header">
-                            <div class="gift-card-icon">🎵</div>
-                            <div class="gift-card-badge">Хит продаж</div>
-                        </div>
-                        <h3 class="gift-card-title">Песня на заказ</h3>
-                        <p class="gift-card-description">Персональная песня с именем и историей человека. Профессиональная запись в студии.</p>
-                        <div class="gift-card-footer">
-                            <span class="gift-card-price">990 ₽</span>
-                            <button class="btn-glass">Выбрать</button>
-                        </div>
-                    </div>
-
-                    <div class="gift-card-full glass-card" onclick="selectGiftAndNavigate('card')">
-                        <div class="gift-card-header">
-                            <div class="gift-card-icon">💌</div>
-                        </div>
-                        <h3 class="gift-card-title">Именная открытка</h3>
-                        <p class="gift-card-description">Красивое поздравление с индивидуальным дизайном и вашими теплыми словами.</p>
-                        <div class="gift-card-footer">
-                            <span class="gift-card-price">299 ₽</span>
-                            <button class="btn-glass">Выбрать</button>
-                        </div>
-                    </div>
-
-                    <div class="gift-card-full glass-card" onclick="selectGiftAndNavigate('story')">
-                        <div class="gift-card-header">
-                            <div class="gift-card-icon">📖</div>
-                            <div class="gift-card-badge premium">Премиум</div>
-                        </div>
-                        <h3 class="gift-card-title">Семейная история</h3>
-                        <p class="gift-card-description">История семьи из фотографий и воспоминаний в красивом оформлении.</p>
-                        <div class="gift-card-footer">
-                            <span class="gift-card-price">1490 ₽</span>
-                            <button class="btn-glass">Выбрать</button>
-                        </div>
-                    </div>
-
-                    <div class="gift-card-full glass-card" onclick="selectGiftAndNavigate('photo')">
-                        <div class="gift-card-header">
-                            <div class="gift-card-icon">📸</div>
-                        </div>
-                        <h3 class="gift-card-title">AI-фотосессия</h3>
-                        <p class="gift-card-description">Профессиональные фотографии в разных стилях с помощью искусственного интеллекта.</p>
-                        <div class="gift-card-footer">
-                            <span class="gift-card-price">990 ₽</span>
-                            <button class="btn-glass">Выбрать</button>
-                        </div>
-                    </div>
-                </div>
+            <!-- CATALOG -->
+            <div class="screen" id="catalog">
+                <h2 style="font-size:26px;font-weight:900;margin-bottom:4px;">Каталог</h2>
+                <p style="color:var(--text-secondary);margin-bottom:20px;">Выберите идеальный подарок</p>
+                <div class="catalog-list" id="catalogList"></div>
             </div>
 
-            <!-- Screen 3: Create Order -->
-            <div class="screen screen-order" id="screenOrder">
-                <div class="order-header">
-                    <h2 class="screen-title">Создание заказа</h2>
-                    <div class="order-progress">
-                        <div class="progress-step active">1</div>
-                        <div class="progress-line"></div>
-                        <div class="progress-step">2</div>
-                        <div class="progress-line"></div>
-                        <div class="progress-step">3</div>
-                    </div>
-                </div>
-
-                <form class="order-form glass-card" id="orderForm">
-                    <div class="selected-gift-info">
-                        <div class="selected-gift-emoji" id="selectedGiftEmoji">🎵</div>
+            <!-- ORDER -->
+            <div class="screen" id="order">
+                <h2 style="font-size:26px;font-weight:900;margin-bottom:4px;">Оформление</h2>
+                <p style="color:var(--text-secondary);margin-bottom:20px;">Заполните данные для подарка</p>
+                <div class="form">
+                    <div class="selected">
+                        <span class="s-emoji" id="ordEmoji">🎵</span>
                         <div>
-                            <div class="selected-gift-name" id="selectedGiftName">Песня на заказ</div>
-                            <div class="selected-gift-price" id="selectedGiftPrice">990 ₽</div>
+                            <div class="s-name" id="ordName">Песня на заказ</div>
+                            <div class="s-price" id="ordPrice">990 ₽</div>
                         </div>
                     </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Кому подарок</label>
-                        <input type="text" class="form-input" id="recipientName" placeholder="Имя получателя" required>
+                    <div class="field">
+                        <label>Кому подарок</label>
+                        <input type="text" id="recipient" placeholder="Имя получателя">
                     </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Повод</label>
-                        <div class="occasion-grid" id="occasionGrid">
-                            <button type="button" class="occasion-btn active" data-occasion="birthday">
-                                <span class="occasion-emoji">🎂</span>
-                                <span>День рождения</span>
-                            </button>
-                            <button type="button" class="occasion-btn" data-occasion="love">
-                                <span class="occasion-emoji">💝</span>
-                                <span>Любовь</span>
-                            </button>
-                            <button type="button" class="occasion-btn" data-occasion="family">
-                                <span class="occasion-emoji">👨‍👩‍👧‍👦</span>
-                                <span>Семья</span>
-                            </button>
-                            <button type="button" class="occasion-btn" data-occasion="wedding">
-                                <span class="occasion-emoji">💒</span>
-                                <span>Свадьба</span>
-                            </button>
-                            <button type="button" class="occasion-btn" data-occasion="holiday">
-                                <span class="occasion-emoji">🎉</span>
-                                <span>Праздник</span>
-                            </button>
+                    <div class="field">
+                        <label>Повод</label>
+                        <div class="occasions" id="occasionBtns">
+                            <button class="active" data-o="birthday">🎂 День рождения</button>
+                            <button data-o="love">💝 Любовь</button>
+                            <button data-o="family">👨‍👩‍👧‍👦 Семья</button>
+                            <button data-o="wedding">💒 Свадьба</button>
+                            <button data-o="holiday">🎉 Праздник</button>
                         </div>
                     </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Описание</label>
-                        <textarea class="form-textarea" id="orderDescription" placeholder="Расскажите историю, поделитесь деталями..." rows="4"></textarea>
+                    <div class="field">
+                        <label>Описание</label>
+                        <textarea id="desc" placeholder="Расскажите историю..."></textarea>
                     </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Добавить фотографии</label>
-                        <div class="photo-upload-area" id="photoUpload">
-                            <div class="photo-upload-icon">
-                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-                                    <path d="M12 16V4M12 4L8 8M12 4L16 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                    <path d="M20 16V18C20 19.1046 19.1046 20 18 20H6C4.89543 20 4 19.1046 4 18V16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                </svg>
-                            </div>
-                            <span>Нажмите для загрузки</span>
-                        </div>
-                        <input type="file" id="photoInput" multiple accept="image/*" style="display: none;">
-                    </div>
-
-                    <button type="submit" class="btn-primary btn-full">
-                        <span>Продолжить</span>
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                            <path d="M7.5 15L12.5 10L7.5 5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                    </button>
-                </form>
-            </div>
-
-            <!-- Screen 4: Payment -->
-            <div class="screen screen-payment" id="screenPayment">
-                <div class="payment-header">
-                    <h2 class="screen-title">Оплата</h2>
-                </div>
-
-                <div class="payment-content">
-                    <div class="order-summary glass-card">
-                        <h3 class="summary-title">Ваш заказ</h3>
-                        <div class="summary-item">
-                            <span class="summary-label">Подарок</span>
-                            <span class="summary-value" id="summaryGift">🎵 Песня на заказ</span>
-                        </div>
-                        <div class="summary-item">
-                            <span class="summary-label">Для</span>
-                            <span class="summary-value" id="summaryRecipient">Анна</span>
-                        </div>
-                        <div class="summary-divider"></div>
-                        <div class="summary-total">
-                            <span class="summary-label">Итого</span>
-                            <span class="summary-price" id="summaryPrice">990 ₽</span>
-                        </div>
-                    </div>
-
-                    <div class="payment-methods glass-card">
-                        <h3 class="summary-title">Способ оплаты</h3>
-                        <div class="payment-option selected">
-                            <div class="payment-icon">💳</div>
-                            <div class="payment-info">
-                                <span>Банковская карта</span>
-                                <span class="payment-subtitle">Visa, Mastercard, МИР</span>
-                            </div>
-                            <div class="payment-check">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                    <circle cx="10" cy="10" r="10" fill="#8B5CF6"/>
-                                    <path d="M6 10L9 13L14 7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
-                            </div>
-                        </div>
-                        <div class="payment-option">
-                            <div class="payment-icon">📱</div>
-                            <div class="payment-info">
-                                <span>СБП</span>
-                                <span class="payment-subtitle">Система быстрых платежей</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <button class="btn-primary btn-full" id="payButton">
-                        <span>Оплатить</span>
-                    </button>
-
-                    <div class="security-note">
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                            <path d="M8 2L3 4.5V7.5C3 10.5 5 13 8 14C11 13 13 10.5 13 7.5V4.5L8 2Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                        <span>Безопасное соединение</span>
-                    </div>
+                    <button class="btn btn-primary" onclick="go('payment')">Продолжить</button>
                 </div>
             </div>
 
-            <!-- Screen 5: My Orders -->
-            <div class="screen screen-orders" id="screenOrders">
-                <div class="profile-section glass-card">
-                    <div class="profile-avatar" id="profileAvatar">
-                        <span>А</span>
-                    </div>
-                    <div class="profile-info">
-                        <h3 class="profile-name" id="profileName">Александр</h3>
-                        <p class="profile-id" id="profileId">ID: user_12345</p>
-                    </div>
+            <!-- PAYMENT -->
+            <div class="screen" id="payment">
+                <h2 style="font-size:26px;font-weight:900;margin-bottom:20px;">Оплата</h2>
+                <div class="pay-block">
+                    <h3>Ваш заказ</h3>
+                    <div class="pay-row"><span>Подарок</span><span id="payGift">🎵 Песня</span></div>
+                    <div class="pay-row"><span>Для</span><span id="payRecipient">—</span></div>
+                    <div class="pay-row total"><span>Итого</span><span id="payPrice">990 ₽</span></div>
                 </div>
+                <div class="methods" style="margin-top:16px;">
+                    <div class="method selected"><span class="m-icon">💳</span>Банковская карта</div>
+                    <div class="method"><span class="m-icon">📱</span>СБП</div>
+                </div>
+                <button class="btn btn-primary" style="margin-top:24px;" id="payBtn">Оплатить</button>
+                <div class="secure">🔒 Безопасное соединение</div>
+            </div>
 
-                <div class="orders-section">
-                    <h3 class="section-title">История заказов</h3>
-                    <div class="orders-list" id="ordersList">
-                        <!-- Orders will be rendered here -->
+            <!-- SUCCESS -->
+            <div class="screen" id="success">
+                <div class="success">
+                    <div class="check">✓</div>
+                    <h2>Заказ создан!</h2>
+                    <div class="details">
+                        <div class="d-row"><span>Номер заказа</span><strong id="sucId">#1001</strong></div>
+                        <div class="d-row"><span>Подарок</span><strong id="sucGift">🎵 Песня</strong></div>
+                        <div class="d-row"><span>Статус</span><span class="status-badge" id="sucStatus">В работе</span></div>
                     </div>
-                    <div class="empty-orders" id="emptyOrders" style="display: none;">
-                        <div class="empty-icon">📭</div>
-                        <h3>У вас пока нет заказов</h3>
-                        <p>Создайте свой первый подарок</p>
-                        <button class="btn-glass" onclick="navigateTo('catalog')">В каталог</button>
-                    </div>
+                    <button class="btn btn-primary" onclick="go('orders')">Мои заказы</button>
                 </div>
             </div>
 
-            <!-- Screen: Order Success -->
-            <div class="screen screen-success" id="screenSuccess">
-                <div class="success-content">
-                    <div class="success-icon">
-                        <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
-                            <circle cx="40" cy="40" r="40" fill="url(#success-gradient)"/>
-                            <path d="M25 40L36 51L55 29" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-                            <defs>
-                                <linearGradient id="success-gradient" x1="0" y1="0" x2="80" y2="80">
-                                    <stop offset="0%" stop-color="#8B5CF6"/>
-                                    <stop offset="100%" stop-color="#F59E0B"/>
-                                </linearGradient>
-                            </defs>
-                        </svg>
+            <!-- ORDERS -->
+            <div class="screen" id="orders">
+                <h2 style="font-size:26px;font-weight:900;margin-bottom:20px;">Мои заказы</h2>
+                <div class="profile-card">
+                    <div class="avatar" id="profAvatar">A</div>
+                    <div>
+                        <div class="p-name" id="profName">Александр</div>
+                        <div class="p-id" id="profId">ID: user_12345</div>
                     </div>
-                    <h2 class="success-title">Заказ создан!</h2>
-                    <div class="success-details glass-card">
-                        <div class="success-detail-item">
-                            <span>Номер заказа</span>
-                            <strong id="successOrderId">#1001</strong>
-                        </div>
-                        <div class="success-detail-item">
-                            <span>Подарок</span>
-                            <strong id="successGift">🎵 Песня</strong>
-                        </div>
-                        <div class="success-detail-item">
-                            <span>Статус</span>
-                            <span class="status-badge status-progress" id="successStatus">В работе</span>
-                        </div>
-                    </div>
-                    <button class="btn-primary btn-full" onclick="navigateTo('orders')">
-                        Мои заказы
-                    </button>
+                </div>
+                <div id="ordersList"></div>
+                <div class="empty-state" id="emptyOrders">
+                    <div class="big-emoji">📭</div>
+                    <div style="font-weight:700;font-size:18px;margin-bottom:4px;">Нет заказов</div>
+                    <div>Создайте свой первый подарок</div>
                 </div>
             </div>
-        </main>
+        </div>
+
+        <nav class="nav">
+            <button class="active" data-screen="home">🏠 Главная</button>
+            <button data-screen="catalog">🎁 Каталог</button>
+            <button data-screen="orders">📦 Заказы</button>
+        </nav>
     </div>
 
-    <script src="js/app.js"></script>
+    <script>
+        // STATE
+        const state = {
+            screen: 'home',
+            history: [],
+            selectedGift: null,
+            occasion: 'birthday',
+            orders: JSON.parse(localStorage.getItem('dg_orders') || '[]'),
+            user: { id: null, name: null }
+        };
+
+        const gifts = [
+            { id: 'song', emoji: '🎵', name: 'Песня на заказ', desc: 'Персональная песня с именем и историей человека.',
+                price: 990 },
+            { id: 'card', emoji: '💌', name: 'Именная открытка',
+                desc: 'Красивое поздравление с индивидуальным дизайном.', price: 299 },
+            { id: 'story', emoji: '📖', name: 'Семейная история',
+                desc: 'История семьи из фотографий и воспоминаний.', price: 1490 },
+            { id: 'photo', emoji: '📸', name: 'AI-фотосессия',
+                desc: 'Профессиональные фотографии в разных стилях.', price: 990 }
+        ];
+
+        // PuzzleBot init
+        function initUser() {
+            const params = new URLSearchParams(window.location.search);
+            state.user.id = params.get('user_id') || 'demo_' + Math.random().toString(36).slice(2, 9);
+            state.user.name = params.get('username') || 'Александр';
+            document.getElementById('profName').textContent = state.user.name;
+            document.getElementById('profId').textContent = 'ID: ' + state.user.id;
+            document.getElementById('profAvatar').textContent = state.user.name.charAt(0).toUpperCase();
+        }
+
+        // Navigation
+        function go(screen, data) {
+            if (data) state.selectedGift = data;
+            state.history.push(state.screen);
+            state.screen = screen;
+            render();
+        }
+
+        function back() {
+            if (state.history.length === 0) return;
+            state.screen = state.history.pop();
+            render();
+        }
+
+        // Render
+        function render() {
+            // Screens
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            const target = document.getElementById(state.screen);
+            if (target) target.classList.add('active');
+            document.getElementById('content').scrollTop = 0;
+
+            // Header
+            const backBtn = document.getElementById('backBtn');
+            const headerTitle = document.getElementById('headerTitle');
+            const titles = { home: 'Gift Studio', catalog: 'Каталог', order: 'Оформление', payment: 'Оплата',
+                success: 'Готово', orders: 'Заказы' };
+            headerTitle.textContent = titles[state.screen] || 'Gift Studio';
+            backBtn.classList.toggle('hidden', state.screen === 'home' || state.screen === 'catalog' || state.screen ===
+                'orders');
+
+            // Nav
+            document.querySelectorAll('.nav button').forEach(b => {
+                b.classList.toggle('active', b.dataset.screen === state.screen);
+            });
+
+            // Populate
+            if (state.screen === 'home') renderPopular();
+            if (state.screen === 'catalog') renderCatalog();
+            if (state.screen === 'order') renderOrderForm();
+            if (state.screen === 'payment') renderPayment();
+            if (state.screen === 'orders') renderOrders();
+        }
+
+        function renderPopular() {
+            document.getElementById('popularGifts').innerHTML = gifts.map(g => `
+            <div class="gift-chip" onclick="go('order', ${JSON.stringify(g).replace(/"/g, '&quot;')})">
+              <div class="emoji">${g.emoji}</div>
+              <div class="name">${g.name}</div>
+              <div class="price">${g.price} ₽</div>
+            </div>
+          `).join('');
+        }
+
+        function renderCatalog() {
+            document.getElementById('catalogList').innerHTML = gifts.map(g => `
+            <div class="gift-card" onclick="go('order', ${JSON.stringify(g).replace(/"/g, '&quot;')})">
+              <div class="icon">${g.emoji}</div>
+              <div class="info">
+                <h3>${g.name}</h3>
+                <div class="desc">${g.desc}</div>
+                <div class="price">${g.price} ₽</div>
+              </div>
+            </div>
+          `).join('');
+        }
+
+        function renderOrderForm() {
+            if (!state.selectedGift) return;
+            document.getElementById('ordEmoji').textContent = state.selectedGift.emoji;
+            document.getElementById('ordName').textContent = state.selectedGift.name;
+            document.getElementById('ordPrice').textContent = state.selectedGift.price + ' ₽';
+        }
+
+        function renderPayment() {
+            if (!state.selectedGift) return;
+            const rec = document.getElementById('recipient').value || '—';
+            document.getElementById('payGift').textContent = state.selectedGift.emoji + ' ' + state.selectedGift.name;
+            document.getElementById('payRecipient').textContent = rec;
+            document.getElementById('payPrice').textContent = state.selectedGift.price + ' ₽';
+        }
+
+        function renderOrders() {
+            const list = document.getElementById('ordersList');
+            const empty = document.getElementById('emptyOrders');
+            if (state.orders.length === 0) {
+                list.innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+            empty.style.display = 'none';
+            list.innerHTML = state.orders.map(o => `
+            <div class="order-item">
+              <div class="o-top"><span class="o-id">#${o.id}</span><span class="status-badge ${o.status==='Готово'?'done':''}">${o.status}</span></div>
+              <div class="o-name">${o.emoji} ${o.name}</div>
+              <div class="o-bottom"><span>${o.date}</span><span>${o.price} ₽</span></div>
+            </div>
+          `).join('');
+        }
+
+        // Payment
+        document.getElementById('payBtn').addEventListener('click', function() {
+            if (!state.selectedGift) return;
+            const btn = this;
+            btn.textContent = 'Обработка...';
+            btn.disabled = true;
+
+            // Здесь проверка оплаты через PuzzleBot API
+            setTimeout(() => {
+                const order = {
+                    id: Date.now().toString().slice(-4),
+                    emoji: state.selectedGift.emoji,
+                    name: state.selectedGift.name,
+                    price: state.selectedGift.price,
+                    recipient: document.getElementById('recipient').value || '—',
+                    status: 'В работе',
+                    date: new Date().toLocaleDateString('ru-RU'),
+                    userId: state.user.id
+                };
+                state.orders.unshift(order);
+                localStorage.setItem('dg_orders', JSON.stringify(state.orders));
+
+                // Здесь отправка заказа в PuzzleBot
+                // PuzzleBot.sendOrder(order);
+
+                document.getElementById('sucId').textContent = '#' + order.id;
+                document.getElementById('sucGift').textContent = order.emoji + ' ' + order.name;
+                document.getElementById('sucStatus').textContent = order.status;
+
+                btn.textContent = 'Оплатить';
+                btn.disabled = false;
+                go('success');
+            }, 1200);
+        });
+
+        // Occasion buttons
+        document.getElementById('occasionBtns').addEventListener('click', function(e) {
+            if (e.target.tagName === 'BUTTON') {
+                this.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                state.occasion = e.target.dataset.o;
+            }
+        });
+
+        // Payment method selection
+        document.querySelector('.methods').addEventListener('click', function(e) {
+            const method = e.target.closest('.method');
+            if (method) {
+                this.querySelectorAll('.method').forEach(m => m.classList.remove('selected'));
+                method.classList.add('selected');
+            }
+        });
+
+        // Back button
+        document.getElementById('backBtn').addEventListener('click', back);
+
+        // Orders button in header
+        document.getElementById('ordersBtn').addEventListener('click', () => go('orders'));
+
+        // Nav
+        document.querySelectorAll('.nav button').forEach(btn => {
+            btn.addEventListener('click', () => go(btn.dataset.screen));
+        });
+
+        // Init
+        initUser();
+        render();
+    </script>
 </body>
 </html>
