@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#09090B">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Digital Gift Studio — Персональные цифровые подарки</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Splash Screen -->
+    <div id="splashScreen" class="splash-screen">
+        <div class="splash-content">
+            <div class="splash-icon">
+                <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+                    <rect width="64" height="64" rx="20" fill="url(#splash-gradient)"/>
+                    <path d="M32 18L38 26H26L32 18Z" fill="white" opacity="0.9"/>
+                    <rect x="24" y="26" width="16" height="16" rx="4" fill="white" opacity="0.9"/>
+                    <path d="M28 38L24 46H40L36 38" fill="white" opacity="0.7"/>
+                    <defs>
+                        <linearGradient id="splash-gradient" x1="0" y1="0" x2="64" y2="64">
+                            <stop offset="0%" stop-color="#7C3AED"/>
+                            <stop offset="100%" stop-color="#F59E0B"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
+            <div class="splash-title">Digital Gift Studio</div>
+            <div class="splash-loader">
+                <div class="loader-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="app" class="app-container">
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div class="status-bar-time">9:41</div>
+            <div class="status-bar-icons">
+                <svg width="17" height="11" viewBox="0 0 17 11" fill="none">
+                    <rect opacity="0.35" x="0.5" y="0.5" width="15" height="10" rx="2" stroke="white"/>
+                    <rect x="2" y="2" width="12" height="7" rx="1" fill="white"/>
+                    <rect x="15.5" y="3.5" width="1" height="4" rx="0.5" fill="white"/>
+                </svg>
+                <svg width="15" height="11" viewBox="0 0 15 11" fill="none">
+                    <path fill-rule="evenodd" clip-rule="evenodd" d="M7.5 2.5C10.5 2.5 13 4 14.5 5.5C13 7 10.5 8.5 7.5 8.5C4.5 8.5 2 7 0.5 5.5C2 4 4.5 2.5 7.5 2.5Z" stroke="white" fill="none"/>
+                    <circle cx="7.5" cy="5.5" r="2" fill="white"/>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Header -->
+        <header class="app-header" id="appHeader">
+            <button class="header-back-btn" id="backButton" style="opacity: 0; pointer-events: none;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M15 18L9 12L15 6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+            <h1 class="header-title" id="headerTitle">🎁 Digital Gift Studio</h1>
+            <button class="header-action-btn" id="headerAction">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="6" r="1.5" fill="white"/>
+                    <circle cx="12" cy="12" r="1.5" fill="white"/>
+                    <circle cx="12" cy="18" r="1.5" fill="white"/>
+                </svg>
+            </button>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content" id="mainContent">
+            <!-- Screen 1: Home -->
+            <div class="screen screen-home active" id="screenHome">
+                <div class="home-hero">
+                    <div class="hero-badge">
+                        <span class="badge-dot"></span>
+                        Премиум подарки
+                    </div>
+                    <h2 class="hero-title">Подарки, которые сохраняют эмоции</h2>
+                    <p class="hero-subtitle">Создайте уникальный подарок за несколько минут</p>
+                    <button class="btn-primary btn-hero" onclick="navigateTo('catalog')">
+                        <span>Создать подарок</span>
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M7.5 15L12.5 10L7.5 5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="section">
+                    <div class="section-header">
+                        <h3 class="section-title">Популярные подарки</h3>
+                        <button class="section-link" onclick="navigateTo('catalog')">Все</button>
+                    </div>
+                    <div class="gifts-scroll">
+                        <div class="gift-card-mini" onclick="selectGiftAndNavigate('song')">
+                            <div class="gift-emoji">🎵</div>
+                            <div class="gift-name">Песня на заказ</div>
+                            <div class="gift-price">990 ₽</div>
+                        </div>
+                        <div class="gift-card-mini" onclick="selectGiftAndNavigate('card')">
+                            <div class="gift-emoji">💌</div>
+                            <div class="gift-name">Именная открытка</div>
+                            <div class="gift-price">299 ₽</div>
+                        </div>
+                        <div class="gift-card-mini" onclick="selectGiftAndNavigate('story')">
+                            <div class="gift-emoji">📖</div>
+                            <div class="gift-name">Семейная история</div>
+                            <div class="gift-price">1490 ₽</div>
+                        </div>
+                        <div class="gift-card-mini" onclick="selectGiftAndNavigate('photo')">
+                            <div class="gift-emoji">📸</div>
+                            <div class="gift-name">AI-фотосессия</div>
+                            <div class="gift-price">990 ₽</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="trust-block">
+                    <div class="trust-stars">
+                        <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+                    </div>
+                    <p class="trust-text">Создаем подарки, которые запоминаются</p>
+                    <div class="trust-stats">
+                        <div class="trust-stat">
+                            <span class="stat-number">2000+</span>
+                            <span class="stat-label">Подарков</span>
+                        </div>
+                        <div class="trust-divider"></div>
+                        <div class="trust-stat">
+                            <span class="stat-number">98%</span>
+                            <span class="stat-label">Довольных</span>
+                        </div>
+                        <div class="trust-divider"></div>
+                        <div class="trust-stat">
+                            <span class="stat-number">24ч</span>
+                            <span class="stat-label">Создание</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Screen 2: Catalog -->
+            <div class="screen screen-catalog" id="screenCatalog">
+                <div class="catalog-header">
+                    <h2 class="screen-title">Каталог подарков</h2>
+                    <p class="screen-description">Выберите идеальный подарок для ваших близких</p>
+                </div>
+                <div class="catalog-grid">
+                    <div class="gift-card-full glass-card" onclick="selectGiftAndNavigate('song')">
+                        <div class="gift-card-header">
+                            <div class="gift-card-icon">🎵</div>
+                            <div class="gift-card-badge">Хит продаж</div>
+                        </div>
+                        <h3 class="gift-card-title">Песня на заказ</h3>
+                        <p class="gift-card-description">Персональная песня с именем и историей человека. Профессиональная запись в студии.</p>
+                        <div class="gift-card-footer">
+                            <span class="gift-card-price">990 ₽</span>
+                            <button class="btn-glass">Выбрать</button>
+                        </div>
+                    </div>
+
+                    <div class="gift-card-full glass-card" onclick="selectGiftAndNavigate('card')">
+                        <div class="gift-card-header">
+                            <div class="gift-card-icon">💌</div>
+                        </div>
+                        <h3 class="gift-card-title">Именная открытка</h3>
+                        <p class="gift-card-description">Красивое поздравление с индивидуальным дизайном и вашими теплыми словами.</p>
+                        <div class="gift-card-footer">
+                            <span class="gift-card-price">299 ₽</span>
+                            <button class="btn-glass">Выбрать</button>
+                        </div>
+                    </div>
+
+                    <div class="gift-card-full glass-card" onclick="selectGiftAndNavigate('story')">
+                        <div class="gift-card-header">
+                            <div class="gift-card-icon">📖</div>
+                            <div class="gift-card-badge premium">Премиум</div>
+                        </div>
+                        <h3 class="gift-card-title">Семейная история</h3>
+                        <p class="gift-card-description">История семьи из фотографий и воспоминаний в красивом оформлении.</p>
+                        <div class="gift-card-footer">
+                            <span class="gift-card-price">1490 ₽</span>
+                            <button class="btn-glass">Выбрать</button>
+                        </div>
+                    </div>
+
+                    <div class="gift-card-full glass-card" onclick="selectGiftAndNavigate('photo')">
+                        <div class="gift-card-header">
+                            <div class="gift-card-icon">📸</div>
+                        </div>
+                        <h3 class="gift-card-title">AI-фотосессия</h3>
+                        <p class="gift-card-description">Профессиональные фотографии в разных стилях с помощью искусственного интеллекта.</p>
+                        <div class="gift-card-footer">
+                            <span class="gift-card-price">990 ₽</span>
+                            <button class="btn-glass">Выбрать</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Screen 3: Create Order -->
+            <div class="screen screen-order" id="screenOrder">
+                <div class="order-header">
+                    <h2 class="screen-title">Создание заказа</h2>
+                    <div class="order-progress">
+                        <div class="progress-step active">1</div>
+                        <div class="progress-line"></div>
+                        <div class="progress-step">2</div>
+                        <div class="progress-line"></div>
+                        <div class="progress-step">3</div>
+                    </div>
+                </div>
+
+                <form class="order-form glass-card" id="orderForm">
+                    <div class="selected-gift-info">
+                        <div class="selected-gift-emoji" id="selectedGiftEmoji">🎵</div>
+                        <div>
+                            <div class="selected-gift-name" id="selectedGiftName">Песня на заказ</div>
+                            <div class="selected-gift-price" id="selectedGiftPrice">990 ₽</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Кому подарок</label>
+                        <input type="text" class="form-input" id="recipientName" placeholder="Имя получателя" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Повод</label>
+                        <div class="occasion-grid" id="occasionGrid">
+                            <button type="button" class="occasion-btn active" data-occasion="birthday">
+                                <span class="occasion-emoji">🎂</span>
+                                <span>День рождения</span>
+                            </button>
+                            <button type="button" class="occasion-btn" data-occasion="love">
+                                <span class="occasion-emoji">💝</span>
+                                <span>Любовь</span>
+                            </button>
+                            <button type="button" class="occasion-btn" data-occasion="family">
+                                <span class="occasion-emoji">👨‍👩‍👧‍👦</span>
+                                <span>Семья</span>
+                            </button>
+                            <button type="button" class="occasion-btn" data-occasion="wedding">
+                                <span class="occasion-emoji">💒</span>
+                                <span>Свадьба</span>
+                            </button>
+                            <button type="button" class="occasion-btn" data-occasion="holiday">
+                                <span class="occasion-emoji">🎉</span>
+                                <span>Праздник</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Описание</label>
+                        <textarea class="form-textarea" id="orderDescription" placeholder="Расскажите историю, поделитесь деталями..." rows="4"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Добавить фотографии</label>
+                        <div class="photo-upload-area" id="photoUpload">
+                            <div class="photo-upload-icon">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                                    <path d="M12 16V4M12 4L8 8M12 4L16 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M20 16V18C20 19.1046 19.1046 20 18 20H6C4.89543 20 4 19.1046 4 18V16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                </svg>
+                            </div>
+                            <span>Нажмите для загрузки</span>
+                        </div>
+                        <input type="file" id="photoInput" multiple accept="image/*" style="display: none;">
+                    </div>
+
+                    <button type="submit" class="btn-primary btn-full">
+                        <span>Продолжить</span>
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M7.5 15L12.5 10L7.5 5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Screen 4: Payment -->
+            <div class="screen screen-payment" id="screenPayment">
+                <div class="payment-header">
+                    <h2 class="screen-title">Оплата</h2>
+                </div>
+
+                <div class="payment-content">
+                    <div class="order-summary glass-card">
+                        <h3 class="summary-title">Ваш заказ</h3>
+                        <div class="summary-item">
+                            <span class="summary-label">Подарок</span>
+                            <span class="summary-value" id="summaryGift">🎵 Песня на заказ</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Для</span>
+                            <span class="summary-value" id="summaryRecipient">Анна</span>
+                        </div>
+                        <div class="summary-divider"></div>
+                        <div class="summary-total">
+                            <span class="summary-label">Итого</span>
+                            <span class="summary-price" id="summaryPrice">990 ₽</span>
+                        </div>
+                    </div>
+
+                    <div class="payment-methods glass-card">
+                        <h3 class="summary-title">Способ оплаты</h3>
+                        <div class="payment-option selected">
+                            <div class="payment-icon">💳</div>
+                            <div class="payment-info">
+                                <span>Банковская карта</span>
+                                <span class="payment-subtitle">Visa, Mastercard, МИР</span>
+                            </div>
+                            <div class="payment-check">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                    <circle cx="10" cy="10" r="10" fill="#8B5CF6"/>
+                                    <path d="M6 10L9 13L14 7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="payment-option">
+                            <div class="payment-icon">📱</div>
+                            <div class="payment-info">
+                                <span>СБП</span>
+                                <span class="payment-subtitle">Система быстрых платежей</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="btn-primary btn-full" id="payButton">
+                        <span>Оплатить</span>
+                    </button>
+
+                    <div class="security-note">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M8 2L3 4.5V7.5C3 10.5 5 13 8 14C11 13 13 10.5 13 7.5V4.5L8 2Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span>Безопасное соединение</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Screen 5: My Orders -->
+            <div class="screen screen-orders" id="screenOrders">
+                <div class="profile-section glass-card">
+                    <div class="profile-avatar" id="profileAvatar">
+                        <span>А</span>
+                    </div>
+                    <div class="profile-info">
+                        <h3 class="profile-name" id="profileName">Александр</h3>
+                        <p class="profile-id" id="profileId">ID: user_12345</p>
+                    </div>
+                </div>
+
+                <div class="orders-section">
+                    <h3 class="section-title">История заказов</h3>
+                    <div class="orders-list" id="ordersList">
+                        <!-- Orders will be rendered here -->
+                    </div>
+                    <div class="empty-orders" id="emptyOrders" style="display: none;">
+                        <div class="empty-icon">📭</div>
+                        <h3>У вас пока нет заказов</h3>
+                        <p>Создайте свой первый подарок</p>
+                        <button class="btn-glass" onclick="navigateTo('catalog')">В каталог</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Screen: Order Success -->
+            <div class="screen screen-success" id="screenSuccess">
+                <div class="success-content">
+                    <div class="success-icon">
+                        <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+                            <circle cx="40" cy="40" r="40" fill="url(#success-gradient)"/>
+                            <path d="M25 40L36 51L55 29" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                            <defs>
+                                <linearGradient id="success-gradient" x1="0" y1="0" x2="80" y2="80">
+                                    <stop offset="0%" stop-color="#8B5CF6"/>
+                                    <stop offset="100%" stop-color="#F59E0B"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                    <h2 class="success-title">Заказ создан!</h2>
+                    <div class="success-details glass-card">
+                        <div class="success-detail-item">
+                            <span>Номер заказа</span>
+                            <strong id="successOrderId">#1001</strong>
+                        </div>
+                        <div class="success-detail-item">
+                            <span>Подарок</span>
+                            <strong id="successGift">🎵 Песня</strong>
+                        </div>
+                        <div class="success-detail-item">
+                            <span>Статус</span>
+                            <span class="status-badge status-progress" id="successStatus">В работе</span>
+                        </div>
+                    </div>
+                    <button class="btn-primary btn-full" onclick="navigateTo('orders')">
+                        Мои заказы
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
