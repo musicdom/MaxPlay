@@ -14,7 +14,7 @@ class MaxMiniApp {
         this.hasMoreOrders = true;
         
         // Настройки API
-        this.API_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL'; // Замените на URL вашего Apps Script
+        this.API_URL = 'https://script.google.com/macros/s/AKfycbzb5mYU45LUhkyWEWlk9GEpeppHjiLP55XNG9RjQilGcTHg8CE363_8UJjGzVO8uBQDGw/exec'; // Замените на URL вашего Apps Script
         this.ORDERS_PER_PAGE = 10;
         
         this.init();
