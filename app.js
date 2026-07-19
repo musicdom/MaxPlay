@@ -1,7 +1,6 @@
-// ============================================
 // MAX Mini App - Основной JavaScript
 // Версия: 2.0 с интеграцией Google Sheets
-// ============================================
+// API URL: https://script.google.com/macros/s/AKfycbwagYhGORpxyPWlQkiDoxIj8Hn4gMFL-RhAV8NrC7IEWvht06zQ00SGEtUASIZFENBRcQ/exec
 
 class MaxMiniApp {
     constructor() {
@@ -13,8 +12,8 @@ class MaxMiniApp {
         this.currentPageNum = 1;
         this.hasMoreOrders = true;
         
-        // Настройки API
-        this.API_URL = 'https://script.google.com/macros/s/AKfycbzb5mYU45LUhkyWEWlk9GEpeppHjiLP55XNG9RjQilGcTHg8CE363_8UJjGzVO8uBQDGw/exec'; // Замените на URL вашего Apps Script
+        // ⚠️ ВАЖНО: замените на актуальный URL вашего Apps Script
+        this.API_URL = 'https://script.google.com/macros/s/AKfycbwagYhGORpxyPWlQkiDoxIj8Hn4gMFL-RhAV8NrC7IEWvht06zQ00SGEtUASIZFENBRcQ/exec';
         this.ORDERS_PER_PAGE = 10;
         
         this.init();
@@ -25,21 +24,13 @@ class MaxMiniApp {
         this.setupSearch();
         this.setupTelegramIntegration();
         
-        // Загружаем категории и заказы
         await this.loadCategories();
         await this.loadOrders();
         
-        // Настраиваем бесконечную прокрутку
         this.setupInfiniteScroll();
     }
 
-    // ============================================
-    // API методы
-    // ============================================
-
-    /**
-     * Базовый метод для запросов к API
-     */
+    // Базовый метод для запросов к API
     async apiRequest(params) {
         try {
             const queryString = new URLSearchParams(params).toString();
@@ -62,9 +53,7 @@ class MaxMiniApp {
         }
     }
 
-    /**
-     * Загрузка категорий из Google Sheets
-     */
+    // Загрузка категорий
     async loadCategories() {
         try {
             const data = await this.apiRequest({ action: 'getCategories' });
@@ -75,7 +64,6 @@ class MaxMiniApp {
             }
         } catch (error) {
             console.error('Ошибка загрузки категорий:', error);
-            // Используем категории по умолчанию
             this.categories = [
                 { id: 'all', name: 'Все', icon: '📋' },
                 { id: 'Доставка', name: 'Доставка', icon: '🚚' },
@@ -89,9 +77,7 @@ class MaxMiniApp {
         }
     }
 
-    /**
-     * Загрузка заказов из Google Sheets
-     */
+    // Загрузка заказов
     async loadOrders(reset = true) {
         if (this.isLoading) return;
         
@@ -110,7 +96,6 @@ class MaxMiniApp {
                 limit: this.ORDERS_PER_PAGE
             };
             
-            // Добавляем фильтры
             if (this.currentCategory !== 'Все') {
                 params.category = this.currentCategory;
             }
@@ -142,21 +127,12 @@ class MaxMiniApp {
         }
     }
 
-    /**
-     * Загрузка следующей страницы заказов
-     */
     async loadMoreOrders() {
         if (!this.hasMoreOrders || this.isLoading) return;
         await this.loadOrders(false);
     }
 
-    // ============================================
-    // UI Методы
-    // ============================================
-
-    /**
-     * Отрисовка категорий
-     */
+    // Отрисовка категорий
     renderCategories() {
         const categoriesContainer = document.querySelector('.categories-scroll');
         if (!categoriesContainer) return;
@@ -168,20 +144,16 @@ class MaxMiniApp {
             </button>`
         ).join('');
         
-        // Добавляем обработчики
         categoriesContainer.querySelectorAll('.category-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const category = btn.dataset.category;
                 this.currentCategory = category === 'all' ? 'Все' : category;
                 
-                // Обновляем активную кнопку
                 categoriesContainer.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 
-                // Перезагружаем заказы с фильтром
                 this.loadOrders(true);
                 
-                // Тактильная обратная связь
                 if (window.Telegram?.WebApp?.HapticFeedback) {
                     window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
                 }
@@ -189,9 +161,7 @@ class MaxMiniApp {
         });
     }
 
-    /**
-     * Отрисовка карточек заказов
-     */
+    // Отрисовка карточек заказов
     renderOrders() {
         const ordersContainer = document.getElementById('ordersFeed');
         if (!ordersContainer) return;
@@ -205,7 +175,6 @@ class MaxMiniApp {
             this.createOrderCard(order, index)
         ).join('');
         
-        // Добавляем индикатор загрузки в конец списка
         if (this.hasMoreOrders) {
             ordersContainer.innerHTML += `
                 <div class="load-more-indicator" id="loadMoreIndicator">
@@ -214,19 +183,14 @@ class MaxMiniApp {
             `;
         }
         
-        // Настраиваем обработчики для карточек
         this.setupOrderCards();
     }
 
-    /**
-     * Создание HTML карточки заказа
-     */
     createOrderCard(order, index) {
         const isVip = order.category === 'VIP' || order.price > 20000;
         const isUrgent = this.isRecentOrder(order.date);
         const priceFormatted = this.formatPrice(order.price);
         
-        // Определяем бейджи
         const badges = [];
         if (isVip) badges.push('<span class="badge badge-vip">⭐ VIP</span>');
         if (isUrgent) badges.push('<span class="badge badge-urgent">🔥 Срочно</span>');
@@ -234,7 +198,6 @@ class MaxMiniApp {
             badges.push('<span class="badge badge-new">Новое</span>');
         }
         
-        // Аватар заказчика (первая буква города или названия)
         const avatarLetter = (order.city || 'Н')[0].toUpperCase();
         
         return `
@@ -278,9 +241,6 @@ class MaxMiniApp {
         `;
     }
 
-    /**
-     * Показ состояния загрузки
-     */
     showLoadingState() {
         const container = document.getElementById('ordersFeed');
         if (!container || this.orders.length > 0) return;
@@ -293,19 +253,11 @@ class MaxMiniApp {
         `;
     }
 
-    /**
-     * Скрытие состояния загрузки
-     */
     hideLoadingState() {
         const indicator = document.getElementById('loadMoreIndicator');
-        if (indicator) {
-            indicator.remove();
-        }
+        if (indicator) indicator.remove();
     }
 
-    /**
-     * Показ пустого состояния
-     */
     showEmptyState() {
         const container = document.getElementById('ordersFeed');
         if (!container) return;
@@ -322,9 +274,6 @@ class MaxMiniApp {
         `;
     }
 
-    /**
-     * Показ состояния ошибки
-     */
     showErrorState(message) {
         const container = document.getElementById('ordersFeed');
         if (!container) return;
@@ -341,45 +290,26 @@ class MaxMiniApp {
         `;
     }
 
-    // ============================================
-    // Вспомогательные методы
-    // ============================================
-
-    /**
-     * Форматирование цены
-     */
     formatPrice(price) {
         return parseInt(price).toLocaleString('ru-RU');
     }
 
-    /**
-     * Проверка на недавний заказ (меньше 24 часов)
-     */
     isRecentOrder(dateStr) {
         if (!dateStr) return false;
-        
         try {
             const orderDate = new Date(dateStr);
             const now = new Date();
             const hoursDiff = (now - orderDate) / (1000 * 60 * 60);
             return hoursDiff < 24;
-        } catch {
-            return false;
-        }
+        } catch { return false; }
     }
 
-    /**
-     * Экранирование HTML
-     */
     escapeHtml(text) {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
     }
 
-    /**
-     * Настройка бесконечной прокрутки
-     */
     setupInfiniteScroll() {
         const mainContent = document.getElementById('mainContent');
         if (!mainContent) return;
@@ -389,16 +319,12 @@ class MaxMiniApp {
             const scrollHeight = mainContent.scrollHeight;
             const clientHeight = mainContent.clientHeight;
             
-            // Если доскролили до низа (с запасом в 100px)
             if (scrollTop + clientHeight >= scrollHeight - 100) {
                 this.loadMoreOrders();
             }
         });
     }
 
-    /**
-     * Настройка поиска с задержкой
-     */
     setupSearch() {
         const searchInput = document.querySelector('.search-input');
         if (!searchInput) return;
@@ -407,16 +333,124 @@ class MaxMiniApp {
         
         searchInput.addEventListener('input', (e) => {
             clearTimeout(searchTimeout);
-            
             searchTimeout = setTimeout(() => {
                 this.loadOrders(true);
-            }, 500); // Задержка 500мс перед поиском
+            }, 500);
         });
     }
 
-    /**
-     * Настройка карточек заказов
-     */
+    setupNavigation() {
+        const navItems = document.querySelectorAll('.nav-item');
+        
+        navItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                const page = item.dataset.page;
+                if (page === this.currentPage) return;
+                
+                this.animatePageTransition(() => {
+                    this.navigateTo(page);
+                    this.updateActiveNav(page);
+                });
+            });
+        });
+    }
+
+    navigateTo(page) {
+        this.currentPage = page;
+        const mainContent = document.getElementById('mainContent');
+        
+        switch(page) {
+            case 'orders':
+                this.showOrdersPage();
+                break;
+            case 'create':
+                this.showCreateOrderPage();
+                break;
+            case 'executors':
+                this.showExecutorsPage();
+                break;
+            case 'vip':
+                this.showVipPage();
+                break;
+            case 'profile':
+                this.showProfilePage();
+                break;
+        }
+    }
+
+    updateActiveNav(page) {
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.classList.toggle('active', item.dataset.page === page);
+        });
+    }
+
+    animatePageTransition(callback) {
+        const mainContent = document.getElementById('mainContent');
+        mainContent.style.opacity = '0';
+        mainContent.style.transform = 'translateY(10px)';
+        
+        setTimeout(() => {
+            callback();
+            mainContent.style.transition = 'all 0.3s ease';
+            mainContent.style.opacity = '1';
+            mainContent.style.transform = 'translateY(0)';
+        }, 150);
+    }
+
+    showOrdersPage() {
+        document.querySelector('.header-title').textContent = 'Заказы';
+        // При возврате на страницу заказов перезагружаем данные
+        this.loadOrders(true);
+    }
+
+    showCreateOrderPage() {
+        document.querySelector('.header-title').textContent = 'Разместить заказ';
+        const mainContent = document.getElementById('mainContent');
+        mainContent.innerHTML = `
+            <div class="placeholder-page">
+                <div class="placeholder-icon">📝</div>
+                <h2>Создание заказа</h2>
+                <p>Здесь будет форма для размещения нового заказа</p>
+            </div>
+        `;
+    }
+
+    showExecutorsPage() {
+        document.querySelector('.header-title').textContent = 'Исполнители';
+        const mainContent = document.getElementById('mainContent');
+        mainContent.innerHTML = `
+            <div class="placeholder-page">
+                <div class="placeholder-icon">👷</div>
+                <h2>Исполнители</h2>
+                <p>Список доступных исполнителей и их рейтинг</p>
+            </div>
+        `;
+    }
+
+    showVipPage() {
+        document.querySelector('.header-title').textContent = 'VIP Заказы';
+        const mainContent = document.getElementById('mainContent');
+        mainContent.innerHTML = `
+            <div class="placeholder-page">
+                <div class="placeholder-icon">⭐</div>
+                <h2>VIP Раздел</h2>
+                <p>Премиум заказы и эксклюзивные предложения</p>
+            </div>
+        `;
+    }
+
+    showProfilePage() {
+        document.querySelector('.header-title').textContent = 'Кабинет';
+        const mainContent = document.getElementById('mainContent');
+        mainContent.innerHTML = `
+            <div class="placeholder-page">
+                <div class="placeholder-icon">👤</div>
+                <h2>Личный кабинет</h2>
+                <p>Ваш профиль, история заказов и настройки</p>
+            </div>
+        `;
+    }
+
     setupOrderCards() {
         document.querySelectorAll('.order-card').forEach(card => {
             card.addEventListener('click', () => {
@@ -426,11 +460,7 @@ class MaxMiniApp {
         });
     }
 
-    /**
-     * Показ деталей заказа
-     */
     showOrderDetails(orderId) {
-        // Тактильная обратная связь
         if (window.Telegram?.WebApp?.HapticFeedback) {
             window.Telegram.WebApp.HapticFeedback.impactOccurred('medium');
         }
@@ -438,14 +468,27 @@ class MaxMiniApp {
         const order = this.orders.find(o => o.id === orderId);
         if (!order) return;
         
-        // В будущем здесь будет модальное окно или новая страница
         alert(`Заказ: ${order.title}\nГород: ${order.city}\nЦена: ${this.formatPrice(order.price)} ₽\n\nОписание: ${order.description}`);
     }
 
-    // ... (остальные методы из предыдущей версии остаются без изменений)
+    setupTelegramIntegration() {
+        if (window.Telegram?.WebApp) {
+            const tg = window.Telegram.WebApp;
+            tg.ready();
+            tg.expand();
+            
+            document.documentElement.style.backgroundColor = tg.backgroundColor || '#0f0f1a';
+            
+            tg.BackButton.onClick(() => {
+                if (this.currentPage !== 'orders') {
+                    this.navigateTo('orders');
+                    this.updateActiveNav('orders');
+                }
+            });
+        }
+    }
 }
 
-// Инициализация приложения
 document.addEventListener('DOMContentLoaded', () => {
     window.maxApp = new MaxMiniApp();
 });
