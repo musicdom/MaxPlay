@@ -1,175 +1,245 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#0A0A0A">
-    <title>Digital Gift Studio</title>
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>MAX Заказы</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="app">
-        <header class="header glass">
-            <button class="header-back hidden" id="backButton">←</button>
-            <div class="header-logo">
-                <span class="logo-icon">✦</span>
-                <span class="logo-text">Gift Studio</span>
-            </div>
-            <button class="header-cart" id="cartButton">🛒</button>
-        </header>
-
-        <main class="main-content" id="mainContent">
-            <!-- Экран Главная -->
-            <section class="screen active" id="homeScreen">
-                <div class="hero">
-                    <div class="hero-badge">✨ Премиум сервис</div>
-                    <h1 class="hero-title">Цифровые подарки<br>с душой</h1>
-                    <p class="hero-sub">Создайте уникальный подарок за 2 минуты</p>
-                    <button class="btn-primary" onclick="navigateTo('catalog')">
-                        <span>Смотреть каталог</span>
-                        <span class="arrow">→</span>
+    <div class="app-container">
+        <!-- Хедер -->
+        <header class="header">
+            <div class="header-content">
+                <h1 class="header-title">Заказы</h1>
+                <div class="header-actions">
+                    <button class="icon-btn notifications-btn" aria-label="Уведомления">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                        </svg>
+                        <span class="notification-badge">3</span>
+                    </button>
+                    <button class="icon-btn filter-btn" aria-label="Фильтры">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                        </svg>
                     </button>
                 </div>
-                <div class="section-title">Популярные подарки</div>
-                <div class="popular-grid">
-                    <div class="popular-card glass" onclick="selectGift('song')">
-                        <div class="popular-emoji">🎵</div>
-                        <div class="popular-name">Песня на заказ</div>
-                        <div class="popular-price">990 ₽</div>
+            </div>
+            <!-- Строка поиска -->
+            <div class="search-container">
+                <div class="search-bar">
+                    <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                    <input type="text" class="search-input" placeholder="Поиск заказов...">
+                </div>
+            </div>
+            <!-- Фильтры категорий -->
+            <div class="categories-scroll">
+                <button class="category-btn active">Все</button>
+                <button class="category-btn">🚚 Доставка</button>
+                <button class="category-btn">🏗️ Стройка</button>
+                <button class="category-btn">💻 IT</button>
+                <button class="category-btn">🎨 Дизайн</button>
+                <button class="category-btn">📝 Тексты</button>
+                <button class="category-btn">🔧 Ремонт</button>
+            </div>
+        </header>
+
+        <!-- Основной контент -->
+        <main class="main-content" id="mainContent">
+            <!-- Лента заказов -->
+            <div class="orders-feed">
+                <!-- Карточка заказа 1 - VIP -->
+                <div class="order-card vip">
+                    <div class="order-card-header">
+                        <div class="order-badges">
+                            <span class="badge badge-vip">⭐ VIP</span>
+                            <span class="badge badge-urgent">🔥 Срочно</span>
+                        </div>
+                        <span class="order-price premium">25 000 ₽</span>
                     </div>
-                    <div class="popular-card glass" onclick="selectGift('card')">
-                        <div class="popular-emoji">💌</div>
-                        <div class="popular-name">Именная открытка</div>
-                        <div class="popular-price">299 ₽</div>
+                    <h3 class="order-title">Разработка мобильного приложения для доставки</h3>
+                    <p class="order-description">Нужно создать приложение для службы доставки еды. React Native, интеграция с картами и платежными системами.</p>
+                    <div class="order-meta">
+                        <span class="meta-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="10" r="3"></circle>
+                                <path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"></path>
+                            </svg>
+                            Москва
+                        </span>
+                        <span class="meta-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            3 дня назад
+                        </span>
                     </div>
-                    <div class="popular-card glass" onclick="selectGift('story')">
-                        <div class="popular-emoji">📖</div>
-                        <div class="popular-name">Семейная история</div>
-                        <div class="popular-price">1490 ₽</div>
-                    </div>
-                    <div class="popular-card glass" onclick="selectGift('photo')">
-                        <div class="popular-emoji">📸</div>
-                        <div class="popular-name">AI-фотосессия</div>
-                        <div class="popular-price">990 ₽</div>
+                    <div class="order-card-footer">
+                        <div class="customer-info">
+                            <div class="customer-avatar">А</div>
+                            <span class="customer-name">Алексей</span>
+                            <span class="rating">⭐ 4.9</span>
+                        </div>
+                        <button class="btn-details">Подробнее</button>
                     </div>
                 </div>
-            </section>
 
-            <!-- Экран Каталог -->
-            <section class="screen" id="catalogScreen">
-                <h2 class="screen-title">Каталог подарков</h2>
-                <div class="catalog-list" id="catalogContainer"></div>
-            </section>
-
-            <!-- Экран Товара / Форма заказа -->
-            <section class="screen" id="giftScreen">
-                <div class="gift-detail glass">
-                    <div class="gift-detail-emoji" id="detailEmoji">🎵</div>
-                    <h2 class="gift-detail-name" id="detailName">Песня на заказ</h2>
-                    <p class="gift-detail-desc" id="detailDesc">Персональная песня с вашим текстом и именем получателя.</p>
-                    <div class="gift-detail-price" id="detailPrice">990 ₽</div>
-                    <button class="btn-primary" onclick="openOrderForm()">Создать подарок</button>
-                </div>
-            </section>
-
-            <!-- Экран Форма заказа -->
-            <section class="screen" id="orderScreen">
-                <h2 class="screen-title">Оформление заказа</h2>
-                <form class="order-form glass" id="orderForm">
-                    <div class="form-group">
-                        <label>Ваше имя</label>
-                        <input type="text" id="customerName" placeholder="Александр" required>
+                <!-- Карточка заказа 2 -->
+                <div class="order-card">
+                    <div class="order-card-header">
+                        <div class="order-badges">
+                            <span class="badge badge-new">Новое</span>
+                        </div>
+                        <span class="order-price">5 000 ₽</span>
                     </div>
-                    <div class="form-group">
-                        <label>Имя получателя</label>
-                        <input type="text" id="recipientName" placeholder="Анна" required>
+                    <h3 class="order-title">Дизайн лендинга для строительной компании</h3>
+                    <p class="order-description">Разработать современный дизайн лендинга. Важно: адаптив, уникальный стиль, Figma.</p>
+                    <div class="order-meta">
+                        <span class="meta-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="10" r="3"></circle>
+                                <path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"></path>
+                            </svg>
+                            Удаленно
+                        </span>
+                        <span class="meta-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            1 час назад
+                        </span>
                     </div>
-                    <div class="form-group">
-                        <label>Повод</label>
-                        <select id="occasion">
-                            <option value="birthday">🎂 День рождения</option>
-                            <option value="love">💝 Любовь</option>
-                            <option value="family">👨‍👩‍👧‍👦 Семья</option>
-                            <option value="wedding">💒 Свадьба</option>
-                            <option value="holiday">🎉 Праздник</option>
-                        </select>
+                    <div class="order-card-footer">
+                        <div class="customer-info">
+                            <div class="customer-avatar">М</div>
+                            <span class="customer-name">Мария</span>
+                            <span class="rating">⭐ 4.7</span>
+                        </div>
+                        <button class="btn-details">Подробнее</button>
                     </div>
-                    <div class="form-group">
-                        <label>Описание пожеланий</label>
-                        <textarea id="description" rows="3" placeholder="Опишите, что вы хотите..."></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label>Фотографии (если нужно)</label>
-                        <input type="file" id="photos" multiple accept="image/*">
-                    </div>
-                    <button type="submit" class="btn-primary">Перейти к оплате</button>
-                </form>
-            </section>
+                </div>
 
-            <!-- Экран Оплата -->
-            <section class="screen" id="paymentScreen">
-                <h2 class="screen-title">Оплата</h2>
-                <div class="payment-block glass">
-                    <div class="payment-summary">
-                        <div class="summary-row"><span>Подарок</span><span id="payGift">🎵 Песня</span></div>
-                        <div class="summary-row"><span>Получатель</span><span id="payRecipient">Анна</span></div>
-                        <div class="summary-divider"></div>
-                        <div class="summary-total"><span>К оплате</span><span id="payPrice">990 ₽</span></div>
+                <!-- Карточка заказа 3 -->
+                <div class="order-card">
+                    <div class="order-card-header">
+                        <div class="order-badges">
+                            <span class="badge badge-verified">✓ Проверено</span>
+                        </div>
+                        <span class="order-price">15 000 ₽</span>
                     </div>
-                    <button class="btn-primary" id="payButton">Оплатить</button>
-                    <p class="secure-text">🔒 Платеж защищён</p>
+                    <h3 class="order-title">Ремонт квартиры-студии под ключ</h3>
+                    <p class="order-description">Косметический ремонт: покраска стен, замена напольного покрытия, установка сантехники.</p>
+                    <div class="order-meta">
+                        <span class="meta-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="10" r="3"></circle>
+                                <path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"></path>
+                            </svg>
+                            Санкт-Петербург
+                        </span>
+                        <span class="meta-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            5 часов назад
+                        </span>
+                    </div>
+                    <div class="order-card-footer">
+                        <div class="customer-info">
+                            <div class="customer-avatar">Д</div>
+                            <span class="customer-name">Дмитрий</span>
+                            <span class="rating">⭐ 5.0</span>
+                        </div>
+                        <button class="btn-details">Подробнее</button>
+                    </div>
                 </div>
-            </section>
 
-            <!-- Экран Успех -->
-            <section class="screen" id="successScreen">
-                <div class="success-block glass">
-                    <div class="success-icon">✅</div>
-                    <h2>Заказ создан!</h2>
-                    <p class="order-number">Номер заказа: <strong id="successOrderId">#1001</strong></p>
-                    <div class="status-badge">⏳ В работе</div>
-                    <button class="btn-secondary" onclick="navigateTo('orders')">Мои заказы</button>
+                <!-- Карточка заказа 4 - VIP -->
+                <div class="order-card vip">
+                    <div class="order-card-header">
+                        <div class="order-badges">
+                            <span class="badge badge-vip">⭐ VIP</span>
+                            <span class="badge badge-urgent">🔥 Срочно</span>
+                        </div>
+                        <span class="order-price premium">50 000 ₽</span>
+                    </div>
+                    <h3 class="order-title">Комплексное продвижение интернет-магазина</h3>
+                    <p class="order-description">SEO оптимизация, контекстная реклама, SMM продвижение. Бюджет обсуждаем.</p>
+                    <div class="order-meta">
+                        <span class="meta-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="10" r="3"></circle>
+                                <path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"></path>
+                            </svg>
+                            Казань
+                        </span>
+                        <span class="meta-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            2 дня назад
+                        </span>
+                    </div>
+                    <div class="order-card-footer">
+                        <div class="customer-info">
+                            <div class="customer-avatar">Е</div>
+                            <span class="customer-name">Елена</span>
+                            <span class="rating">⭐ 4.8</span>
+                        </div>
+                        <button class="btn-details">Подробнее</button>
+                    </div>
                 </div>
-            </section>
-
-            <!-- Экран Заказы -->
-            <section class="screen" id="ordersScreen">
-                <h2 class="screen-title">Мои заказы</h2>
-                <div id="ordersList"></div>
-                <div class="empty-orders" id="emptyOrdersMessage">
-                    <div class="empty-icon">📭</div>
-                    <p>У вас пока нет заказов</p>
-                    <button class="btn-secondary" onclick="navigateTo('catalog')">Выбрать подарок</button>
-                </div>
-            </section>
-
-            <!-- Экран Профиль -->
-            <section class="screen" id="profileScreen">
-                <div class="profile-card glass">
-                    <div class="profile-avatar" id="profileAvatar">👤</div>
-                    <div class="profile-name" id="profileName">Гость</div>
-                    <div class="profile-id" id="profileId">id: не задан</div>
-                </div>
-                <div class="profile-actions">
-                    <button class="btn-secondary" onclick="resetData()">Сбросить данные</button>
-                </div>
-            </section>
+            </div>
         </main>
 
-        <nav class="bottom-nav glass">
-            <button class="nav-item active" data-screen="home">🏠 Главная</button>
-            <button class="nav-item" data-screen="catalog">🎁 Каталог</button>
-            <button class="nav-item" data-screen="orders">📦 Заказы</button>
-            <button class="nav-item" data-screen="profile">👤 Профиль</button>
+        <!-- Нижнее меню навигации -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" data-page="orders">
+                <span class="nav-icon">🔍</span>
+                <span class="nav-label">Заказы</span>
+            </button>
+            <button class="nav-item" data-page="create">
+                <span class="nav-icon create-icon">
+                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                        <circle cx="14" cy="14" r="14" fill="url(#gradient)"/>
+                        <path d="M14 9v10M9 14h10" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+                        <defs>
+                            <linearGradient id="gradient" x1="0" y1="0" x2="28" y2="28">
+                                <stop offset="0%" stop-color="#667eea"/>
+                                <stop offset="100%" stop-color="#764ba2"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </span>
+                <span class="nav-label">Разместить</span>
+            </button>
+            <button class="nav-item" data-page="executors">
+                <span class="nav-icon">👷</span>
+                <span class="nav-label">Исполнители</span>
+            </button>
+            <button class="nav-item" data-page="vip">
+                <span class="nav-icon">⭐</span>
+                <span class="nav-label">VIP</span>
+            </button>
+            <button class="nav-item" data-page="profile">
+                <span class="nav-icon">👤</span>
+                <span class="nav-label">Кабинет</span>
+            </button>
         </nav>
     </div>
 
-    <script src="js/puzzlebot.js"></script>
-    <script src="js/api.js"></script>
-    <script src="js/app.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
