@@ -1,245 +1,316 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#1a1a2e">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>MAX Заказы</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>MAX Бонус</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/style.css">
 </head>
 <body>
-    <div class="app-container">
-        <!-- Хедер -->
+    <!-- Haptic feedback layer -->
+    <div id="haptic-layer"></div>
+
+    <!-- Главный контейнер -->
+    <div id="app">
+        <!-- Верхний Header -->
         <header class="header">
-            <div class="header-content">
-                <h1 class="header-title">Заказы</h1>
-                <div class="header-actions">
-                    <button class="icon-btn notifications-btn" aria-label="Уведомления">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                        </svg>
-                        <span class="notification-badge">3</span>
-                    </button>
-                    <button class="icon-btn filter-btn" aria-label="Фильтры">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-                        </svg>
-                    </button>
+            <div class="header__left">
+                <div class="header__avatar avatar">
+                    <span class="avatar__initials">МА</span>
+                    <div class="avatar__status"></div>
+                </div>
+                <div class="header__greeting">
+                    <span class="header__greeting-text">Добро пожаловать</span>
+                    <h1 class="header__greeting-name">Максим</h1>
                 </div>
             </div>
-            <!-- Строка поиска -->
-            <div class="search-container">
-                <div class="search-bar">
-                    <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <path d="m21 21-4.35-4.35"></path>
+            <div class="header__right">
+                <button class="icon-btn" aria-label="Уведомления" id="notifications-btn">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
-                    <input type="text" class="search-input" placeholder="Поиск заказов...">
-                </div>
-            </div>
-            <!-- Фильтры категорий -->
-            <div class="categories-scroll">
-                <button class="category-btn active">Все</button>
-                <button class="category-btn">🚚 Доставка</button>
-                <button class="category-btn">🏗️ Стройка</button>
-                <button class="category-btn">💻 IT</button>
-                <button class="category-btn">🎨 Дизайн</button>
-                <button class="category-btn">📝 Тексты</button>
-                <button class="category-btn">🔧 Ремонт</button>
+                    <span class="badge badge--small">3</span>
+                </button>
             </div>
         </header>
 
-        <!-- Основной контент -->
-        <main class="main-content" id="mainContent">
-            <!-- Лента заказов -->
-            <div class="orders-feed">
-                <!-- Карточка заказа 1 - VIP -->
-                <div class="order-card vip">
-                    <div class="order-card-header">
-                        <div class="order-badges">
-                            <span class="badge badge-vip">⭐ VIP</span>
-                            <span class="badge badge-urgent">🔥 Срочно</span>
-                        </div>
-                        <span class="order-price premium">25 000 ₽</span>
+        <!-- Основной контент с отступами для навигации -->
+        <main class="main-content">
+            <!-- Карта баланса (Glass) -->
+            <section class="balance-card glass-card">
+                <div class="balance-card__header">
+                    <div class="balance-card__label">
+                        <svg class="icon icon--small" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="2" y="7" width="20" height="14" rx="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span>Бонусный счет</span>
                     </div>
-                    <h3 class="order-title">Разработка мобильного приложения для доставки</h3>
-                    <p class="order-description">Нужно создать приложение для службы доставки еды. React Native, интеграция с картами и платежными системами.</p>
-                    <div class="order-meta">
-                        <span class="meta-item">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="10" r="3"></circle>
-                                <path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"></path>
+                    <div class="balance-card__currency">₽</div>
+                </div>
+                <div class="balance-card__amount">
+                    <span class="balance-card__amount-number">84 250</span>
+                    <span class="balance-card__amount-decimal">.00</span>
+                </div>
+                <div class="balance-card__footer">
+                    <div class="balance-card__change positive">
+                        <svg class="icon icon--tiny" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="18 15 12 9 6 15" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        +12.5%
+                    </div>
+                    <div class="balance-card__date">Обновлено сегодня</div>
+                </div>
+                <div class="balance-card__gradient"></div>
+            </section>
+
+            <!-- Быстрые действия -->
+            <section class="quick-actions">
+                <div class="quick-actions__grid">
+                    <button class="quick-action" data-ripple>
+                        <div class="quick-action__icon" style="background: linear-gradient(135deg, #F6D365, #FDA085);">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2v20M2 12h20" stroke-linecap="round"/>
                             </svg>
-                            Москва
-                        </span>
-                        <span class="meta-item">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <polyline points="12 6 12 12 16 14"></polyline>
-                            </svg>
-                            3 дня назад
-                        </span>
-                    </div>
-                    <div class="order-card-footer">
-                        <div class="customer-info">
-                            <div class="customer-avatar">А</div>
-                            <span class="customer-name">Алексей</span>
-                            <span class="rating">⭐ 4.9</span>
                         </div>
-                        <button class="btn-details">Подробнее</button>
-                    </div>
+                        <span class="quick-action__label">Пополнить</span>
+                    </button>
+                    <button class="quick-action" data-ripple>
+                        <div class="quick-action__icon" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M19 12H5M12 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <span class="quick-action__label">Вывести</span>
+                    </button>
+                    <button class="quick-action" data-ripple>
+                        <div class="quick-action__icon" style="background: linear-gradient(135deg, #43e97b, #38f9d7);">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                        <span class="quick-action__label">Активировать</span>
+                    </button>
+                    <button class="quick-action" data-ripple>
+                        <div class="quick-action__icon" style="background: linear-gradient(135deg, #f093fb, #f5576c);">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" stroke-linecap="round" stroke-linejoin="round"/>
+                                <line x1="12" y1="17" x2="12.01" y2="17" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <span class="quick-action__label">Помощь</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Секция "Активные бонусы" -->
+            <section class="bonuses-section">
+                <div class="section-header">
+                    <h2 class="section-header__title">Активные бонусы</h2>
+                    <button class="section-header__action" id="show-all-btn">Все</button>
                 </div>
 
-                <!-- Карточка заказа 2 -->
-                <div class="order-card">
-                    <div class="order-card-header">
-                        <div class="order-badges">
-                            <span class="badge badge-new">Новое</span>
-                        </div>
-                        <span class="order-price">5 000 ₽</span>
-                    </div>
-                    <h3 class="order-title">Дизайн лендинга для строительной компании</h3>
-                    <p class="order-description">Разработать современный дизайн лендинга. Важно: адаптив, уникальный стиль, Figma.</p>
-                    <div class="order-meta">
-                        <span class="meta-item">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="10" r="3"></circle>
-                                <path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"></path>
+                <!-- Skeleton Loader (активен 2 секунды) -->
+                <div class="bonuses-list skeleton-active" id="bonuses-list">
+                    <!-- Карточка бонуса 1 -->
+                    <div class="bonus-card glass-card" data-ripple>
+                        <div class="bonus-card__icon" style="background: linear-gradient(135deg, #F6D365, #FDA085);">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M12 2L2 7l10 5 10-5-10-5z" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M2 17l10 5 10-5" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M2 12l10 5 10-5" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
-                            Удаленно
-                        </span>
-                        <span class="meta-item">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <polyline points="12 6 12 12 16 14"></polyline>
-                            </svg>
-                            1 час назад
-                        </span>
-                    </div>
-                    <div class="order-card-footer">
-                        <div class="customer-info">
-                            <div class="customer-avatar">М</div>
-                            <span class="customer-name">Мария</span>
-                            <span class="rating">⭐ 4.7</span>
                         </div>
-                        <button class="btn-details">Подробнее</button>
+                        <div class="bonus-card__content">
+                            <div class="bonus-card__title">Кешбэк 5%</div>
+                            <div class="bonus-card__subtitle">До 15 августа</div>
+                            <div class="bonus-card__progress">
+                                <div class="bonus-card__progress-bar" style="width: 65%"></div>
+                            </div>
+                            <div class="bonus-card__stats">
+                                <span>Использовано 65%</span>
+                                <span class="bonus-card__amount">+1 250 ₽</span>
+                            </div>
+                        </div>
+                        <span class="badge badge--success">Активен</span>
                     </div>
+
+                    <!-- Карточка бонуса 2 -->
+                    <div class="bonus-card glass-card" data-ripple>
+                        <div class="bonus-card__icon" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="12" cy="12" r="10" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M12 6v6l4 2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <div class="bonus-card__content">
+                            <div class="bonus-card__title">Ускоренный рост</div>
+                            <div class="bonus-card__subtitle">До 20 августа</div>
+                            <div class="bonus-card__progress">
+                                <div class="bonus-card__progress-bar" style="width: 30%"></div>
+                            </div>
+                            <div class="bonus-card__stats">
+                                <span>Использовано 30%</span>
+                                <span class="bonus-card__amount">+540 ₽</span>
+                            </div>
+                        </div>
+                        <span class="badge badge--warning">Завершается</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Секция "История операций" -->
+            <section class="history-section">
+                <div class="section-header">
+                    <h2 class="section-header__title">Последние операции</h2>
+                    <button class="section-header__action" id="show-history-btn">Все</button>
                 </div>
 
-                <!-- Карточка заказа 3 -->
-                <div class="order-card">
-                    <div class="order-card-header">
-                        <div class="order-badges">
-                            <span class="badge badge-verified">✓ Проверено</span>
-                        </div>
-                        <span class="order-price">15 000 ₽</span>
-                    </div>
-                    <h3 class="order-title">Ремонт квартиры-студии под ключ</h3>
-                    <p class="order-description">Косметический ремонт: покраска стен, замена напольного покрытия, установка сантехники.</p>
-                    <div class="order-meta">
-                        <span class="meta-item">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="10" r="3"></circle>
-                                <path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"></path>
+                <div class="history-list">
+                    <!-- Элемент истории 1 -->
+                    <div class="history-item glass-card" data-ripple>
+                        <div class="history-item__icon" style="background: linear-gradient(135deg, #43e97b, #38f9d7);">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
-                            Санкт-Петербург
-                        </span>
-                        <span class="meta-item">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <polyline points="12 6 12 12 16 14"></polyline>
-                            </svg>
-                            5 часов назад
-                        </span>
-                    </div>
-                    <div class="order-card-footer">
-                        <div class="customer-info">
-                            <div class="customer-avatar">Д</div>
-                            <span class="customer-name">Дмитрий</span>
-                            <span class="rating">⭐ 5.0</span>
                         </div>
-                        <button class="btn-details">Подробнее</button>
+                        <div class="history-item__content">
+                            <div class="history-item__title">Зачисление бонусов</div>
+                            <div class="history-item__subtitle">За покупку в "Магнит"</div>
+                        </div>
+                        <div class="history-item__amount positive">+150 ₽</div>
                     </div>
-                </div>
 
-                <!-- Карточка заказа 4 - VIP -->
-                <div class="order-card vip">
-                    <div class="order-card-header">
-                        <div class="order-badges">
-                            <span class="badge badge-vip">⭐ VIP</span>
-                            <span class="badge badge-urgent">🔥 Срочно</span>
-                        </div>
-                        <span class="order-price premium">50 000 ₽</span>
-                    </div>
-                    <h3 class="order-title">Комплексное продвижение интернет-магазина</h3>
-                    <p class="order-description">SEO оптимизация, контекстная реклама, SMM продвижение. Бюджет обсуждаем.</p>
-                    <div class="order-meta">
-                        <span class="meta-item">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="10" r="3"></circle>
-                                <path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"></path>
+                    <!-- Элемент истории 2 -->
+                    <div class="history-item glass-card" data-ripple>
+                        <div class="history-item__icon" style="background: linear-gradient(135deg, #f093fb, #f5576c);">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
-                            Казань
-                        </span>
-                        <span class="meta-item">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <polyline points="12 6 12 12 16 14"></polyline>
-                            </svg>
-                            2 дня назад
-                        </span>
-                    </div>
-                    <div class="order-card-footer">
-                        <div class="customer-info">
-                            <div class="customer-avatar">Е</div>
-                            <span class="customer-name">Елена</span>
-                            <span class="rating">⭐ 4.8</span>
                         </div>
-                        <button class="btn-details">Подробнее</button>
+                        <div class="history-item__content">
+                            <div class="history-item__title">Списание бонусов</div>
+                            <div class="history-item__subtitle">Оплата в "Перекресток"</div>
+                        </div>
+                        <div class="history-item__amount negative">-320 ₽</div>
+                    </div>
+
+                    <!-- Элемент истории 3 -->
+                    <div class="history-item glass-card" data-ripple>
+                        <div class="history-item__icon" style="background: linear-gradient(135deg, #F6D365, #FDA085);">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 6.5L12 2 2 6.5M22 6.5l-10 4.5-10-4.5M22 6.5V18M12 22.5V11" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M2 18V6.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <div class="history-item__content">
+                            <div class="history-item__title">Ежемесячный бонус</div>
+                            <div class="history-item__subtitle">За активность в июле</div>
+                        </div>
+                        <div class="history-item__amount positive">+2 500 ₽</div>
                     </div>
                 </div>
-            </div>
+            </section>
+
+            <!-- Отступ для нижней навигации -->
+            <div style="height: 100px;"></div>
         </main>
 
-        <!-- Нижнее меню навигации -->
+        <!-- Bottom Navigation -->
         <nav class="bottom-nav">
-            <button class="nav-item active" data-page="orders">
-                <span class="nav-icon">🔍</span>
-                <span class="nav-label">Заказы</span>
+            <button class="bottom-nav__item active" data-tab="home" data-ripple>
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M3 12l9-9 9 9" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M5 10v10a1 1 0 001 1h3a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1h3a1 1 0 001-1V10" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="bottom-nav__label">Главная</span>
             </button>
-            <button class="nav-item" data-page="create">
-                <span class="nav-icon create-icon">
-                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-                        <circle cx="14" cy="14" r="14" fill="url(#gradient)"/>
-                        <path d="M14 9v10M9 14h10" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
-                        <defs>
-                            <linearGradient id="gradient" x1="0" y1="0" x2="28" y2="28">
-                                <stop offset="0%" stop-color="#667eea"/>
-                                <stop offset="100%" stop-color="#764ba2"/>
-                            </linearGradient>
-                        </defs>
-                    </svg>
-                </span>
-                <span class="nav-label">Разместить</span>
+            <button class="bottom-nav__item" data-tab="bonuses" data-ripple>
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2 17l10 5 10-5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2 12l10 5 10-5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="bottom-nav__label">Бонусы</span>
             </button>
-            <button class="nav-item" data-page="executors">
-                <span class="nav-icon">👷</span>
-                <span class="nav-label">Исполнители</span>
+            <button class="bottom-nav__item" data-tab="scan" data-ripple id="scan-btn">
+                <div class="bottom-nav__fab-wrapper">
+                    <div class="bottom-nav__fab">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M9 3v18M15 3v18M3 9h18M3 15h18" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                </div>
             </button>
-            <button class="nav-item" data-page="vip">
-                <span class="nav-icon">⭐</span>
-                <span class="nav-label">VIP</span>
+            <button class="bottom-nav__item" data-tab="history" data-ripple>
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <circle cx="12" cy="12" r="10" stroke-linecap="round" stroke-linejoin="round"/>
+                    <polyline points="12 6 12 12 16 14" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="bottom-nav__label">История</span>
             </button>
-            <button class="nav-item" data-page="profile">
-                <span class="nav-icon">👤</span>
-                <span class="nav-label">Кабинет</span>
+            <button class="bottom-nav__item" data-tab="profile" data-ripple>
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="12" cy="7" r="4" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="bottom-nav__label">Профиль</span>
             </button>
         </nav>
+
+        <!-- FAB (Floating Action Button) -->
+        <button class="fab" id="fab-btn" data-ripple>
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="5" y1="12" x2="19" y2="12" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+
+        <!-- Bottom Sheet (Modal) -->
+        <div class="bottom-sheet" id="bottom-sheet">
+            <div class="bottom-sheet__overlay" id="sheet-overlay"></div>
+            <div class="bottom-sheet__container glass-card">
+                <div class="bottom-sheet__handle"></div>
+                <div class="bottom-sheet__content">
+                    <h3 class="bottom-sheet__title">Бонус активирован!</h3>
+                    <p class="bottom-sheet__description">Вы получили дополнительный кешбэк 5% на все покупки в категории "Супермаркеты" до 15 августа.</p>
+                    <button class="btn btn--primary btn--full" id="sheet-close-btn" data-ripple>
+                        <span>Отлично!</span>
+                        <svg class="icon icon--small" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast уведомление -->
+        <div class="toast" id="toast">
+            <div class="toast__icon">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M12 8v4M12 16h.01" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <div class="toast__content">
+                <div class="toast__title">Бонус зачислен</div>
+                <div class="toast__subtitle">+150 ₽ на ваш счет</div>
+            </div>
+            <button class="toast__close" id="toast-close">
+                <svg class="icon icon--tiny" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18" stroke-linecap="round" stroke-linejoin="round"/>
+                    <line x1="6" y1="6" x2="18" y2="18" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+        </div>
     </div>
 
-    <script src="app.js"></script>
+    <script src="scripts/script.js"></script>
 </body>
 </html>
