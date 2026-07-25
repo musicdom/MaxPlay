@@ -379,6 +379,233 @@ const UI = (() => {
         }
     }
 
+    function renderPromotionsPage() {
+        mainContent.innerHTML = '';
+
+        const pageContainer = document.createElement('div');
+        pageContainer.className = 'promotions-page';
+
+        const headerSection = document.createElement('div');
+        headerSection.className = 'promotions-header';
+
+        const backButton = document.createElement('button');
+        backButton.className = 'promo-back-btn';
+        backButton.textContent = '← Назад';
+        backButton.addEventListener('click', () => {
+            renderScreen('home');
+        });
+
+        const pageTitle = document.createElement('div');
+        pageTitle.className = 'promotions-page-title';
+        pageTitle.textContent = '🎯 Каталог акций';
+
+        const subtitle = document.createElement('div');
+        subtitle.className = 'promotions-page-subtitle';
+        subtitle.textContent = 'Лучшие предложения для вас';
+
+        headerSection.appendChild(backButton);
+        headerSection.appendChild(pageTitle);
+        headerSection.appendChild(subtitle);
+
+        const searchBar = Search.createSearchBar('Поиск по магазинам и скидкам...');
+        const categoryFilters = Search.createCategoryFilters(Data.getActiveCategory());
+        const sortBar = Search.createSortBar(Data.getActiveSort());
+
+        const contentArea = document.createElement('div');
+        contentArea.className = 'promo-content-area';
+
+        const skeletonGrid = Cards.createSkeletonGrid(6);
+        contentArea.appendChild(skeletonGrid);
+
+        pageContainer.appendChild(headerSection);
+        pageContainer.appendChild(searchBar);
+        pageContainer.appendChild(categoryFilters);
+        pageContainer.appendChild(sortBar);
+        pageContainer.appendChild(contentArea);
+
+        mainContent.appendChild(pageContainer);
+
+        setTimeout(() => {
+            loadPromotions(contentArea);
+        }, 1000);
+
+        const searchUpdateHandler = (e) => {
+            loadPromotions(contentArea);
+        };
+
+        const filterUpdateHandler = (e) => {
+            loadPromotions(contentArea);
+        };
+
+        const sortUpdateHandler = (e) => {
+            loadPromotions(contentArea);
+        };
+
+        const retryHandler = () => {
+            showToast('🔄 Повторная загрузка...');
+            loadPromotions(contentArea);
+        };
+
+        window.addEventListener('search-updated', searchUpdateHandler);
+        window.addEventListener('filter-updated', filterUpdateHandler);
+        window.addEventListener('sort-updated', sortUpdateHandler);
+        window.addEventListener('retry-load-promotions', retryHandler);
+
+        if (!pageContainer._cleanup) {
+            pageContainer._cleanup = () => {
+                window.removeEventListener('search-updated', searchUpdateHandler);
+                window.removeEventListener('filter-updated', filterUpdateHandler);
+                window.removeEventListener('sort-updated', sortUpdateHandler);
+                window.removeEventListener('retry-load-promotions', retryHandler);
+            };
+        }
+
+        const originalRenderScreen = renderScreen;
+        const cleanupOnLeave = () => {
+            if (pageContainer._cleanup) {
+                pageContainer._cleanup();
+            }
+        };
+
+        renderBottomNavPromo();
+    }
+
+    function loadPromotions(container) {
+        const category = Data.getActiveCategory();
+        const sort = Data.getActiveSort();
+        const query = Data.getSearchQuery();
+
+        const promotions = Data.getPromotions(category, sort, query);
+        Cards.renderPromoGrid(container, promotions);
+    }
+
+    function renderBottomNavPromo() {
+        bottomNav.innerHTML = '';
+        const navItems = [
+            { id: 'home', icon: '🏠', label: 'Главная' },
+            { id: 'promotions', icon: '🎯', label: 'Акции' },
+            { id: 'favorites', icon: '❤️', label: 'Избранное' },
+            { id: 'notifications', icon: '🔔', label: 'Уведомления' },
+            { id: 'profile', icon: '👤', label: 'Профиль' }
+        ];
+
+        navItems.forEach(item => {
+            const navItem = createElement('button', ['nav-item'], {
+                dataset: { screen: item.id },
+                onclick: () => {
+                    if (item.id === 'notifications') {
+                        showToast('🔔 Уведомлений пока нет');
+                        return;
+                    }
+                    if (item.id === 'profile') {
+                        showModal(
+                            '👤 Профиль',
+                            'Раздел профиля находится в разработке.',
+                            null
+                        );
+                        return;
+                    }
+                    if (item.id === 'promotions') {
+                        renderPromotionsPage();
+                        return;
+                    }
+                    if (item.id === 'favorites') {
+                        renderFavoritesPage();
+                        return;
+                    }
+                    renderScreen(item.id);
+                }
+            });
+            if (item.id === 'promotions') {
+                navItem.classList.add('active');
+            }
+            const icon = createElement('span', ['nav-icon'], {}, [item.icon]);
+            const label = createElement('span', ['nav-label'], {}, [item.label]);
+            navItem.appendChild(icon);
+            navItem.appendChild(label);
+            bottomNav.appendChild(navItem);
+        });
+    }
+
+    function renderFavoritesPage() {
+        mainContent.innerHTML = '';
+
+        const pageContainer = document.createElement('div');
+        pageContainer.className = 'promotions-page';
+
+        const headerSection = document.createElement('div');
+        headerSection.className = 'promotions-header';
+
+        const backButton = document.createElement('button');
+        backButton.className = 'promo-back-btn';
+        backButton.textContent = '← Назад';
+        backButton.addEventListener('click', () => {
+            renderScreen('home');
+        });
+
+        const pageTitle = document.createElement('div');
+        pageTitle.className = 'promotions-page-title';
+        pageTitle.textContent = '❤️ Избранное';
+
+        headerSection.appendChild(backButton);
+        headerSection.appendChild(pageTitle);
+
+        const contentArea = document.createElement('div');
+        contentArea.className = 'promo-content-area';
+
+        const favPromotions = Favorites.getFavoritePromotions();
+        Cards.renderPromoGrid(contentArea, favPromotions);
+
+        pageContainer.appendChild(headerSection);
+        pageContainer.appendChild(contentArea);
+
+        mainContent.appendChild(pageContainer);
+
+        const bottomNavLocal = document.getElementById('bottom-nav');
+        bottomNavLocal.innerHTML = '';
+
+        const navItems = [
+            { id: 'home', icon: '🏠', label: 'Главная' },
+            { id: 'promotions', icon: '🎯', label: 'Акции' },
+            { id: 'favorites', icon: '❤️', label: 'Избранное' },
+            { id: 'notifications', icon: '🔔', label: 'Уведомления' },
+            { id: 'profile', icon: '👤', label: 'Профиль' }
+        ];
+
+        navItems.forEach(item => {
+            const navItem = createElement('button', ['nav-item'], {
+                dataset: { screen: item.id },
+                onclick: () => {
+                    if (item.id === 'notifications') {
+                        showToast('🔔 Уведомлений пока нет');
+                        return;
+                    }
+                    if (item.id === 'profile') {
+                        showModal('👤 Профиль', 'Раздел профиля находится в разработке.', null);
+                        return;
+                    }
+                    if (item.id === 'promotions') {
+                        renderPromotionsPage();
+                        return;
+                    }
+                    if (item.id === 'favorites') {
+                        renderFavoritesPage();
+                        return;
+                    }
+                    renderScreen(item.id);
+                }
+            });
+            if (item.id === 'favorites') {
+                navItem.classList.add('active');
+            }
+            const icon = createElement('span', ['nav-icon'], {}, [item.icon]);
+            const label = createElement('span', ['nav-label'], {}, [item.label]);
+            navItem.appendChild(icon);
+            navItem.appendChild(label);
+            bottomNavLocal.appendChild(navItem);
+        });
+    }
+
     function init() {
         renderScreen('home');
     }
@@ -386,6 +613,11 @@ const UI = (() => {
     return {
         init,
         renderScreen,
-        showToast
+        showToast,
+        showModal,
+        renderPromotionsPage,
+        renderFavoritesPage,
+        loadPromotions,
+        renderBottomNavPromo
     };
 })();
