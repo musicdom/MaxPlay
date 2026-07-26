@@ -8,46 +8,72 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:'Inter',sans-serif; background:#0a0a0f; color:#fff; overflow-x:hidden; min-height:100vh; }
-        .app-container { max-width:480px; margin:0 auto; padding:20px; min-height:100vh; display:flex; flex-direction:column; }
-        .header { margin-bottom:20px; }
-        .title { font-size:28px; font-weight:800; background:linear-gradient(135deg,#fff,#c0c0d0); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-        .subtitle { color:#6b6b75; font-size:14px; }
-        .search-box { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06); border-radius:24px; padding:10px 15px; display:flex; align-items:center; margin-bottom:15px; }
-        .search-box input { background:none; border:none; color:#fff; font-size:16px; flex:1; outline:none; }
-        .filters { display:flex; gap:8px; overflow-x:auto; margin-bottom:15px; }
-        .chip { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06); border-radius:28px; padding:8px 14px; font-size:12px; cursor:pointer; white-space:nowrap; color:#9898a0; }
-        .chip.active { background:rgba(79,143,255,0.15); border-color:rgba(79,143,255,0.3); color:#fff; }
-        .sort { display:flex; gap:6px; margin-bottom:15px; align-items:center; }
-        .sort span { color:#6b6b75; font-size:12px; }
-        .sort-btn { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06); border-radius:20px; padding:6px 14px; font-size:12px; cursor:pointer; color:#9898a0; }
-        .sort-btn.active { background:rgba(124,92,252,0.15); border-color:rgba(124,92,252,0.3); color:#7c5cfc; }
-        .cards { display:flex; flex-direction:column; gap:12px; }
-        .card { background:rgba(255,255,255,0.03); backdrop-filter:blur(15px); border:1px solid rgba(255,255,255,0.06); border-radius:24px; padding:16px; position:relative; animation:fadeIn 0.4s ease; }
-        @keyframes fadeIn { from{opacity:0;transform:translateY(20px);} to{opacity:1;transform:translateY(0);} }
-        .vip { border:2px solid transparent; position:relative; }
-        .vip::before { content:''; position:absolute; top:-2px; left:-2px; right:-2px; bottom:-2px; background:linear-gradient(135deg,#ffd700,#ffaa00); border-radius:24px; z-index:-1; animation:vipGlow 3s infinite; background-size:300% 300%; }
+        * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+        :root {
+            --bg-primary:#0a0a0f; --glass-bg:rgba(255,255,255,0.04); --glass-border:rgba(255,255,255,0.06);
+            --text-primary:#fff; --text-secondary:#9898a0; --text-tertiary:#6b6b75;
+            --accent:#4f8fff; --accent-secondary:#7c5cfc; --success:#2ecc71;
+            --border-radius-sm:12px; --border-radius-lg:24px; --border-radius-xl:28px;
+        }
+        body { font-family:'Inter', sans-serif; background:var(--bg-primary); color:var(--text-primary); overflow-x:hidden; min-height:100vh; }
+        .app-container { max-width:480px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; position:relative; overflow:hidden; padding-bottom:80px; }
+        .main-content { flex:1; padding:20px 20px 0; overflow-y:auto; }
+        .bottom-nav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:480px; height:80px; background:rgba(18,18,26,0.85); backdrop-filter:blur(30px); border-top:1px solid var(--glass-border); display:flex; align-items:center; justify-content:space-around; z-index:100; }
+        .nav-item { display:flex; flex-direction:column; align-items:center; gap:4px; padding:8px 12px; border-radius:16px; cursor:pointer; color:var(--text-tertiary); transition:0.15s; background:none; border:none; font-family:inherit; position:relative; }
+        .nav-item.active { color:var(--accent); }
+        .nav-item.active::before { content:''; position:absolute; top:-1px; left:50%; transform:translateX(-50%); width:24px; height:3px; background:var(--accent); border-radius:0 0 3px 3px; box-shadow:0 0 12px rgba(79,143,255,0.3); }
+        .nav-icon { font-size:22px; }
+        .nav-label { font-size:11px; font-weight:500; }
+        .page { animation:fadeSlideIn 0.35s ease; }
+        @keyframes fadeSlideIn { from{opacity:0;transform:translateY(12px);} to{opacity:1;transform:translateY(0);} }
+        .promotions-header { margin-bottom:16px; }
+        .promotions-page-title { font-size:28px; font-weight:800; background:linear-gradient(135deg,#fff,#c0c0d0); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+        .promotions-page-subtitle { font-size:14px; color:var(--text-tertiary); }
+        .search-wrapper { margin-bottom:14px; }
+        .search-container { background:rgba(255,255,255,0.04); backdrop-filter:blur(20px); border:1px solid var(--glass-border); border-radius:var(--border-radius-lg); padding:4px; display:flex; align-items:center; }
+        .search-icon { font-size:20px; padding:12px 8px 12px 14px; color:var(--text-tertiary); }
+        .search-input { flex:1; background:transparent; border:none; color:#fff; font-size:16px; padding:12px 8px; outline:none; }
+        .search-clear { background:rgba(255,255,255,0.08); border:none; color:var(--text-secondary); width:32px; height:32px; border-radius:50%; display:none; align-items:center; justify-content:center; cursor:pointer; margin-right:6px; }
+        .filters-scroll { display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin-bottom:12px; }
+        .filter-chip { flex-shrink:0; background:var(--glass-bg); backdrop-filter:blur(10px); border:1px solid var(--glass-border); border-radius:var(--border-radius-xl); padding:8px 14px; display:flex; align-items:center; gap:6px; cursor:pointer; font-size:12px; color:var(--text-secondary); transition:0.15s; font-family:inherit; }
+        .filter-chip.active { background:rgba(79,143,255,0.15); border-color:rgba(79,143,255,0.3); color:#fff; }
+        .sort-container { display:flex; align-items:center; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
+        .sort-label { font-size:12px; color:var(--text-tertiary); }
+        .sort-btn { background:var(--glass-bg); backdrop-filter:blur(10px); border:1px solid var(--glass-border); border-radius:20px; padding:6px 14px; cursor:pointer; font-size:12px; color:var(--text-secondary); transition:0.15s; font-family:inherit; }
+        .sort-btn.active { background:rgba(124,92,252,0.15); border-color:rgba(124,92,252,0.3); color:var(--accent-secondary); }
+        .cards-grid { display:flex; flex-direction:column; gap:12px; }
+        .promo-card { background:rgba(255,255,255,0.03); backdrop-filter:blur(15px); border:1px solid var(--glass-border); border-radius:var(--border-radius-lg); padding:16px; position:relative; transition:0.25s; animation:cardAppear 0.4s ease forwards; }
+        @keyframes cardAppear { from{opacity:0;transform:translateY(20px) scale(0.96);} to{opacity:1;transform:translateY(0) scale(1);} }
+        .vip-card { border:2px solid transparent; background-clip:padding-box; position:relative; }
+        .vip-card::before { content:''; position:absolute; top:-2px; left:-2px; right:-2px; bottom:-2px; background:linear-gradient(135deg,#ffd700,#ffaa00); border-radius:24px; z-index:-1; animation:vipGlow 3s infinite; background-size:300% 300%; }
         @keyframes vipGlow { 0%,100%{background-position:0% 50%;} 50%{background-position:100% 50%;} }
-        .card-store { font-weight:700; font-size:16px; }
-        .card-discount { font-size:22px; font-weight:800; background:linear-gradient(135deg,#2ecc71,#7bed9f); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-        .card-desc { color:#9898a0; font-size:14px; }
-        .card-date { color:#6b6b75; font-size:12px; margin:4px 0; }
-        .card-stats { color:#6b6b75; font-size:11px; margin:4px 0; }
-        .get-btn { background:linear-gradient(135deg,rgba(79,143,255,0.2),rgba(124,92,252,0.2)); border:1px solid rgba(79,143,255,0.3); color:#fff; padding:12px; border-radius:12px; font-weight:600; width:100%; cursor:pointer; margin-top:8px; font-family:inherit; }
-        .fav-btn { position:absolute; top:12px; right:12px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.1); border-radius:50%; width:32px; height:32px; cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center; }
-        .badge { position:absolute; top:12px; left:12px; background:#ff6b6b; color:#fff; padding:3px 10px; border-radius:20px; font-size:10px; font-weight:700; }
-        .vip-badge { position:absolute; top:50px; left:12px; background:gold; color:#000; padding:3px 10px; border-radius:20px; font-size:10px; font-weight:700; }
-        .error { color:#ff6b6b; text-align:center; padding:30px; }
-        .error button { margin-top:15px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#fff; padding:10px 20px; border-radius:12px; cursor:pointer; }
-        .loading { text-align:center; padding:30px; color:#6b6b75; }
+        .promo-logo-container { width:48px; height:48px; border-radius:12px; overflow:hidden; margin-bottom:10px; background:rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:center; }
+        .promo-logo { width:100%; height:100%; object-fit:contain; }
+        .promo-fav-btn { position:absolute; top:12px; right:12px; width:32px; height:32px; border-radius:50%; background:rgba(0,0,0,0.4); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.1); cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center; z-index:2; }
+        .promo-new-badge { position:absolute; top:12px; left:12px; background:linear-gradient(135deg,#ff6b6b,#ee5a24); color:#fff; padding:3px 10px; border-radius:20px; font-size:10px; font-weight:700; z-index:2; }
+        .promo-vip-badge { position:absolute; top:50px; left:12px; background:linear-gradient(135deg,#ffd700,#ffaa00); color:#000; padding:3px 10px; border-radius:20px; font-size:10px; font-weight:700; z-index:2; display:none; }
+        .vip-card .promo-vip-badge { display:flex; }
+        .promo-info { margin:8px 0; }
+        .promo-store { font-size:16px; font-weight:700; }
+        .promo-discount { font-size:22px; font-weight:800; background:linear-gradient(135deg,var(--success),#7bed9f); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+        .promo-desc { font-size:14px; color:var(--text-secondary); }
+        .promo-date { font-size:12px; color:var(--text-tertiary); margin-top:4px; }
+        .promo-stats { display:flex; gap:12px; font-size:11px; color:var(--text-tertiary); margin:4px 0; }
+        .get-btn { width:100%; background:linear-gradient(135deg,rgba(79,143,255,0.2),rgba(124,92,252,0.2)); border:1px solid rgba(79,143,255,0.3); color:#fff; padding:12px; border-radius:12px; font-weight:600; cursor:pointer; margin-top:8px; font-family:inherit; }
+        .empty-state { text-align:center; padding:40px; color:var(--text-tertiary); }
+        .toast-container { position:fixed; top:20px; left:50%; transform:translateX(-50%); z-index:9999; width:calc(100% - 40px); max-width:440px; }
+        .toast { background:rgba(30,30,40,0.9); backdrop-filter:blur(30px); border:1px solid var(--glass-border); border-radius:16px; padding:14px; color:#fff; text-align:center; animation:toastIn 0.3s ease; }
+        @keyframes toastIn { from{opacity:0;transform:translateY(-20px) scale(0.9);} to{opacity:1;transform:translateY(0) scale(1);} }
     </style>
 </head>
 <body>
-    <div id="app" class="app-container"></div>
+    <div id="app" class="app-container">
+        <main id="main-content" class="main-content"></main>
+        <nav id="bottom-nav" class="bottom-nav"></nav>
+    </div>
 
     <script>
-        // ⚙️ Ваши данные
+        // ==================== КОНФИГУРАЦИЯ ====================
         var CONFIG = {
             GOOGLE_SHEET_ID: '1Wtv4kA1W_hb4bvjyc7ruecrVw5s4Gh-TBQR1PRJYo2c',
             API_KEY: 'AIzaSyAbTbin2-mkFRspURGKRXxyCpjy_Dez8ts',
@@ -55,149 +81,355 @@
             COLUMNS: { ID:0, STORE:1, CATEGORY:2, DISCOUNT:3, DESCRIPTION:4, LINK:5, LOGO:6, VIP:7, ACTIVE:8, DATE:9 }
         };
 
-        // Простая обёртка для запросов
-        function loadData() {
-            var url = 'https://sheets.googleapis.com/v4/spreadsheets/' + CONFIG.GOOGLE_SHEET_ID +
-                      '/values/' + CONFIG.SHEET_NAME + '?key=' + CONFIG.API_KEY;
-            fetch(url)
-                .then(function(r) {
-                    if (!r.ok) throw new Error('Ошибка HTTP: ' + r.status);
-                    return r.json();
-                })
-                .then(function(data) {
-                    if (!data.values || data.values.length < 2) {
-                        throw new Error('Нет данных. Добавьте акции в таблицу.');
-                    }
-                    var rows = data.values.slice(1); // пропускаем заголовок
-                    var offers = [];
-                    for (var i = 0; i < rows.length; i++) {
-                        var r = rows[i];
-                        var active = r[CONFIG.COLUMNS.ACTIVE] ? r[CONFIG.COLUMNS.ACTIVE].toLowerCase().trim() : '';
-                        if (active !== 'да') continue; // только активные
-                        if (!r[CONFIG.COLUMNS.STORE]) continue; // нужен магазин
-                        offers.push({
-                            id: r[CONFIG.COLUMNS.ID] || (i+1),
-                            store: r[CONFIG.COLUMNS.STORE],
-                            category: r[CONFIG.COLUMNS.CATEGORY] || '',
-                            discount: r[CONFIG.COLUMNS.DISCOUNT] || '',
-                            description: r[CONFIG.COLUMNS.DESCRIPTION] || '',
-                            link: r[CONFIG.COLUMNS.LINK] || '#',
-                            logo: r[CONFIG.COLUMNS.LOGO] || '',
-                            isVip: r[CONFIG.COLUMNS.VIP] && r[CONFIG.COLUMNS.VIP].toLowerCase().trim() === 'да',
-                            date: r[CONFIG.COLUMNS.DATE] || ''
-                        });
-                    }
-                    if (offers.length === 0) {
-                        throw new Error('Нет активных акций (столбец I должен быть "Да").');
-                    }
-                    renderApp(offers);
-                })
-                .catch(function(err) {
-                    document.getElementById('app').innerHTML = '<div class="error"><p>⚠️ Не удалось загрузить акции</p><p style="color:#6b6b75;font-size:14px;">' + err.message + '</p><button onclick="location.reload()">Повторить</button></div>';
-                });
-        }
+        // ==================== ХРАНИЛИЩЕ ====================
+        var Storage = {
+            get: function(key) { try { return JSON.parse(localStorage.getItem(key)); } catch(e) { return null; } },
+            set: function(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) {} }
+        };
 
-        function renderApp(offers) {
-            var html = '<div class="header"><div class="title">🎯 MAX Выгода</div><div class="subtitle">Лучшие предложения</div></div>';
-            html += '<div class="search-box"><span style="margin-right:8px;">🔍</span><input type="text" placeholder="Поиск акций..." id="searchInput"></div>';
-            html += '<div class="filters" id="filters"></div>';
-            html += '<div class="sort"><span>Сортировка:</span><button class="sort-btn active" data-sort="new">Новые</button><button class="sort-btn" data-sort="discount">Макс. скидка</button></div>';
-            html += '<div class="cards" id="cards"></div>';
-            document.getElementById('app').innerHTML = html;
+        // ==================== СТАТИСТИКА ====================
+        var Stats = {
+            key: 'max_stats',
+            all: function() { return Storage.get(this.key) || {}; },
+            save: function(s) { Storage.set(this.key, s); },
+            view: function(id) {
+                var s = this.all();
+                if (!s[id]) s[id] = { views:0, clicks:0, favs:0 };
+                s[id].views++;
+                this.save(s);
+            },
+            click: function(id) {
+                var s = this.all();
+                if (!s[id]) s[id] = { views:0, clicks:0, favs:0 };
+                s[id].clicks++;
+                this.save(s);
+            },
+            fav: function(id, added) {
+                var s = this.all();
+                if (!s[id]) s[id] = { views:0, clicks:0, favs:0 };
+                added ? s[id].favs++ : s[id].favs = Math.max(0, s[id].favs - 1);
+                this.save(s);
+            },
+            get: function(id) { return this.all()[id] || { views:0, clicks:0, favs:0 }; }
+        };
 
-            // категории
-            var cats = ['Все'];
-            offers.forEach(function(o) { if (cats.indexOf(o.category) === -1) cats.push(o.category); });
-            var filtersDiv = document.getElementById('filters');
-            cats.forEach(function(cat) {
-                var chip = document.createElement('div');
-                chip.className = 'chip' + (cat === 'Все' ? ' active' : '');
-                chip.textContent = cat;
-                chip.onclick = function() {
-                    document.querySelectorAll('.chip').forEach(function(c) { c.classList.remove('active'); });
-                    this.classList.add('active');
-                    filterAndSort();
-                };
-                filtersDiv.appendChild(chip);
-            });
-
-            // сортировка
-            var currentSort = 'new';
-            document.querySelectorAll('.sort-btn').forEach(function(btn) {
-                btn.onclick = function() {
-                    document.querySelectorAll('.sort-btn').forEach(function(b) { b.classList.remove('active'); });
-                    this.classList.add('active');
-                    currentSort = this.dataset.sort;
-                    filterAndSort();
-                };
-            });
-
-            // поиск
-            var searchInput = document.getElementById('searchInput');
-            searchInput.oninput = filterAndSort;
-
-            function filterAndSort() {
-                var activeCat = document.querySelector('.chip.active').textContent;
-                var query = searchInput.value.toLowerCase();
-                var filtered = offers.filter(function(o) {
-                    if (activeCat !== 'Все' && o.category !== activeCat) return false;
-                    if (query && o.store.toLowerCase().indexOf(query) === -1 && o.description.toLowerCase().indexOf(query) === -1) return false;
-                    return true;
-                });
-                if (currentSort === 'discount') {
-                    filtered.sort(function(a,b) { return (parseInt(b.discount)||0) - (parseInt(a.discount)||0); });
-                } else {
-                    filtered.sort(function(a,b) { return b.id - a.id; });
-                }
-                renderCards(filtered);
+        // ==================== ИЗБРАННОЕ ====================
+        var Favorites = {
+            key: 'max_favs',
+            list: function() { return Storage.get(this.key) || []; },
+            save: function(list) { Storage.set(this.key, list); },
+            is: function(id) { return this.list().indexOf(id) > -1; },
+            toggle: function(id) {
+                var list = this.list();
+                var idx = list.indexOf(id);
+                var added = false;
+                if (idx > -1) { list.splice(idx, 1); } else { list.push(id); added = true; }
+                this.save(list);
+                Stats.fav(id, added);
+                return added;
             }
+        };
 
-            function renderCards(list) {
-                var cardsDiv = document.getElementById('cards');
-                cardsDiv.innerHTML = '';
-                if (list.length === 0) {
-                    cardsDiv.innerHTML = '<div class="loading">Ничего не найдено</div>';
+        // ==================== API ====================
+        var API = {
+            offers: [],
+            categories: [],
+            load: function() {
+                var self = this;
+                var url = 'https://sheets.googleapis.com/v4/spreadsheets/' + CONFIG.GOOGLE_SHEET_ID +
+                          '/values/' + CONFIG.SHEET_NAME + '?key=' + CONFIG.API_KEY;
+                return fetch(url)
+                    .then(r => r.json())
+                    .then(data => {
+                        if (!data.values || data.values.length < 2) throw new Error('Нет данных');
+                        var rows = data.values.slice(1);
+                        var offers = [];
+                        for (var i = 0; i < rows.length; i++) {
+                            var r = rows[i];
+                            if (!r[CONFIG.COLUMNS.STORE]) continue;
+                            var active = r[CONFIG.COLUMNS.ACTIVE] ? r[CONFIG.COLUMNS.ACTIVE].toLowerCase().trim() : '';
+                            if (active !== 'да') continue;
+                            offers.push({
+                                id: r[CONFIG.COLUMNS.ID] || (i+1),
+                                store: r[CONFIG.COLUMNS.STORE],
+                                category: r[CONFIG.COLUMNS.CATEGORY] || '',
+                                discount: r[CONFIG.COLUMNS.DISCOUNT] || '',
+                                description: r[CONFIG.COLUMNS.DESCRIPTION] || '',
+                                link: r[CONFIG.COLUMNS.LINK] || '#',
+                                logo: r[CONFIG.COLUMNS.LOGO] || '',
+                                isVip: r[CONFIG.COLUMNS.VIP] && r[CONFIG.COLUMNS.VIP].toLowerCase().trim() === 'да',
+                                date: r[CONFIG.COLUMNS.DATE] || ''
+                            });
+                        }
+                        self.offers = offers;
+                        self.categories = self.buildCategories(offers);
+                        return offers;
+                    });
+            },
+            buildCategories: function(offers) {
+                var cats = [{ id:'all', name:'Все', emoji:'🔥' }];
+                var meta = { 'еда':'🍕', 'маркетплейсы':'📦', 'банки':'💳', 'связь':'📱', 'игры':'🎮', 'путешествия':'✈️', 'магазины':'🏪', 'авто':'🚗' };
+                var set = {};
+                offers.forEach(o => {
+                    var key = o.category.toLowerCase().trim();
+                    if (key && !set[key]) {
+                        set[key] = true;
+                        cats.push({ id:key, name:o.category, emoji: meta[key] || '📌' });
+                    }
+                });
+                return cats;
+            },
+            filter: function(cat, sort, query) {
+                var filtered = this.offers.slice();
+                if (cat && cat !== 'all') filtered = filtered.filter(o => o.category.toLowerCase() === cat);
+                if (query) {
+                    var q = query.toLowerCase();
+                    filtered = filtered.filter(o => o.store.toLowerCase().indexOf(q) > -1 || o.description.toLowerCase().indexOf(q) > -1);
+                }
+                if (sort === 'popular') filtered.sort((a,b) => (Stats.get(b.id).views||0) - (Stats.get(a.id).views||0));
+                else if (sort === 'discount') filtered.sort((a,b) => (parseInt(b.discount)||0) - (parseInt(a.discount)||0));
+                else filtered.sort((a,b) => b.id - a.id);
+                return filtered;
+            }
+        };
+
+        // ==================== UI ====================
+        var App = {
+            currentScreen: 'promotions',
+            activeCategory: 'all',
+            activeSort: 'new',
+            searchQuery: '',
+            init: function() {
+                this.content = document.getElementById('main-content');
+                this.nav = document.getElementById('bottom-nav');
+                this.showLoader();
+                API.load().then(() => {
+                    this.renderScreen('promotions');
+                }).catch(err => {
+                    this.content.innerHTML = '<div class="empty-state"><p>❌ Ошибка загрузки</p><p style="color:var(--text-tertiary);font-size:14px;">' + err.message + '</p></div>';
+                    this.renderNav();
+                });
+            },
+            showLoader: function() {
+                this.content.innerHTML = '<div style="text-align:center;padding:50px;color:var(--text-tertiary);">Загрузка...</div>';
+            },
+            renderScreen: function(screen) {
+                this.currentScreen = screen;
+                this.content.innerHTML = '';
+                if (screen === 'promotions' || screen === 'home') {
+                    this.renderPromotionsPage();
+                } else if (screen === 'favorites') {
+                    this.renderFavoritesPage();
+                } else if (screen === 'notifications') {
+                    this.renderPlaceholder('🔔 Уведомления', 'Здесь будут уведомления о новых акциях');
+                } else if (screen === 'profile') {
+                    this.renderPlaceholder('👤 Профиль', 'Личный кабинет в разработке');
+                }
+                this.renderNav();
+            },
+            renderPromotionsPage: function() {
+                var self = this;
+                var html = '<div class="page"><div class="promotions-header"><div class="promotions-page-title">🎯 MAX Выгода</div><div class="promotions-page-subtitle">Лучшие предложения</div></div>';
+                html += '<div class="search-wrapper"><div class="search-container"><span class="search-icon">🔍</span><input class="search-input" id="searchInput" placeholder="Поиск акций..." value="' + this.searchQuery + '"><button class="search-clear" id="clearSearch">✕</button></div></div>';
+                html += '<div class="filters-scroll" id="filtersScroll"></div>';
+                html += '<div class="sort-container"><span class="sort-label">Сортировка:</span><button class="sort-btn active" data-sort="new">Новые</button><button class="sort-btn" data-sort="popular">Популярные</button><button class="sort-btn" data-sort="discount">Макс. скидка</button></div>';
+                html += '<div id="cardsContainer"></div></div>';
+                this.content.innerHTML = html;
+
+                var searchInput = document.getElementById('searchInput');
+                var clearBtn = document.getElementById('clearSearch');
+                searchInput.addEventListener('input', function() {
+                    clearBtn.style.display = this.value ? 'flex' : 'none';
+                    self.searchQuery = this.value;
+                    self.renderCards();
+                });
+                clearBtn.addEventListener('click', function() {
+                    searchInput.value = '';
+                    clearBtn.style.display = 'none';
+                    self.searchQuery = '';
+                    self.renderCards();
+                });
+                clearBtn.style.display = searchInput.value ? 'flex' : 'none';
+
+                this.renderFilters();
+                this.renderSort();
+                this.renderCards();
+            },
+            renderFilters: function() {
+                var container = document.getElementById('filtersScroll');
+                container.innerHTML = '';
+                var self = this;
+                API.categories.forEach(cat => {
+                    var chip = document.createElement('button');
+                    chip.className = 'filter-chip' + (cat.id === self.activeCategory ? ' active' : '');
+                    chip.innerHTML = '<span>' + cat.emoji + '</span><span>' + cat.name + '</span>';
+                    chip.onclick = function() {
+                        self.activeCategory = cat.id;
+                        self.renderFilters();
+                        self.renderCards();
+                    };
+                    container.appendChild(chip);
+                });
+            },
+            renderSort: function() {
+                var buttons = document.querySelectorAll('.sort-btn');
+                var self = this;
+                buttons.forEach(btn => {
+                    btn.classList.remove('active');
+                    if (btn.dataset.sort === self.activeSort) btn.classList.add('active');
+                    btn.onclick = function() {
+                        self.activeSort = this.dataset.sort;
+                        self.renderSort();
+                        self.renderCards();
+                    };
+                });
+            },
+            renderCards: function() {
+                var container = document.getElementById('cardsContainer');
+                var offers = API.filter(this.activeCategory, this.activeSort, this.searchQuery);
+                if (offers.length === 0) {
+                    container.innerHTML = '<div class="empty-state">🔍<br>Ничего не найдено</div>';
                     return;
                 }
-                list.forEach(function(o) {
-                    var card = document.createElement('div');
-                    card.className = 'card' + (o.isVip ? ' vip' : '');
-                    var vipBadgeHtml = o.isVip ? '<div class="vip-badge">⭐ VIP</div>' : '';
-                    var newBadge = (o.id > Math.max(...offers.map(x=>x.id)) - 3) ? '<div class="badge">NEW</div>' : ''; // условно новые
-                    card.innerHTML = 
-                        '<div style="width:48px;height:48px;border-radius:12px;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;margin-bottom:10px;">' +
-                        (o.logo ? '<img src="' + o.logo + '" style="width:100%;height:100%;object-fit:contain;" alt="">' : o.store.charAt(0)) +
-                        '</div>' +
-                        '<button class="fav-btn">🤍</button>' +
-                        newBadge +
-                        vipBadgeHtml +
-                        '<div class="card-store">' + o.store + '</div>' +
-                        '<div class="card-discount">' + o.discount + '</div>' +
-                        '<div class="card-desc">' + o.description + '</div>' +
-                        '<div class="card-date">⏳ до ' + o.date + '</div>' +
-                        '<div class="card-stats">👁 0  🔗 0</div>' +
-                        '<button class="get-btn">Получить скидку</button>';
-                    
-                    card.querySelector('.get-btn').onclick = function(e) {
-                        e.stopPropagation();
-                        window.open(o.link, '_blank');
-                    };
-                    card.querySelector('.fav-btn').onclick = function(e) {
-                        e.stopPropagation();
-                        var btn = this;
-                        btn.innerHTML = btn.innerHTML === '🤍' ? '❤️' : '🤍';
-                    };
-                    cardsDiv.appendChild(card);
+                var html = '<div class="cards-grid">';
+                offers.forEach((o, i) => {
+                    var stats = Stats.get(o.id);
+                    html += '<div class="promo-card' + (o.isVip ? ' vip-card' : '') + '" style="animation-delay:' + (i*0.05) + 's">';
+                    html += '<div class="promo-logo-container">' + (o.logo ? '<img class="promo-logo" src="' + o.logo + '" alt="">' : '<span style="font-size:22px;font-weight:700;color:var(--accent);">' + o.store.charAt(0) + '</span>') + '</div>';
+                    html += '<button class="promo-fav-btn" data-id="' + o.id + '">' + (Favorites.is(o.id) ? '❤️' : '🤍') + '</button>';
+                    html += '<div class="promo-new-badge">NEW</div>';
+                    html += '<div class="promo-vip-badge">⭐ VIP</div>';
+                    html += '<div class="promo-info">';
+                    html += '<div class="promo-store">' + o.store + '</div>';
+                    html += '<div class="promo-discount">' + o.discount + '</div>';
+                    html += '<div class="promo-desc">' + o.description + '</div>';
+                    html += '<div class="promo-date">⏳ до ' + o.date + '</div>';
+                    html += '<div class="promo-stats">👁 ' + stats.views + '  🔗 ' + stats.clicks + '  ❤️ ' + stats.favs + '</div>';
+                    html += '</div>';
+                    html += '<button class="get-btn" data-link="' + o.link + '" data-id="' + o.id + '">Получить скидку</button>';
+                    html += '</div>';
                 });
+                html += '</div>';
+                container.innerHTML = html;
+
+                // Обработчики
+                var cards = container.querySelectorAll('.promo-card');
+                cards.forEach(card => {
+                    var id = parseInt(card.querySelector('.promo-fav-btn')?.dataset.id);
+                    if (id) Stats.view(id);
+                });
+                container.querySelectorAll('.get-btn').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        var id = parseInt(this.dataset.id);
+                        Stats.click(id);
+                        window.open(this.dataset.link, '_blank');
+                    });
+                });
+                container.querySelectorAll('.promo-fav-btn').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        var id = parseInt(this.dataset.id);
+                        var added = Favorites.toggle(id);
+                        this.innerHTML = added ? '❤️' : '🤍';
+                        App.showToast(added ? 'Добавлено в избранное' : 'Удалено из избранного');
+                        // Обновить статистику на карточке
+                        var statsEl = this.parentElement.querySelector('.promo-stats');
+                        if (statsEl) {
+                            var s = Stats.get(id);
+                            statsEl.innerHTML = '👁 ' + s.views + '  🔗 ' + s.clicks + '  ❤️ ' + s.favs;
+                        }
+                    });
+                });
+            },
+            renderFavoritesPage: function() {
+                var self = this;
+                var html = '<div class="page"><div class="promotions-header"><div class="promotions-page-title">❤️ Избранное</div></div>';
+                html += '<button class="promo-back-btn" style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:12px;padding:8px 16px;color:var(--text-secondary);cursor:pointer;margin-bottom:15px;font-family:inherit;">← Назад</button>';
+                html += '<div id="favContainer"></div></div>';
+                this.content.innerHTML = html;
+                this.content.querySelector('.promo-back-btn').addEventListener('click', () => self.renderScreen('promotions'));
+
+                var favIds = Favorites.list();
+                var offers = API.offers.filter(o => favIds.indexOf(o.id) > -1);
+                var container = document.getElementById('favContainer');
+                if (offers.length === 0) {
+                    container.innerHTML = '<div class="empty-state">❤️<br>Нет избранных акций</div>';
+                    return;
+                }
+                // Используем ту же отрисовку карточек
+                var cardsHtml = '<div class="cards-grid">';
+                offers.forEach((o, i) => {
+                    var stats = Stats.get(o.id);
+                    cardsHtml += '<div class="promo-card' + (o.isVip ? ' vip-card' : '') + '">';
+                    cardsHtml += '<div class="promo-logo-container">' + (o.logo ? '<img class="promo-logo" src="' + o.logo + '" alt="">' : '<span style="font-size:22px;font-weight:700;color:var(--accent);">' + o.store.charAt(0) + '</span>') + '</div>';
+                    cardsHtml += '<button class="promo-fav-btn" data-id="' + o.id + '">❤️</button>';
+                    if (o.isVip) cardsHtml += '<div class="promo-vip-badge">⭐ VIP</div>';
+                    cardsHtml += '<div class="promo-info"><div class="promo-store">' + o.store + '</div><div class="promo-discount">' + o.discount + '</div><div class="promo-desc">' + o.description + '</div><div class="promo-date">⏳ до ' + o.date + '</div><div class="promo-stats">👁 ' + stats.views + ' 🔗 ' + stats.clicks + ' ❤️ ' + stats.favs + '</div></div>';
+                    cardsHtml += '<button class="get-btn" data-link="' + o.link + '" data-id="' + o.id + '">Получить скидку</button>';
+                    cardsHtml += '</div>';
+                });
+                cardsHtml += '</div>';
+                container.innerHTML = cardsHtml;
+
+                container.querySelectorAll('.get-btn').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        Stats.click(parseInt(this.dataset.id));
+                        window.open(this.dataset.link, '_blank');
+                    });
+                });
+                container.querySelectorAll('.promo-fav-btn').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        var id = parseInt(this.dataset.id);
+                        Favorites.toggle(id);
+                        self.renderFavoritesPage(); // обновить страницу избранного
+                        self.showToast('Удалено из избранного');
+                    });
+                });
+            },
+            renderPlaceholder: function(title, text) {
+                this.content.innerHTML = '<div class="page"><div class="promotions-header"><div class="promotions-page-title">' + title + '</div></div><div class="empty-state"><p>' + text + '</p></div></div>';
+            },
+            renderNav: function() {
+                var self = this;
+                var items = [
+                    { id:'home', icon:'🏠', label:'Главная' },
+                    { id:'promotions', icon:'🎯', label:'Акции' },
+                    { id:'favorites', icon:'❤️', label:'Избранное' },
+                    { id:'notifications', icon:'🔔', label:'Уведомления' },
+                    { id:'profile', icon:'👤', label:'Профиль' }
+                ];
+                this.nav.innerHTML = '';
+                items.forEach(item => {
+                    var el = document.createElement('button');
+                    el.className = 'nav-item' + (self.currentScreen === item.id || (item.id === 'promotions' && self.currentScreen === 'home') ? ' active' : '');
+                    el.innerHTML = '<span class="nav-icon">' + item.icon + '</span><span class="nav-label">' + item.label + '</span>';
+                    el.addEventListener('click', () => self.renderScreen(item.id === 'home' ? 'promotions' : item.id));
+                    self.nav.appendChild(el);
+                });
+            },
+            showToast: function(msg) {
+                var container = document.querySelector('.toast-container');
+                if (!container) {
+                    container = document.createElement('div');
+                    container.className = 'toast-container';
+                    document.body.appendChild(container);
+                }
+                var toast = document.createElement('div');
+                toast.className = 'toast';
+                toast.textContent = msg;
+                container.appendChild(toast);
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    toast.style.transform = 'translateY(-10px)';
+                    setTimeout(() => toast.remove(), 300);
+                }, 2000);
             }
+        };
 
-            filterAndSort(); // начальная отрисовка
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('app').innerHTML = '<div class="loading">Загрузка...</div>';
-            loadData();
-        });
+        document.addEventListener('DOMContentLoaded', () => App.init());
     </script>
 </body>
 </html>
