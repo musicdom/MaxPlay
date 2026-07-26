@@ -1,13 +1,14 @@
-const CONFIG = {
-    GOOGLE_SHEET_ID: '1BxiMVs0XRA5nFMjKvBdBZjgmUUqptlbs74OgvE2upms',
+// Глобальная конфигурация
+var CONFIG = {
+    GOOGLE_SHEET_ID: '1BxiMVs0XRA5nFMjKvBdBZjgmUUqptlbs74OgvE2upms', // замените на свой
     SHEET_NAME: 'Акции',
-    API_KEY: 'AIzaSyD-пример-ключ-для-демо',
+    API_KEY: 'AIzaSyA-_dummy_key_for_demo_123456789', // замените на свой
     CACHE_KEY: 'maxvygoda_offers_cache',
     CACHE_TIMESTAMP_KEY: 'maxvygoda_cache_timestamp',
     FAVORITES_KEY: 'maxvygoda_favorites',
     STATS_KEY: 'maxvygoda_stats',
-    CACHE_DURATION: 5 * 60 * 1000,
-    AUTO_REFRESH_INTERVAL: 5 * 60 * 1000,
+    CACHE_DURATION: 5 * 60 * 1000,          // 5 минут
+    AUTO_REFRESH_INTERVAL: 5 * 60 * 1000,   // 5 минут
     SKELETON_DURATION: 1000,
     DEBOUNCE_DELAY: 250,
     MAX_RETRIES: 3,
@@ -25,5 +26,3 @@ const CONFIG = {
         DATE: 9
     }
 };
-
-export default CONFIG;
