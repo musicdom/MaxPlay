@@ -16,6 +16,14 @@
             <nav id="bottom-nav" class="bottom-nav"></nav>
         </div>
     </div>
-    <script type="module" src="scripts/app.js"></script>
+    <!-- Загрузка скриптов в строгом порядке -->
+    <script src="scripts/config.js"></script>
+    <script src="scripts/cache.js"></script>
+    <script src="scripts/stats.js"></script>
+    <script src="scripts/favorites.js"></script>
+    <script src="scripts/api.js"></script>
+    <script src="scripts/search.js"></script>
+    <script src="scripts/cards.js"></script>
+    <script src="scripts/app.js"></script>
 </body>
 </html>
