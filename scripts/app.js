@@ -1,12 +1,5 @@
-import CONFIG from './config.js';
-import API from './api.js';
-import Cache from './cache.js';
-import Cards from './cards.js';
-import Search from './search.js';
-import Favorites from './favorites.js';
-import Stats from './stats.js';
-
-const App = {
+// Главное приложение
+var App = {
     currentScreen: 'promotions',
     activeCategory: 'all',
     activeSort: 'new',
@@ -16,207 +9,181 @@ const App = {
     searchBarInstance: null,
     toastTimer: null,
 
-    async init() {
+    init: function() {
         this.mainContent = document.getElementById('main-content');
         this.bottomNav = document.getElementById('bottom-nav');
-
         document.body.style.opacity = '0';
         document.body.style.transition = 'opacity 0.3s ease';
-
         this.setupGlobalListeners();
         this.renderInitialUI();
         API.startAutoRefresh();
-
-        requestAnimationFrame(() => {
+        requestAnimationFrame(function() {
             document.body.style.opacity = '1';
         });
-
-        await this.loadData();
+        this.loadData();
     },
 
-    setupGlobalListeners() {
-        document.addEventListener('visibilitychange', () => {
+    setupGlobalListeners: function() {
+        var self = this;
+        document.addEventListener('visibilitychange', function() {
             if (document.visibilityState === 'visible') {
-                API.loadOffers(true).catch(() => {});
+                API.loadOffers(true).catch(function() {});
             }
         });
-
-        window.addEventListener('resize', () => {
-            const vh = window.innerHeight * 0.01;
-            document.documentElement.style.setProperty('--vh', `${vh}px`);
+        window.addEventListener('resize', function() {
+            var vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', vh + 'px');
         });
+        var vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', vh + 'px');
 
-        const vh = window.innerHeight * 0.01;
-        document.documentElement.style.setProperty('--vh', `${vh}px`);
-
-        window.addEventListener('online', () => {
-            this.showToast('🔄 Интернет восстановлен');
-            API.loadOffers(true).then(() => {
-                this.renderPromotionsContent();
-            }).catch(() => {});
+        window.addEventListener('online', function() {
+            self.showToast('🔄 Интернет восстановлен');
+            API.loadOffers(true).then(function() {
+                self.renderPromotionsContent();
+            }).catch(function() {});
         });
-
-        window.addEventListener('offline', () => {
-            this.showToast('📡 Нет подключения к интернету');
+        window.addEventListener('offline', function() {
+            self.showToast('📡 Нет подключения к интернету');
         });
     },
 
-    renderInitialUI() {
+    renderInitialUI: function() {
+        var self = this;
         this.mainContent.innerHTML = '';
         this.mainContent.className = 'main-content promotions-page';
 
-        const pageContainer = document.createElement('div');
-        pageContainer.className = 'promotions-page-inner';
+        var page = document.createElement('div');
+        page.className = 'promotions-page-inner';
 
-        const headerSection = document.createElement('div');
-        headerSection.className = 'promotions-header';
+        var header = document.createElement('div');
+        header.className = 'promotions-header';
+        var title = document.createElement('div');
+        title.className = 'promotions-page-title';
+        title.textContent = '🎯 MAX Выгода';
+        var sub = document.createElement('div');
+        sub.className = 'promotions-page-subtitle';
+        sub.textContent = 'Лучшие предложения для вас';
+        header.appendChild(title);
+        header.appendChild(sub);
 
-        const pageTitle = document.createElement('div');
-        pageTitle.className = 'promotions-page-title';
-        pageTitle.textContent = '🎯 MAX Выгода';
-
-        const subtitle = document.createElement('div');
-        subtitle.className = 'promotions-page-subtitle';
-        subtitle.textContent = 'Лучшие предложения для вас';
-
-        headerSection.appendChild(pageTitle);
-        headerSection.appendChild(subtitle);
-
-        const searchBar = Search.createSearchBar('Поиск по магазинам и скидкам...', (query) => {
-            this.searchQuery = query;
-            this.renderPromotionsContent();
+        var searchBar = Search.createSearchBar('Поиск по магазинам и скидкам...', function(query) {
+            self.searchQuery = query;
+            self.renderPromotionsContent();
         });
         this.searchBarInstance = searchBar;
 
-        const categories = API.getCategories();
-        const categoryFilters = Search.createCategoryFilters(categories, this.activeCategory, (catId) => {
-            this.activeCategory = catId;
-            this.renderPromotionsContent();
+        var categories = API.getCategories();
+        var catFilters = Search.createCategoryFilters(categories, this.activeCategory, function(catId) {
+            self.activeCategory = catId;
+            self.renderPromotionsContent();
         });
 
-        const sortOptions = API.getSortOptions();
-        const sortBar = Search.createSortBar(sortOptions, this.activeSort, (sortId) => {
-            this.activeSort = sortId;
-            this.renderPromotionsContent();
+        var sortOptions = API.getSortOptions();
+        var sortBar = Search.createSortBar(sortOptions, this.activeSort, function(sortId) {
+            self.activeSort = sortId;
+            self.renderPromotionsContent();
         });
 
-        const contentArea = document.createElement('div');
+        var contentArea = document.createElement('div');
         contentArea.className = 'promo-content-area';
         contentArea.id = 'promo-content-area';
-
         Cards.showSkeleton(contentArea);
 
-        pageContainer.appendChild(headerSection);
-        pageContainer.appendChild(searchBar.wrapper);
-        pageContainer.appendChild(categoryFilters);
-        pageContainer.appendChild(sortBar);
-        pageContainer.appendChild(contentArea);
-
-        this.mainContent.appendChild(pageContainer);
+        page.appendChild(header);
+        page.appendChild(searchBar.wrapper);
+        page.appendChild(catFilters);
+        page.appendChild(sortBar);
+        page.appendChild(contentArea);
+        this.mainContent.appendChild(page);
         this.renderBottomNav();
     },
 
-    async loadData() {
-        const contentArea = document.getElementById('promo-content-area');
-
-        try {
-            const offers = await API.loadOffers();
-
-            if (!navigator.onLine) {
-                if (offers.length > 0) {
-                    this.showToast('📡 Оффлайн-режим. Загружены сохранённые данные');
-                    this.updateCategoryFilters();
-                    this.renderPromotionsContent();
-                } else {
-                    Cards.showOffline(contentArea, () => this.loadData());
+    loadData: function() {
+        var self = this;
+        var contentArea = document.getElementById('promo-content-area');
+        API.loadOffers()
+            .then(function(offers) {
+                if (!navigator.onLine) {
+                    if (offers.length > 0) {
+                        self.showToast('📡 Оффлайн-режим. Загружены сохранённые данные');
+                        self.updateCategoryFilters();
+                        self.renderPromotionsContent();
+                    } else {
+                        Cards.showOffline(contentArea, function() { self.loadData(); });
+                    }
+                    return;
                 }
-                return;
-            }
-
-            if (offers.length === 0) {
-                Cards.showError(contentArea, 'Не удалось загрузить акции. Проверьте подключение.', () => this.loadData());
-                return;
-            }
-
-            this.updateCategoryFilters();
-            this.renderPromotionsContent();
-        } catch (error) {
-            console.error('Load error:', error);
-            Cards.showError(contentArea, error.message || 'Неизвестная ошибка', () => this.loadData());
-        }
+                if (offers.length === 0) {
+                    Cards.showError(contentArea, 'Не удалось загрузить акции.', function() { self.loadData(); });
+                    return;
+                }
+                self.updateCategoryFilters();
+                self.renderPromotionsContent();
+            })
+            .catch(function(error) {
+                console.error(error);
+                Cards.showError(contentArea, error.message || 'Ошибка загрузки', function() { self.loadData(); });
+            });
     },
 
-    updateCategoryFilters() {
-        const filtersContainer = this.mainContent.querySelector('.promo-filters-container');
-        if (!filtersContainer) return;
-
-        const categories = API.getCategories();
-        const newFilters = Search.createCategoryFilters(categories, this.activeCategory, (catId) => {
-            this.activeCategory = catId;
-            this.renderPromotionsContent();
+    updateCategoryFilters: function() {
+        var container = this.mainContent.querySelector('.promo-filters-container');
+        if (!container) return;
+        var categories = API.getCategories();
+        var newFilters = Search.createCategoryFilters(categories, this.activeCategory, function(catId) {
+            App.activeCategory = catId;
+            App.renderPromotionsContent();
         });
-
-        filtersContainer.parentNode.replaceChild(newFilters, filtersContainer);
+        container.parentNode.replaceChild(newFilters, container);
     },
 
-    renderPromotionsContent() {
-        const contentArea = document.getElementById('promo-content-area');
+    renderPromotionsContent: function() {
+        var contentArea = document.getElementById('promo-content-area');
         if (!contentArea) return;
-
-        const offers = API.getOffers(this.activeCategory, this.activeSort, this.searchQuery);
-
+        var offers = API.getOffers(this.activeCategory, this.activeSort, this.searchQuery);
         if (!navigator.onLine) {
-            const cached = Cache.getCachedOffers();
+            var cached = Cache.getCachedOffers();
             if (cached && cached.length > 0) {
-                const filtered = API.getOffers(this.activeCategory, this.activeSort, this.searchQuery);
-                Cards.renderPromoGrid(contentArea, filtered, () => this.loadData());
+                var filtered = API.getOffers(this.activeCategory, this.activeSort, this.searchQuery);
+                Cards.renderPromoGrid(contentArea, filtered, function() { App.loadData(); });
                 return;
             }
-            Cards.showOffline(contentArea, () => this.loadData());
+            Cards.showOffline(contentArea, function() { App.loadData(); });
             return;
         }
-
-        Cards.renderPromoGrid(contentArea, offers, () => this.loadData());
+        Cards.renderPromoGrid(contentArea, offers, function() { App.loadData(); });
     },
 
-    renderBottomNav() {
+    renderBottomNav: function() {
         if (!this.bottomNav) return;
         this.bottomNav.innerHTML = '';
-
-        const navItems = [
+        var navItems = [
             { id: 'home', icon: '🏠', label: 'Главная' },
             { id: 'promotions', icon: '🎯', label: 'Акции' },
             { id: 'favorites', icon: '❤️', label: 'Избранное' },
             { id: 'notifications', icon: '🔔', label: 'Уведомления' },
             { id: 'profile', icon: '👤', label: 'Профиль' }
         ];
-
-        navItems.forEach(item => {
-            const navItem = document.createElement('button');
+        var self = this;
+        navItems.forEach(function(item) {
+            var navItem = document.createElement('button');
             navItem.className = 'nav-item';
-            if (item.id === this.currentScreen) {
-                navItem.classList.add('active');
-            }
-
-            navItem.addEventListener('click', () => {
-                this.handleNavClick(item.id);
-            });
-
-            const icon = document.createElement('span');
+            if (item.id === self.currentScreen) navItem.classList.add('active');
+            navItem.addEventListener('click', function() { self.handleNavClick(item.id); });
+            var icon = document.createElement('span');
             icon.className = 'nav-icon';
             icon.textContent = item.icon;
-
-            const label = document.createElement('span');
+            var label = document.createElement('span');
             label.className = 'nav-label';
             label.textContent = item.label;
-
             navItem.appendChild(icon);
             navItem.appendChild(label);
-            this.bottomNav.appendChild(navItem);
+            self.bottomNav.appendChild(navItem);
         });
     },
 
-    handleNavClick(screenId) {
+    handleNavClick: function(screenId) {
         switch (screenId) {
             case 'notifications':
                 this.showToast('🔔 Уведомлений пока нет');
@@ -235,49 +202,41 @@ const App = {
         }
     },
 
-    showFavorites() {
+    showFavorites: function() {
         this.mainContent.innerHTML = '';
         this.mainContent.className = 'main-content promotions-page';
-
-        const pageContainer = document.createElement('div');
-        pageContainer.className = 'promotions-page-inner';
-
-        const headerSection = document.createElement('div');
-        headerSection.className = 'promotions-header';
-
-        const backButton = document.createElement('button');
-        backButton.className = 'promo-back-btn';
-        backButton.textContent = '← Назад';
-        backButton.addEventListener('click', () => {
-            this.currentScreen = 'promotions';
-            this.renderInitialUI();
-            this.loadData();
+        var page = document.createElement('div');
+        page.className = 'promotions-page-inner';
+        var header = document.createElement('div');
+        header.className = 'promotions-header';
+        var backBtn = document.createElement('button');
+        backBtn.className = 'promo-back-btn';
+        backBtn.textContent = '← Назад';
+        backBtn.addEventListener('click', function() {
+            App.currentScreen = 'promotions';
+            App.renderInitialUI();
+            App.loadData();
         });
-
-        const pageTitle = document.createElement('div');
-        pageTitle.className = 'promotions-page-title';
-        pageTitle.textContent = '❤️ Избранное';
-
-        headerSection.appendChild(backButton);
-        headerSection.appendChild(pageTitle);
-
-        const contentArea = document.createElement('div');
+        var title = document.createElement('div');
+        title.className = 'promotions-page-title';
+        title.textContent = '❤️ Избранное';
+        header.appendChild(backBtn);
+        header.appendChild(title);
+        var contentArea = document.createElement('div');
         contentArea.className = 'promo-content-area';
-
-        const allOffers = API.getOffers();
-        const favOffers = Favorites.getFavoriteOffers(allOffers);
+        var allOffers = API.getOffers();
+        var favOffers = Favorites.getFavoriteOffers(allOffers);
         Cards.renderPromoGrid(contentArea, favOffers);
-
-        pageContainer.appendChild(headerSection);
-        pageContainer.appendChild(contentArea);
-        this.mainContent.appendChild(pageContainer);
-
+        page.appendChild(header);
+        page.appendChild(contentArea);
+        this.mainContent.appendChild(page);
         this.currentScreen = 'favorites';
         this.renderBottomNav();
     },
 
-    showToast(message, duration = 2500) {
-        let container = document.querySelector('.toast-container');
+    showToast: function(message, duration) {
+        duration = duration || 2500;
+        var container = document.querySelector('.toast-container');
         if (!container) {
             container = document.createElement('div');
             container.className = 'toast-container';
@@ -285,56 +244,47 @@ const App = {
         }
         if (this.toastTimer) clearTimeout(this.toastTimer);
         container.innerHTML = '';
-
-        const toast = document.createElement('div');
+        var toast = document.createElement('div');
         toast.className = 'toast';
         toast.textContent = message;
         container.appendChild(toast);
-
-        this.toastTimer = setTimeout(() => {
+        var self = this;
+        this.toastTimer = setTimeout(function() {
             toast.classList.add('removing');
-            toast.addEventListener('animationend', () => {
+            toast.addEventListener('animationend', function() {
                 toast.remove();
-                if (container.children.length === 0) {
-                    container.remove();
-                }
+                if (container.children.length === 0) container.remove();
             }, { once: true });
         }, duration);
     },
 
-    showModal(title, text) {
-        const overlay = document.createElement('div');
+    showModal: function(title, text) {
+        var overlay = document.createElement('div');
         overlay.className = 'modal-overlay';
-
-        const sheet = document.createElement('div');
+        var sheet = document.createElement('div');
         sheet.className = 'modal-sheet';
-
-        const modalTitle = document.createElement('div');
+        var modalTitle = document.createElement('div');
         modalTitle.className = 'modal-title';
         modalTitle.textContent = title;
-
-        const modalText = document.createElement('div');
+        var modalText = document.createElement('div');
         modalText.className = 'modal-text';
         modalText.textContent = text;
-
-        const closeBtn = document.createElement('button');
+        var closeBtn = document.createElement('button');
         closeBtn.className = 'modal-close';
         closeBtn.textContent = 'Понятно';
-        closeBtn.addEventListener('click', () => overlay.remove());
-
+        closeBtn.addEventListener('click', function() { overlay.remove(); });
         sheet.appendChild(modalTitle);
         sheet.appendChild(modalText);
         sheet.appendChild(closeBtn);
         overlay.appendChild(sheet);
-
-        overlay.addEventListener('click', (e) => {
+        overlay.addEventListener('click', function(e) {
             if (e.target === overlay) overlay.remove();
         });
-
         document.body.appendChild(overlay);
     }
 };
 
-document.addEventListener('DOMContentLoaded', () => {
+// Запуск после загрузки DOM
+document.addEventListener('DOMContentLoaded', function() {
     App.init();
 });
