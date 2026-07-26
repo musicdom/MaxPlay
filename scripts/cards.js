@@ -1,252 +1,239 @@
-import Stats from './stats.js';
-import Favorites from './favorites.js';
+// Отрисовка карточек
+var Cards = {
+    _maxId: 0,
 
-const Cards = {
-    createOfflineCard(onRetry) {
-        const card = document.createElement('div');
+    createOfflineCard: function(onRetry) {
+        var card = document.createElement('div');
         card.className = 'promo-card offline-card';
 
-        const icon = document.createElement('div');
+        var icon = document.createElement('div');
         icon.className = 'offline-icon';
         icon.textContent = '📡';
 
-        const title = document.createElement('div');
+        var title = document.createElement('div');
         title.className = 'offline-title';
         title.textContent = 'Нет подключения';
 
-        const text = document.createElement('div');
+        var text = document.createElement('div');
         text.className = 'offline-text';
         text.textContent = 'Проверьте интернет-соединение';
 
-        const retryBtn = document.createElement('button');
-        retryBtn.className = 'promo-card-button retry-btn';
-        retryBtn.textContent = 'Повторить';
-        retryBtn.addEventListener('click', () => {
-            if (onRetry) onRetry();
-        });
+        var btn = document.createElement('button');
+        btn.className = 'promo-card-button retry-btn';
+        btn.textContent = 'Повторить';
+        btn.addEventListener('click', function() { if (onRetry) onRetry(); });
 
         card.appendChild(icon);
         card.appendChild(title);
         card.appendChild(text);
-        card.appendChild(retryBtn);
-
+        card.appendChild(btn);
         return card;
     },
 
-    createErrorCard(message, onRetry) {
-        const card = document.createElement('div');
+    createErrorCard: function(message, onRetry) {
+        var card = document.createElement('div');
         card.className = 'promo-card offline-card';
 
-        const icon = document.createElement('div');
+        var icon = document.createElement('div');
         icon.className = 'offline-icon';
         icon.textContent = '⚠️';
 
-        const title = document.createElement('div');
+        var title = document.createElement('div');
         title.className = 'offline-title';
         title.textContent = 'Не удалось загрузить акции';
 
-        const text = document.createElement('div');
+        var text = document.createElement('div');
         text.className = 'offline-text';
         text.textContent = message || 'Попробуйте позже';
 
-        const retryBtn = document.createElement('button');
-        retryBtn.className = 'promo-card-button retry-btn';
-        retryBtn.textContent = 'Повторить';
-        retryBtn.addEventListener('click', () => {
-            if (onRetry) onRetry();
-        });
+        var btn = document.createElement('button');
+        btn.className = 'promo-card-button retry-btn';
+        btn.textContent = 'Повторить';
+        btn.addEventListener('click', function() { if (onRetry) onRetry(); });
 
         card.appendChild(icon);
         card.appendChild(title);
         card.appendChild(text);
-        card.appendChild(retryBtn);
-
+        card.appendChild(btn);
         return card;
     },
 
-    createEmptyCard() {
-        const card = document.createElement('div');
+    createEmptyCard: function() {
+        var card = document.createElement('div');
         card.className = 'promo-card empty-card';
 
-        const icon = document.createElement('div');
+        var icon = document.createElement('div');
         icon.className = 'offline-icon';
         icon.textContent = '🔍';
 
-        const title = document.createElement('div');
+        var title = document.createElement('div');
         title.className = 'offline-title';
         title.textContent = 'Ничего не найдено';
 
-        const text = document.createElement('div');
+        var text = document.createElement('div');
         text.className = 'offline-text';
         text.textContent = 'Попробуйте изменить фильтры';
 
         card.appendChild(icon);
         card.appendChild(title);
         card.appendChild(text);
-
         return card;
     },
 
-    createSkeletonCard() {
-        const card = document.createElement('div');
+    createSkeletonCard: function() {
+        var card = document.createElement('div');
         card.className = 'promo-card skeleton-card';
 
-        const logoPlaceholder = document.createElement('div');
-        logoPlaceholder.className = 'skeleton skeleton-logo';
+        var logo = document.createElement('div');
+        logo.className = 'skeleton skeleton-logo';
 
-        const lines = [];
-        for (let i = 0; i < 4; i++) {
-            const line = document.createElement('div');
-            line.className = `skeleton skeleton-line skeleton-line-${i + 1}`;
-            lines.push(line);
+        card.appendChild(logo);
+        for (var i = 1; i <= 4; i++) {
+            var line = document.createElement('div');
+            line.className = 'skeleton skeleton-line skeleton-line-' + i;
+            card.appendChild(line);
         }
-
-        const buttonPlaceholder = document.createElement('div');
-        buttonPlaceholder.className = 'skeleton skeleton-button';
-
-        card.appendChild(logoPlaceholder);
-        lines.forEach(line => card.appendChild(line));
-        card.appendChild(buttonPlaceholder);
+        var btn = document.createElement('div');
+        btn.className = 'skeleton skeleton-button';
+        card.appendChild(btn);
 
         return card;
     },
 
-    createSkeletonGrid(count = 6) {
-        const grid = document.createElement('div');
+    createSkeletonGrid: function(count) {
+        var grid = document.createElement('div');
         grid.className = 'promo-grid skeleton-grid';
-
-        for (let i = 0; i < count; i++) {
+        for (var i = 0; i < count; i++) {
             grid.appendChild(this.createSkeletonCard());
         }
-
         return grid;
     },
 
-    createPromoCard(offer, index) {
-        const card = document.createElement('div');
+    createPromoCard: function(offer, index) {
+        var self = this;
+        var card = document.createElement('div');
         card.className = 'promo-card';
-        card.style.animationDelay = `${index * 0.05}s`;
+        card.style.animationDelay = (index * 0.05) + 's';
         card.setAttribute('data-id', offer.id);
-
-        if (offer.isVip) {
-            card.classList.add('vip-card');
-        }
+        if (offer.isVip) card.classList.add('vip-card');
 
         Stats.recordView(offer.id);
 
-        const logoContainer = document.createElement('div');
+        // логотип
+        var logoContainer = document.createElement('div');
         logoContainer.className = 'promo-card-logo-container';
-
-        const logo = document.createElement('img');
-        logo.className = 'promo-card-logo';
-        logo.src = offer.logo || `images/placeholder.png`;
-        logo.alt = offer.store;
-        logo.loading = 'lazy';
-        logo.onerror = function() {
+        var img = document.createElement('img');
+        img.className = 'promo-card-logo';
+        img.src = offer.logo || 'images/placeholder.png';
+        img.alt = offer.store;
+        img.loading = 'lazy';
+        img.onerror = function() {
             this.style.display = 'none';
             this.nextElementSibling.style.display = 'flex';
         };
+        var fallback = document.createElement('div');
+        fallback.className = 'promo-card-logo-fallback';
+        fallback.style.display = 'none';
+        fallback.textContent = offer.store.charAt(0).toUpperCase();
+        logoContainer.appendChild(img);
+        logoContainer.appendChild(fallback);
 
-        const logoFallback = document.createElement('div');
-        logoFallback.className = 'promo-card-logo-fallback';
-        logoFallback.style.display = 'none';
-        logoFallback.textContent = offer.store.charAt(0).toUpperCase();
-
-        logoContainer.appendChild(logo);
-        logoContainer.appendChild(logoFallback);
-
-        const favoriteBtn = document.createElement('button');
-        favoriteBtn.className = 'promo-favorite-btn';
-        const isFav = Favorites.isFavorite(offer.id);
-        favoriteBtn.innerHTML = isFav ? '❤️' : '🤍';
-        if (isFav) favoriteBtn.classList.add('active');
-
-        favoriteBtn.addEventListener('click', (e) => {
+        // избранное
+        var favBtn = document.createElement('button');
+        favBtn.className = 'promo-favorite-btn';
+        var isFav = Favorites.isFavorite(offer.id);
+        favBtn.innerHTML = isFav ? '❤️' : '🤍';
+        if (isFav) favBtn.classList.add('active');
+        favBtn.addEventListener('click', function(e) {
             e.stopPropagation();
-            const isNowFav = Favorites.toggleFavorite(offer.id);
-            favoriteBtn.innerHTML = isNowFav ? '❤️' : '🤍';
-            if (isNowFav) {
-                favoriteBtn.classList.add('active');
-                favoriteBtn.style.animation = 'none';
-                favoriteBtn.offsetHeight;
-                favoriteBtn.style.animation = 'heartBeat 0.4s ease';
+            var added = Favorites.toggleFavorite(offer.id);
+            favBtn.innerHTML = added ? '❤️' : '🤍';
+            if (added) {
+                favBtn.classList.add('active');
+                favBtn.style.animation = 'none';
+                favBtn.offsetHeight;
+                favBtn.style.animation = 'heartBeat 0.4s ease';
             } else {
-                favoriteBtn.classList.remove('active');
+                favBtn.classList.remove('active');
             }
         });
 
-        const vipBadge = document.createElement('div');
+        // VIP-бейдж
+        var vipBadge = document.createElement('div');
         vipBadge.className = 'promo-card-vip-badge';
         vipBadge.textContent = '⭐ VIP';
         vipBadge.style.display = offer.isVip ? 'flex' : 'none';
 
-        const newBadge = document.createElement('div');
+        // NEW-бейдж
+        var newBadge = document.createElement('div');
         newBadge.className = 'promo-card-new-badge';
         newBadge.textContent = 'NEW';
-        const isNew = offer.id > (this._maxId || 0);
-        newBadge.style.display = isNew ? 'flex' : 'none';
+        newBadge.style.display = (offer.id > self._maxId) ? 'flex' : 'none';
 
-        const infoContainer = document.createElement('div');
-        infoContainer.className = 'promo-card-info';
+        // информация
+        var info = document.createElement('div');
+        info.className = 'promo-card-info';
 
-        const storeName = document.createElement('div');
-        storeName.className = 'promo-card-store';
-        storeName.textContent = offer.store;
+        var storeEl = document.createElement('div');
+        storeEl.className = 'promo-card-store';
+        storeEl.textContent = offer.store;
 
-        const discount = document.createElement('div');
-        discount.className = 'promo-card-discount';
-        discount.textContent = offer.discount;
+        var discountEl = document.createElement('div');
+        discountEl.className = 'promo-card-discount';
+        discountEl.textContent = offer.discount;
 
-        const description = document.createElement('div');
-        description.className = 'promo-card-description';
-        description.textContent = offer.description;
+        var descEl = document.createElement('div');
+        descEl.className = 'promo-card-description';
+        descEl.textContent = offer.description;
 
-        const dateContainer = document.createElement('div');
+        var dateContainer = document.createElement('div');
         dateContainer.className = 'promo-card-date';
-        const dateIcon = document.createElement('span');
+        var dateIcon = document.createElement('span');
         dateIcon.className = 'date-icon';
         dateIcon.textContent = '⏳';
-        const dateText = document.createElement('span');
-        dateText.textContent = offer.date ? `до ${offer.date}` : '';
+        var dateText = document.createElement('span');
+        dateText.textContent = offer.date ? 'до ' + offer.date : '';
         dateContainer.appendChild(dateIcon);
         dateContainer.appendChild(dateText);
 
-        const statsContainer = document.createElement('div');
+        // статистика
+        var statsContainer = document.createElement('div');
         statsContainer.className = 'promo-card-stats';
-        const stats = Stats.getOfferStats(offer.id);
-        const viewsSpan = document.createElement('span');
+        var stat = Stats.getOfferStats(offer.id);
+        var viewsSpan = document.createElement('span');
         viewsSpan.className = 'stat-item';
-        viewsSpan.textContent = `👁 ${stats.views}`;
-        const clicksSpan = document.createElement('span');
+        viewsSpan.textContent = '👁 ' + stat.views;
+        var clicksSpan = document.createElement('span');
         clicksSpan.className = 'stat-item';
-        clicksSpan.textContent = `🔗 ${stats.clicks}`;
+        clicksSpan.textContent = '🔗 ' + stat.clicks;
         statsContainer.appendChild(viewsSpan);
         statsContainer.appendChild(clicksSpan);
 
-        const button = document.createElement('button');
+        info.appendChild(storeEl);
+        info.appendChild(discountEl);
+        info.appendChild(descEl);
+        info.appendChild(dateContainer);
+        info.appendChild(statsContainer);
+
+        // кнопка
+        var button = document.createElement('button');
         button.className = 'promo-card-button';
         button.textContent = 'Получить скидку';
-        button.addEventListener('click', (e) => {
+        button.addEventListener('click', function(e) {
             e.stopPropagation();
             Stats.recordClick(offer.id);
-            clicksSpan.textContent = `🔗 ${stats.clicks + 1}`;
+            clicksSpan.textContent = '🔗 ' + (stat.clicks + 1);
             handleGetPromo(offer);
         });
 
-        infoContainer.appendChild(storeName);
-        infoContainer.appendChild(discount);
-        infoContainer.appendChild(description);
-        infoContainer.appendChild(dateContainer);
-        infoContainer.appendChild(statsContainer);
-
         card.appendChild(logoContainer);
-        card.appendChild(favoriteBtn);
+        card.appendChild(favBtn);
         card.appendChild(vipBadge);
         card.appendChild(newBadge);
-        card.appendChild(infoContainer);
+        card.appendChild(info);
         card.appendChild(button);
 
-        card.addEventListener('click', () => {
+        card.addEventListener('click', function() {
             Stats.recordClick(offer.id);
             handleGetPromo(offer);
         });
@@ -254,75 +241,61 @@ const Cards = {
         return card;
     },
 
-    renderPromoGrid(container, offers, onRetry) {
+    renderPromoGrid: function(container, offers, onRetry) {
         container.innerHTML = '';
-
         if (!offers || offers.length === 0) {
-            const emptyCard = this.createEmptyCard();
-            const grid = document.createElement('div');
+            var grid = document.createElement('div');
             grid.className = 'promo-grid';
-            grid.appendChild(emptyCard);
+            grid.appendChild(this.createEmptyCard());
             container.appendChild(grid);
             return;
         }
-
-        this._maxId = Math.max(...offers.map(o => o.id));
-
-        const grid = document.createElement('div');
+        this._maxId = Math.max.apply(null, offers.map(function(o) { return o.id; }));
+        var grid = document.createElement('div');
         grid.className = 'promo-grid';
-
-        offers.forEach((offer, index) => {
-            grid.appendChild(this.createPromoCard(offer, index));
-        });
-
+        for (var i = 0; i < offers.length; i++) {
+            grid.appendChild(this.createPromoCard(offers[i], i));
+        }
         container.appendChild(grid);
     },
 
-    showSkeleton(container) {
+    showSkeleton: function(container) {
         container.innerHTML = '';
         container.appendChild(this.createSkeletonGrid(6));
     },
 
-    showOffline(container, onRetry) {
+    showOffline: function(container, onRetry) {
         container.innerHTML = '';
-        const grid = document.createElement('div');
+        var grid = document.createElement('div');
         grid.className = 'promo-grid';
         grid.appendChild(this.createOfflineCard(onRetry));
         container.appendChild(grid);
     },
 
-    showError(container, message, onRetry) {
+    showError: function(container, message, onRetry) {
         container.innerHTML = '';
-        const grid = document.createElement('div');
+        var grid = document.createElement('div');
         grid.className = 'promo-grid';
         grid.appendChild(this.createErrorCard(message, onRetry));
         container.appendChild(grid);
     }
 };
 
+// Функция открытия ссылки
 function handleGetPromo(offer) {
     if (!navigator.onLine) {
-        if (typeof UI !== 'undefined' && UI.showToast) {
-            UI.showToast('❌ Нет подключения к интернету');
-        }
+        alert('❌ Нет подключения к интернету');
         return;
     }
-
     try {
-        const newWindow = window.open(offer.link, '_blank', 'noopener,noreferrer');
-        if (!newWindow) {
-            if (typeof UI !== 'undefined' && UI.showToast) {
-                UI.showToast('🔗 Переход на сайт партнёра');
-            }
-            setTimeout(() => {
+        var win = window.open(offer.link, '_blank', 'noopener,noreferrer');
+        if (!win) {
+            alert('🔗 Переход на сайт: ' + offer.link);
+            setTimeout(function() {
                 window.open(offer.link, '_blank', 'noopener,noreferrer');
             }, 100);
         }
     } catch (e) {
-        if (typeof UI !== 'undefined' && UI.showToast) {
-            UI.showToast('🔗 ' + offer.link);
-        }
+        alert('🔗 ' + offer.link);
     }
 }
-
-export default Cards;
