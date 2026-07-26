@@ -1,46 +1,35 @@
-import CONFIG from './config.js';
-import Cache from './cache.js';
-import Stats from './stats.js';
-
-const Favorites = {
-    getFavorites() {
+// Избранное
+var Favorites = {
+    getFavorites: function() {
         return Cache.load(CONFIG.FAVORITES_KEY) || [];
     },
-
-    saveFavorites(favorites) {
+    saveFavorites: function(favorites) {
         Cache.save(CONFIG.FAVORITES_KEY, favorites);
     },
-
-    isFavorite(id) {
-        return this.getFavorites().includes(id);
+    isFavorite: function(id) {
+        return this.getFavorites().indexOf(id) !== -1;
     },
-
-    toggleFavorite(id) {
-        const favorites = this.getFavorites();
-        const index = favorites.indexOf(id);
-        let isAdded = false;
-
+    toggleFavorite: function(id) {
+        var favorites = this.getFavorites();
+        var index = favorites.indexOf(id);
+        var isAdded = false;
         if (index > -1) {
             favorites.splice(index, 1);
-            isAdded = false;
         } else {
             favorites.push(id);
             isAdded = true;
         }
-
         this.saveFavorites(favorites);
         Stats.recordFavorite(id, isAdded);
         return isAdded;
     },
-
-    getFavoriteOffers(offers) {
-        const favIds = this.getFavorites();
-        return offers.filter(offer => favIds.includes(offer.id));
+    getFavoriteOffers: function(offers) {
+        var favIds = this.getFavorites();
+        return offers.filter(function(offer) {
+            return favIds.indexOf(offer.id) !== -1;
+        });
     },
-
-    getCount() {
+    getCount: function() {
         return this.getFavorites().length;
     }
 };
-
-export default Favorites;
