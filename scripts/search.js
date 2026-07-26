@@ -1,137 +1,129 @@
-import CONFIG from './config.js';
-
-const Search = {
+// Поиск, фильтры, сортировка
+var Search = {
     debounceTimer: null,
 
-    createSearchBar(placeholder, onSearch) {
-        const searchWrapper = document.createElement('div');
-        searchWrapper.className = 'search-wrapper promo-search-wrapper';
+    createSearchBar: function(placeholder, onSearch) {
+        var wrapper = document.createElement('div');
+        wrapper.className = 'search-wrapper promo-search-wrapper';
 
-        const searchContainer = document.createElement('div');
-        searchContainer.className = 'search-container promo-search-container';
+        var container = document.createElement('div');
+        container.className = 'search-container promo-search-container';
 
-        const searchIcon = document.createElement('div');
-        searchIcon.className = 'search-icon';
-        searchIcon.textContent = '🔍';
+        var icon = document.createElement('div');
+        icon.className = 'search-icon';
+        icon.textContent = '🔍';
 
-        const searchInput = document.createElement('input');
-        searchInput.className = 'search-input promo-search-input';
-        searchInput.type = 'text';
-        searchInput.placeholder = placeholder || 'Поиск акций...';
-        searchInput.autocomplete = 'off';
+        var input = document.createElement('input');
+        input.className = 'search-input promo-search-input';
+        input.type = 'text';
+        input.placeholder = placeholder || 'Поиск акций...';
+        input.autocomplete = 'off';
 
-        const clearButton = document.createElement('button');
-        clearButton.className = 'search-clear';
-        clearButton.textContent = '✕';
-        clearButton.style.display = 'none';
+        var clearBtn = document.createElement('button');
+        clearBtn.className = 'search-clear';
+        clearBtn.textContent = '✕';
+        clearBtn.style.display = 'none';
 
-        clearButton.addEventListener('click', () => {
-            searchInput.value = '';
-            clearButton.style.display = 'none';
+        clearBtn.addEventListener('click', function() {
+            input.value = '';
+            clearBtn.style.display = 'none';
             if (onSearch) onSearch('');
         });
 
-        searchInput.addEventListener('input', () => {
-            const value = searchInput.value;
-            clearButton.style.display = value.length > 0 ? 'flex' : 'none';
-
-            if (this.debounceTimer) clearTimeout(this.debounceTimer);
-            this.debounceTimer = setTimeout(() => {
-                if (onSearch) onSearch(value);
+        input.addEventListener('input', function() {
+            var val = input.value;
+            clearBtn.style.display = val.length > 0 ? 'flex' : 'none';
+            if (Search.debounceTimer) clearTimeout(Search.debounceTimer);
+            Search.debounceTimer = setTimeout(function() {
+                if (onSearch) onSearch(val);
             }, CONFIG.DEBOUNCE_DELAY);
         });
 
-        searchContainer.appendChild(searchIcon);
-        searchContainer.appendChild(searchInput);
-        searchContainer.appendChild(clearButton);
-        searchWrapper.appendChild(searchContainer);
+        container.appendChild(icon);
+        container.appendChild(input);
+        container.appendChild(clearBtn);
+        wrapper.appendChild(container);
 
         return {
-            wrapper: searchWrapper,
-            input: searchInput,
-            clear: clearButton,
-            getValue: () => searchInput.value,
-            setValue: (val) => {
-                searchInput.value = val;
-                clearButton.style.display = val.length > 0 ? 'flex' : 'none';
+            wrapper: wrapper,
+            input: input,
+            clear: clearBtn,
+            getValue: function() { return input.value; },
+            setValue: function(val) {
+                input.value = val;
+                clearBtn.style.display = val.length > 0 ? 'flex' : 'none';
             }
         };
     },
 
-    createCategoryFilters(categories, activeCategory, onFilter) {
-        const filtersContainer = document.createElement('div');
-        filtersContainer.className = 'promo-filters-container';
+    createCategoryFilters: function(categories, activeCategory, onFilter) {
+        var container = document.createElement('div');
+        container.className = 'promo-filters-container';
 
-        const filtersScroll = document.createElement('div');
-        filtersScroll.className = 'promo-filters-scroll';
+        var scroll = document.createElement('div');
+        scroll.className = 'promo-filters-scroll';
 
-        categories.forEach(cat => {
-            const chip = document.createElement('button');
+        categories.forEach(function(cat) {
+            var chip = document.createElement('button');
             chip.className = 'promo-filter-chip';
-            if (cat.id === activeCategory) {
-                chip.classList.add('active');
-            }
+            if (cat.id === activeCategory) chip.classList.add('active');
             chip.setAttribute('data-category', cat.id);
 
-            const emoji = document.createElement('span');
+            var emoji = document.createElement('span');
             emoji.className = 'filter-chip-emoji';
             emoji.textContent = cat.emoji;
 
-            const name = document.createElement('span');
+            var name = document.createElement('span');
             name.className = 'filter-chip-name';
             name.textContent = cat.name;
 
             chip.appendChild(emoji);
             chip.appendChild(name);
 
-            chip.addEventListener('click', () => {
-                const allChips = filtersScroll.querySelectorAll('.promo-filter-chip');
-                allChips.forEach(c => c.classList.remove('active'));
+            chip.addEventListener('click', function() {
+                var all = scroll.querySelectorAll('.promo-filter-chip');
+                all.forEach(function(c) { c.classList.remove('active'); });
                 chip.classList.add('active');
                 if (onFilter) onFilter(cat.id);
             });
 
-            filtersScroll.appendChild(chip);
+            scroll.appendChild(chip);
         });
 
-        filtersContainer.appendChild(filtersScroll);
-        return filtersContainer;
+        container.appendChild(scroll);
+        return container;
     },
 
-    createSortBar(sortOptions, activeSort, onSort) {
-        const sortContainer = document.createElement('div');
-        sortContainer.className = 'promo-sort-container';
+    createSortBar: function(sortOptions, activeSort, onSort) {
+        var container = document.createElement('div');
+        container.className = 'promo-sort-container';
 
-        const sortLabel = document.createElement('span');
-        sortLabel.className = 'sort-label';
-        sortLabel.textContent = 'Сортировка:';
+        var label = document.createElement('span');
+        label.className = 'sort-label';
+        label.textContent = 'Сортировка:';
 
-        const sortButtons = document.createElement('div');
-        sortButtons.className = 'sort-buttons';
+        var buttons = document.createElement('div');
+        buttons.className = 'sort-buttons';
 
-        sortOptions.forEach(option => {
-            const btn = document.createElement('button');
+        sortOptions.forEach(function(opt) {
+            var btn = document.createElement('button');
             btn.className = 'sort-btn';
-            if (option.id === activeSort) {
-                btn.classList.add('active');
-            }
-            btn.setAttribute('data-sort', option.id);
-            btn.textContent = option.name;
+            if (opt.id === activeSort) btn.classList.add('active');
+            btn.setAttribute('data-sort', opt.id);
+            btn.textContent = opt.name;
 
-            btn.addEventListener('click', () => {
-                const allBtns = sortButtons.querySelectorAll('.sort-btn');
-                allBtns.forEach(b => b.classList.remove('active'));
+            btn.addEventListener('click', function() {
+                var allBtns = buttons.querySelectorAll('.sort-btn');
+                allBtns.forEach(function(b) { b.classList.remove('active'); });
                 btn.classList.add('active');
-                if (onSort) onSort(option.id);
+                if (onSort) onSort(opt.id);
             });
 
-            sortButtons.appendChild(btn);
+            buttons.appendChild(btn);
         });
 
-        sortContainer.appendChild(sortLabel);
-        sortContainer.appendChild(sortButtons);
-        return sortContainer;
+        container.appendChild(label);
+        container.appendChild(buttons);
+        return container;
     }
 };
-
-export default Search;
