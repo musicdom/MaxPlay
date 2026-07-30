@@ -336,4 +336,65 @@
                 this.attachCardEvents(container);
             },
             attachCardEvents: function(container) {
-                container.querySelectorAll('.get-btn').forEach(btn => { btn.addEventListener('click', function(e) { e.stopPropagation(); Stats.click(parseInt(this.dataset.id)); window.open(this.dataset.link, '_blank');
+                container.querySelectorAll('.get-btn').forEach(btn => { btn.addEventListener('click', function(e) { e.stopPropagation(); Stats.click(parseInt(this.dataset.id)); window.open(this.dataset.link, '_blank'); }); });
+                container.querySelectorAll('.promo-fav-btn').forEach(btn => { btn.addEventListener('click', function(e) { e.stopPropagation(); var id = parseInt(this.dataset.id); var added = Favorites.toggle(id); this.innerHTML = added ? '❤️' : '🤍'; App.showToast(added ? 'Добавлено в избранное' : 'Удалено из избранного'); }); });
+                container.querySelectorAll('.promo-card').forEach(card => { var id = parseInt(card.querySelector('.promo-fav-btn')?.dataset.id); if (id) Stats.view(id); });
+            },
+            /* ---------- ИЗБРАННОЕ ---------- */
+            renderFavoritesPage: function() {
+                var self = this;
+                var html = '<div class="page"><div class="promotions-header"><div class="promotions-page-title">❤️ Избранное</div></div><button class="promo-back-btn" style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:12px;padding:8px 16px;color:var(--text-secondary);cursor:pointer;margin-bottom:15px;font-family:inherit;">← Назад</button><div id="favContainer"></div></div>';
+                this.content.innerHTML = html;
+                this.content.querySelector('.promo-back-btn').onclick = () => self.renderScreen('promotions');
+                var favIds = Favorites.list();
+                var offers = API.offers.filter(o => favIds.indexOf(o.id) > -1);
+                var container = document.getElementById('favContainer');
+                if (offers.length === 0) { container.innerHTML = '<div class="empty-state">❤️<br>Нет избранных акций</div>'; return; }
+                var cardsHtml = '<div class="cards-grid">';
+                offers.forEach(o => { var stats = Stats.get(o.id); cardsHtml += `<div class="promo-card${o.isVip?' vip-card':''}"><div class="promo-logo-container">${o.logo?`<img class="promo-logo" src="${o.logo}">`:`<span style="font-size:22px;font-weight:700;color:var(--accent);">${o.store.charAt(0)}</span>`}</div><button class="promo-fav-btn" data-id="${o.id}">❤️</button>${o.isVip?'<div class="promo-vip-badge">⭐ VIP</div>':''}<div class="promo-info"><div class="promo-store">${o.store}</div><div class="promo-discount">${o.discount}</div><div class="promo-desc">${o.description}</div><div class="promo-date">⏳ до ${o.date}</div><div class="promo-stats">👁 ${stats.views} 🔗 ${stats.clicks} ❤️ ${stats.favs}</div></div><button class="get-btn" data-link="${o.link}" data-id="${o.id}">Получить скидку</button></div>`; });
+                cardsHtml += '</div>'; container.innerHTML = cardsHtml;
+                container.querySelectorAll('.get-btn').forEach(btn => { btn.addEventListener('click', function(e) { e.stopPropagation(); Stats.click(parseInt(this.dataset.id)); window.open(this.dataset.link, '_blank'); }); });
+                container.querySelectorAll('.promo-fav-btn').forEach(btn => { btn.addEventListener('click', function(e) { e.stopPropagation(); Favorites.toggle(parseInt(this.dataset.id)); self.renderFavoritesPage(); self.showToast('Удалено из избранного'); }); });
+            },
+            /* ---------- ПРОФИЛЬ ---------- */
+            renderProfilePage: function() {
+                var user = Session.get();
+                if (!user) { this.showAuthScreen('login'); return; }
+                var html = `<div class="page"><div class="promotions-header"><div class="promotions-page-title">👤 Профиль</div></div><div style="background:rgba(255,255,255,0.03);backdrop-filter:blur(15px);border:1px solid var(--glass-border);border-radius:var(--border-radius-lg);padding:20px;text-align:center;"><div style="font-size:48px;margin-bottom:10px;">👤</div><div style="font-size:20px;font-weight:600;">${user.name||user.login}</div><div style="color:var(--text-tertiary);font-size:14px;">@${user.login}</div><button id="logoutBtn" style="margin-top:20px;width:100%;background:rgba(255,107,107,0.2);border:1px solid rgba(255,107,107,0.3);color:#ff6b6b;padding:12px;border-radius:12px;font-weight:600;cursor:pointer;font-family:inherit;">Выйти</button></div></div>`;
+                this.content.innerHTML = html;
+                var self = this;
+                document.getElementById('logoutBtn').onclick = function() { Session.logout(); self.nav.style.display = 'none'; self.showAuthScreen('login'); };
+            },
+            /* ---------- ЗАГЛУШКИ ---------- */
+            renderPlaceholder: function(title, text) { this.content.innerHTML = `<div class="page"><div class="promotions-header"><div class="promotions-page-title">${title}</div></div><div class="empty-state"><p>${text}</p></div></div>`; },
+            /* ---------- НАВИГАЦИЯ (ТОЛЬКО ОДНА АКТИВНАЯ) ---------- */
+            renderNav: function() {
+                var self = this;
+                var items = [
+                    { id:'home', icon:'🏠', label:'Главная' },
+                    { id:'promotions', icon:'🎯', label:'Акции' },
+                    { id:'favorites', icon:'❤️', label:'Избранное' },
+                    { id:'notifications', icon:'🔔', label:'Уведомления' },
+                    { id:'profile', icon:'👤', label:'Профиль' }
+                ];
+                this.nav.innerHTML = '';
+                items.forEach(item => {
+                    var el = document.createElement('button');
+                    el.className = 'nav-item' + (self.currentScreen === item.id ? ' active' : '');
+                    el.innerHTML = `<span class="nav-icon">${item.icon}</span><span class="nav-label">${item.label}</span>`;
+                    el.addEventListener('click', function() { self.renderScreen(item.id); });
+                    self.nav.appendChild(el);
+                });
+            },
+            showToast: function(msg) {
+                var container = document.querySelector('.toast-container');
+                if (!container) { container = document.createElement('div'); container.className = 'toast-container'; document.body.appendChild(container); }
+                var toast = document.createElement('div'); toast.className = 'toast'; toast.textContent = msg; container.appendChild(toast);
+                setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateY(-10px)'; setTimeout(() => toast.remove(), 300); }, 2000);
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => App.init());
+    </script>
+</body>
+</html>
