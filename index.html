@@ -15,7 +15,6 @@
             --accent:#5b9bff; --accent-secondary:#8b6cfc; --success:#2ed8a3;
             --gradient-main:linear-gradient(135deg, #5b9bff 0%, #8b6cfc 100%);
             --border-radius-sm:12px; --border-radius-lg:20px; --border-radius-xl:24px;
-            --shadow-glow:0 8px 32px rgba(91,155,255,0.12);
         }
         body { font-family:'Inter', sans-serif; background:var(--bg-primary); color:var(--text-primary); overflow-x:hidden; min-height:100vh; }
         .app-container { max-width:480px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; position:relative; overflow:hidden; padding-bottom:80px; }
@@ -31,30 +30,42 @@
         .page { animation:fadeSlideIn 0.3s ease; }
         @keyframes fadeSlideIn { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
 
-        /* Home screen */
-        .home-welcome { background:var(--gradient-main); border-radius:var(--border-radius-lg); padding:20px; margin-bottom:20px; position:relative; overflow:hidden; }
+        .home-welcome { background:var(--gradient-main); border-radius:var(--border-radius-lg); padding:20px; margin-bottom:20px; }
         .home-welcome h2 { font-size:22px; font-weight:700; }
         .home-welcome p { font-size:14px; opacity:0.9; margin-top:4px; }
         .home-categories { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:20px; }
-        .home-cat-chip { flex:1 1 calc(50% - 10px); background:var(--glass-bg); backdrop-filter:blur(12px); border:1px solid var(--glass-border); border-radius:16px; padding:14px 10px; text-align:center; cursor:pointer; transition:all 0.2s; font-size:14px; font-weight:500; color:var(--text-secondary); }
+        .home-cat-chip { flex:1 1 calc(50% - 10px); background:var(--glass-bg); backdrop-filter:blur(12px); border:1px solid var(--glass-border); border-radius:16px; padding:14px 10px; text-align:center; cursor:pointer; transition:all 0.2s; font-size:14px; color:var(--text-secondary); }
         .home-cat-chip:active { background:rgba(91,155,255,0.1); border-color:rgba(91,155,255,0.3); color:#fff; }
         .home-cat-chip span { font-size:20px; display:block; margin-bottom:4px; }
         .section-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
         .section-header h3 { font-size:18px; font-weight:600; }
         .section-link { color:var(--accent); font-size:14px; cursor:pointer; }
 
-        /* Promo cards (улучшенные) */
+        .promotions-header { margin-bottom:16px; }
+        .promotions-page-title { font-size:28px; font-weight:800; background:linear-gradient(135deg,#fff,#c0c0d0); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+        .promotions-page-subtitle { font-size:14px; color:var(--text-tertiary); }
+        .search-wrapper { margin-bottom:14px; }
+        .search-container { background:rgba(255,255,255,0.05); backdrop-filter:blur(20px); border:1px solid var(--glass-border); border-radius:var(--border-radius-lg); padding:4px; display:flex; align-items:center; }
+        .search-icon { font-size:20px; padding:12px 8px 12px 14px; color:var(--text-tertiary); }
+        .search-input { flex:1; background:transparent; border:none; color:#fff; font-size:16px; padding:12px 8px; outline:none; }
+        .search-clear { background:rgba(255,255,255,0.08); border:none; color:var(--text-secondary); width:32px; height:32px; border-radius:50%; display:none; align-items:center; justify-content:center; cursor:pointer; margin-right:6px; }
+        .filters-scroll { display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin-bottom:12px; }
+        .filter-chip { flex-shrink:0; background:var(--glass-bg); backdrop-filter:blur(10px); border:1px solid var(--glass-border); border-radius:var(--border-radius-xl); padding:8px 14px; display:flex; align-items:center; gap:6px; cursor:pointer; font-size:12px; color:var(--text-secondary); transition:0.15s; font-family:inherit; }
+        .filter-chip.active { background:rgba(91,155,255,0.15); border-color:rgba(91,155,255,0.3); color:#fff; }
+        .sort-container { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+        .sort-label { font-size:12px; color:var(--text-tertiary); }
+        .sort-btn { background:var(--glass-bg); backdrop-filter:blur(10px); border:1px solid var(--glass-border); border-radius:20px; padding:6px 14px; cursor:pointer; font-size:12px; color:var(--text-secondary); transition:0.15s; font-family:inherit; }
+        .sort-btn.active { background:rgba(139,108,252,0.2); border-color:rgba(139,108,252,0.3); color:var(--accent-secondary); }
+
         .cards-grid { display:flex; flex-direction:column; gap:12px; }
         .promo-card { background:rgba(255,255,255,0.04); backdrop-filter:blur(15px); border:1px solid var(--glass-border); border-radius:var(--border-radius-lg); padding:16px; position:relative; transition:all 0.25s; animation:cardAppear 0.4s ease forwards; box-shadow:0 4px 20px rgba(0,0,0,0.2); }
-        .promo-card:active { transform:scale(0.98); background:rgba(255,255,255,0.06); }
         @keyframes cardAppear { from{opacity:0; transform:translateY(16px) scale(0.98);} to{opacity:1; transform:translateY(0) scale(1);} }
         .vip-card { border:2px solid transparent; background-clip:padding-box; position:relative; }
         .vip-card::before { content:''; position:absolute; inset:-2px; background:linear-gradient(135deg,#ffd700,#ff8c00); border-radius:22px; z-index:-1; animation:vipGlow 3s infinite alternate; }
         @keyframes vipGlow { 0%{box-shadow:0 0 15px rgba(255,215,0,0.4);} 100%{box-shadow:0 0 30px rgba(255,140,0,0.7);} }
         .promo-logo-container { width:44px; height:44px; border-radius:12px; overflow:hidden; margin-bottom:10px; background:rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:center; }
         .promo-logo { width:100%; height:100%; object-fit:contain; }
-        .promo-fav-btn { position:absolute; top:12px; right:12px; width:30px; height:30px; border-radius:50%; background:rgba(0,0,0,0.5); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.15); cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center; z-index:2; transition:all 0.2s; }
-        .promo-fav-btn:active { transform:scale(0.85); }
+        .promo-fav-btn { position:absolute; top:12px; right:12px; width:30px; height:30px; border-radius:50%; background:rgba(0,0,0,0.5); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.15); cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center; z-index:2; }
         .promo-new-badge { position:absolute; top:12px; left:12px; background:linear-gradient(135deg,#ff5252,#ff1744); color:#fff; padding:3px 10px; border-radius:20px; font-size:10px; font-weight:700; z-index:2; }
         .promo-vip-badge { position:absolute; top:50px; left:12px; background:linear-gradient(135deg,#ffd700,#ffb300); color:#000; padding:3px 10px; border-radius:20px; font-size:10px; font-weight:700; z-index:2; display:none; }
         .vip-card .promo-vip-badge { display:flex; }
@@ -67,11 +78,10 @@
         .get-btn { width:100%; background:var(--gradient-main); border:none; color:#fff; padding:12px; border-radius:12px; font-weight:600; cursor:pointer; margin-top:8px; font-family:inherit; transition:all 0.2s; box-shadow:0 4px 15px rgba(91,155,255,0.3); }
         .get-btn:active { transform:scale(0.97); opacity:0.9; }
 
-        /* Auth & other */
         .auth-page { display:flex; align-items:center; justify-content:center; min-height:100vh; padding:20px; }
-        .auth-card { width:100%; max-width:360px; background:rgba(255,255,255,0.04); backdrop-filter:blur(25px); border:1px solid var(--glass-border); border-radius:var(--border-radius-lg); padding:30px 20px; box-shadow:var(--shadow-glow); }
+        .auth-card { width:100%; max-width:360px; background:rgba(255,255,255,0.04); backdrop-filter:blur(25px); border:1px solid var(--glass-border); border-radius:var(--border-radius-lg); padding:30px 20px; }
         .auth-title { font-size:24px; font-weight:700; text-align:center; margin-bottom:20px; }
-        .auth-input { width:100%; background:rgba(255,255,255,0.06); border:1px solid var(--glass-border); border-radius:12px; padding:12px 15px; color:#fff; font-size:15px; margin-bottom:12px; outline:none; font-family:inherit; transition:border 0.2s; }
+        .auth-input { width:100%; background:rgba(255,255,255,0.06); border:1px solid var(--glass-border); border-radius:12px; padding:12px 15px; color:#fff; font-size:15px; margin-bottom:12px; outline:none; font-family:inherit; }
         .auth-input:focus { border-color:var(--accent); }
         .auth-btn { width:100%; background:var(--gradient-main); border:none; border-radius:12px; padding:14px; color:#fff; font-weight:600; font-size:16px; cursor:pointer; margin-top:8px; font-family:inherit; }
         .auth-link { color:var(--accent); text-align:center; margin-top:16px; cursor:pointer; font-size:14px; }
@@ -92,7 +102,6 @@
     </div>
 
     <script>
-        // Конфигурация (ваши ключи)
         var CONFIG = {
             GOOGLE_SHEET_ID: '1Wtv4kA1W_hb4bvjyc7ruecrVw5s4Gh-TBQR1PRJYo2c',
             API_KEY: 'AIzaSyAbTbin2-mkFRspURGKRXxyCpjy_Dez8ts',
@@ -207,7 +216,80 @@
                 API.loadOffers().then(()=>{ self.renderScreen('home'); }).catch(err=>{ self.content.innerHTML=`<div class="empty-state"><p>❌ Ошибка загрузки</p><p>${err.message}</p></div>`; self.renderNav(); });
             },
             showLoader: function() { this.content.innerHTML='<div style="text-align:center;padding:50px;color:var(--text-tertiary);">Загрузка...</div>'; },
-            showAuthScreen: function(mode) { /* без изменений, код длинный, сохранён как был */ },
+            showAuthScreen: function(mode) {
+                var self = this;
+                this.nav.style.display = 'none';
+                var html = `<div class="auth-page">
+                    <div class="auth-card">
+                        <div class="auth-title">${mode === 'login' ? 'Вход' : 'Регистрация'}</div>
+                        <div class="auth-error" id="authError"></div>
+                        ${mode === 'register' ? '<input class="auth-input" id="regName" placeholder="Имя">' : ''}
+                        <input class="auth-input" id="authLogin" placeholder="Логин" autocomplete="username">
+                        <input class="auth-input" type="password" id="authPassword" placeholder="Пароль" autocomplete="current-password">
+                        ${mode === 'login' ? '<label class="auth-checkbox"><input type="checkbox" id="rememberMe" checked> Запомнить меня</label>' : ''}
+                        <button class="auth-btn" id="authBtn">${mode === 'login' ? 'Войти' : 'Зарегистрироваться'}</button>
+                        <div class="auth-link" id="switchAuth">${mode === 'login' ? 'Нет аккаунта? Зарегистрироваться' : 'Есть аккаунт? Войти'}</div>
+                    </div>
+                </div>`;
+                this.content.innerHTML = html;
+
+                document.getElementById('switchAuth').onclick = function() {
+                    self.showAuthScreen(mode === 'login' ? 'register' : 'login');
+                };
+
+                document.getElementById('authBtn').onclick = function() {
+                    var login = document.getElementById('authLogin').value.trim();
+                    var password = document.getElementById('authPassword').value.trim();
+                    var name = mode === 'register' ? document.getElementById('regName')?.value.trim() : '';
+
+                    if (!login || !password || (mode === 'register' && !name)) {
+                        document.getElementById('authError').textContent = 'Заполните все поля';
+                        return;
+                    }
+
+                    if (mode === 'login') {
+                        self.showLoader();
+                        API.loadUsers().then(users => {
+                            var found = users.find(u => u.login === login && u.password === password);
+                            if (found) {
+                                var remember = document.getElementById('rememberMe')?.checked || false;
+                                Session.save(found, remember);
+                                self.nav.style.display = 'flex';
+                                self.loadApp();
+                            } else {
+                                self.showAuthScreen('login');
+                                setTimeout(() => {
+                                    document.getElementById('authError').textContent = 'Неверный логин или пароль';
+                                }, 100);
+                            }
+                        }).catch(() => {
+                            self.showAuthScreen('login');
+                            setTimeout(() => {
+                                document.getElementById('authError').textContent = 'Ошибка сети';
+                            }, 100);
+                        });
+                    } else {
+                        document.getElementById('authBtn').disabled = true;
+                        document.getElementById('authBtn').textContent = 'Отправка...';
+                        API.registerUser(login, password, name).then(res => {
+                            if (res.success) {
+                                var user = { login, password, name, role: 'user' };
+                                Session.save(user, true);
+                                self.nav.style.display = 'flex';
+                                self.loadApp();
+                            } else {
+                                document.getElementById('authError').textContent = res.error || 'Ошибка регистрации';
+                                document.getElementById('authBtn').disabled = false;
+                                document.getElementById('authBtn').textContent = 'Зарегистрироваться';
+                            }
+                        }).catch(() => {
+                            document.getElementById('authError').textContent = 'Ошибка соединения';
+                            document.getElementById('authBtn').disabled = false;
+                            document.getElementById('authBtn').textContent = 'Зарегистрироваться';
+                        });
+                    }
+                };
+            },
             renderScreen: function(screen) {
                 this.currentScreen = screen;
                 this.content.innerHTML = '';
@@ -235,7 +317,6 @@
                 </div>`;
                 this.content.innerHTML = html;
 
-                // Быстрые категории (первые 4)
                 var catsContainer = document.getElementById('homeCats');
                 var displayCats = API.categories.filter(c=>c.id!=='all').slice(0,4);
                 displayCats.forEach(cat => {
@@ -251,7 +332,6 @@
 
                 document.getElementById('goToPromo').onclick = () => self.renderScreen('promotions');
 
-                // Последние 3 акции
                 var latest = API.filter('all','new','').slice(0,3);
                 var container = document.getElementById('homeLatestCards');
                 if(latest.length===0) {
@@ -275,7 +355,6 @@
                         container.appendChild(card);
                     });
                 }
-                // делегирование событий (как в акциях, добавим позже, но для краткости опустим, можно скопировать из renderCards)
                 this.attachCardEvents(container);
             },
             renderPromotionsPage: function() {
@@ -305,12 +384,39 @@
                 this.renderSort();
                 this.renderCards();
             },
-            renderFilters: function() { /* без изменений */ },
-            renderSort: function() { /* без изменений */ },
+            renderFilters: function() {
+                var container = document.getElementById('filtersScroll');
+                container.innerHTML = '';
+                var self = this;
+                API.categories.forEach(cat => {
+                    var chip = document.createElement('button');
+                    chip.className = 'filter-chip' + (cat.id === self.activeCategory ? ' active' : '');
+                    chip.innerHTML = `<span>${cat.emoji}</span><span>${cat.name}</span>`;
+                    chip.onclick = function() {
+                        self.activeCategory = cat.id;
+                        self.renderFilters();
+                        self.renderCards();
+                    };
+                    container.appendChild(chip);
+                });
+            },
+            renderSort: function() {
+                var buttons = document.querySelectorAll('.sort-btn');
+                var self = this;
+                buttons.forEach(btn => {
+                    btn.classList.remove('active');
+                    if(btn.dataset.sort === self.activeSort) btn.classList.add('active');
+                    btn.onclick = function() {
+                        self.activeSort = this.dataset.sort;
+                        self.renderSort();
+                        self.renderCards();
+                    };
+                });
+            },
             renderCards: function() {
                 var container = document.getElementById('cardsContainer');
                 var offers = API.filter(this.activeCategory, this.activeSort, this.searchQuery);
-                if (offers.length === 0) {
+                if(offers.length===0) {
                     container.innerHTML = '<div class="empty-state">🔍<br>Ничего не найдено</div>';
                     return;
                 }
@@ -362,9 +468,75 @@
                     if(id) Stats.view(id);
                 });
             },
-            renderFavoritesPage: function() { /* без изменений */ },
-            renderProfilePage: function() { /* без изменений */ },
-            renderPlaceholder: function(title,text) { this.content.innerHTML=`<div class="page"><div class="promotions-header"><div class="promotions-page-title">${title}</div></div><div class="empty-state"><p>${text}</p></div></div>`; },
+            renderFavoritesPage: function() {
+                var self = this;
+                var html = '<div class="page"><div class="promotions-header"><div class="promotions-page-title">❤️ Избранное</div></div>';
+                html += '<button class="promo-back-btn" style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:12px;padding:8px 16px;color:var(--text-secondary);cursor:pointer;margin-bottom:15px;font-family:inherit;">← Назад</button>';
+                html += '<div id="favContainer"></div></div>';
+                this.content.innerHTML = html;
+                this.content.querySelector('.promo-back-btn').onclick = () => self.renderScreen('promotions');
+
+                var favIds = Favorites.list();
+                var offers = API.offers.filter(o => favIds.indexOf(o.id) > -1);
+                var container = document.getElementById('favContainer');
+                if(offers.length === 0) {
+                    container.innerHTML = '<div class="empty-state">❤️<br>Нет избранных акций</div>';
+                    return;
+                }
+                var cardsHtml = '<div class="cards-grid">';
+                offers.forEach(o => {
+                    var stats = Stats.get(o.id);
+                    cardsHtml += `<div class="promo-card${o.isVip?' vip-card':''}">
+                        <div class="promo-logo-container">${o.logo?`<img class="promo-logo" src="${o.logo}">`:`<span style="font-size:22px;font-weight:700;color:var(--accent);">${o.store.charAt(0)}</span>`}</div>
+                        <button class="promo-fav-btn" data-id="${o.id}">❤️</button>
+                        ${o.isVip?'<div class="promo-vip-badge">⭐ VIP</div>':''}
+                        <div class="promo-info"><div class="promo-store">${o.store}</div><div class="promo-discount">${o.discount}</div><div class="promo-desc">${o.description}</div><div class="promo-date">⏳ до ${o.date}</div><div class="promo-stats">👁 ${stats.views} 🔗 ${stats.clicks} ❤️ ${stats.favs}</div></div>
+                        <button class="get-btn" data-link="${o.link}" data-id="${o.id}">Получить скидку</button>
+                    </div>`;
+                });
+                cardsHtml += '</div>';
+                container.innerHTML = cardsHtml;
+
+                container.querySelectorAll('.get-btn').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        Stats.click(parseInt(this.dataset.id));
+                        window.open(this.dataset.link, '_blank');
+                    });
+                });
+                container.querySelectorAll('.promo-fav-btn').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        var id = parseInt(this.dataset.id);
+                        Favorites.toggle(id);
+                        self.renderFavoritesPage();
+                        self.showToast('Удалено из избранного');
+                    });
+                });
+            },
+            renderProfilePage: function() {
+                var user = Session.get();
+                if(!user) { this.showAuthScreen('login'); return; }
+                var html = `<div class="page">
+                    <div class="promotions-header"><div class="promotions-page-title">👤 Профиль</div></div>
+                    <div style="background:rgba(255,255,255,0.04);backdrop-filter:blur(15px);border:1px solid var(--glass-border);border-radius:var(--border-radius-lg);padding:20px;text-align:center;">
+                        <div style="font-size:48px;margin-bottom:10px;">👤</div>
+                        <div style="font-size:20px;font-weight:600;">${user.name || user.login}</div>
+                        <div style="color:var(--text-tertiary);font-size:14px;">@${user.login}</div>
+                        <button id="logoutBtn" style="margin-top:20px;width:100%;background:rgba(255,107,107,0.2);border:1px solid rgba(255,107,107,0.3);color:#ff6b6b;padding:12px;border-radius:12px;font-weight:600;cursor:pointer;font-family:inherit;">Выйти</button>
+                    </div>
+                </div>`;
+                this.content.innerHTML = html;
+                var self = this;
+                document.getElementById('logoutBtn').onclick = function() {
+                    Session.logout();
+                    self.nav.style.display = 'none';
+                    self.showAuthScreen('login');
+                };
+            },
+            renderPlaceholder: function(title, text) {
+                this.content.innerHTML = `<div class="page"><div class="promotions-header"><div class="promotions-page-title">${title}</div></div><div class="empty-state"><p>${text}</p></div></div>`;
+            },
             renderNav: function() {
                 var self = this;
                 var items = [
@@ -380,16 +552,28 @@
                     el.className = 'nav-item' + (self.currentScreen === item.id ? ' active' : '');
                     el.innerHTML = `<span class="nav-icon">${item.icon}</span><span class="nav-label">${item.label}</span>`;
                     el.addEventListener('click', () => {
-                        if (item.id === 'home') self.renderScreen('home');
-                        else if (item.id === 'promotions') self.renderScreen('promotions');
-                        else if (item.id === 'favorites') self.renderScreen('favorites');
-                        else if (item.id === 'profile') self.renderScreen('profile');
-                        else if (item.id === 'notifications') self.renderScreen('notifications');
+                        if(item.id === 'home') self.renderScreen('home');
+                        else if(item.id === 'promotions') self.renderScreen('promotions');
+                        else if(item.id === 'favorites') self.renderScreen('favorites');
+                        else if(item.id === 'profile') self.renderScreen('profile');
+                        else if(item.id === 'notifications') self.renderScreen('notifications');
                     });
                     self.nav.appendChild(el);
                 });
             },
-            showToast: function(msg) { /* без изменений */ }
+            showToast: function(msg) {
+                var container = document.querySelector('.toast-container');
+                if(!container) {
+                    container = document.createElement('div');
+                    container.className = 'toast-container';
+                    document.body.appendChild(container);
+                }
+                var toast = document.createElement('div');
+                toast.className = 'toast';
+                toast.textContent = msg;
+                container.appendChild(toast);
+                setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateY(-10px)'; setTimeout(() => toast.remove(), 300); }, 2000);
+            }
         };
 
         document.addEventListener('DOMContentLoaded', () => App.init());
