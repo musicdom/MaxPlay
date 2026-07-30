@@ -106,7 +106,6 @@
             KEY: 'max_user_session',
             save: function(user, remember) {
                 Storage.set(this.KEY, user);
-                // если не запоминать, удалим при выходе явно
             },
             get: function() { return Storage.get(this.KEY); },
             logout: function() { Storage.remove(this.KEY); }
@@ -221,9 +220,10 @@
                 return filtered;
             },
             registerUser: function(login, password, name) {
+                // Отправляем как text/plain, чтобы избежать CORS preflight
                 return fetch(CONFIG.APPS_SCRIPT_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'text/plain' },
                     body: JSON.stringify({ login, password, name })
                 }).then(r => r.json());
             }
@@ -318,7 +318,7 @@
                         API.registerUser(login, password, name).then(res => {
                             if (res.success) {
                                 var user = { login, password, name, role: 'user' };
-                                Session.save(user, true); // после регистрации запоминаем
+                                Session.save(user, true);
                                 self.nav.style.display = 'flex';
                                 self.loadApp();
                             } else {
