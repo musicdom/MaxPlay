@@ -81,9 +81,13 @@
         .home-welcome { background:linear-gradient(135deg, #4f8fff, #7c5cfc); border-radius:20px; padding:20px; margin-bottom:20px; }
         .home-welcome h2 { font-size:22px; font-weight:700; margin-bottom:4px; }
         .home-welcome p { font-size:14px; opacity:0.9; }
-        .home-categories { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px; }
-        .home-cat-chip { background:var(--glass-bg); backdrop-filter:blur(10px); border:1px solid var(--glass-border); border-radius:16px; padding:14px; text-align:center; cursor:pointer; font-size:14px; color:var(--text-secondary); transition:0.15s; }
-        .home-cat-chip span { display:block; font-size:20px; margin-bottom:4px; }
+        .home-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px; }
+        .home-card { background:var(--glass-bg); backdrop-filter:blur(12px); border:1px solid var(--glass-border); border-radius:20px; padding:20px 10px; text-align:center; cursor:pointer; transition:0.2s; color:var(--text-secondary); }
+        .home-card:active { background:rgba(79,143,255,0.1); border-color:rgba(79,143,255,0.3); color:#fff; }
+        .home-card span { display:block; font-size:32px; margin-bottom:10px; }
+        .home-card b { display:block; font-size:15px; font-weight:600; margin-bottom:4px; }
+        .home-card small { font-size:12px; }
+        .home-card-wide { grid-column: span 2; }
         .section-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
         .section-header h3 { font-size:18px; font-weight:600; }
         .section-link { color:var(--accent); font-size:14px; cursor:pointer; }
@@ -260,24 +264,54 @@
                 else if (screen === 'notifications') this.renderPlaceholder('🔔 Уведомления', 'Здесь будут уведомления о новых акциях');
                 this.renderNav();
             },
-            /* ---------- ГЛАВНАЯ ---------- */
+            /* ---------- ГЛАВНАЯ (ОБНОВЛЁННАЯ) ---------- */
             renderHomePage: function() {
                 var self = this;
                 var user = Session.get();
-                var html = `<div class="page"><div class="home-welcome"><h2>Привет, ${user?.name||user?.login||'Гость'} 👋</h2><p>Готов найти лучшие скидки сегодня?</p></div><div class="home-categories" id="homeCats"></div><div class="section-header"><h3>🔥 Последние акции</h3><span class="section-link" id="goToPromo">Все акции →</span></div><div id="homeLatestCards" class="cards-grid"></div></div>`;
+                var html = `<div class="page">
+                    <div class="home-welcome">
+                        <h2>Привет, ${user?.name||user?.login||'Гость'} 👋</h2>
+                        <p>Готов найти лучшие скидки сегодня?</p>
+                    </div>
+                    <div class="home-grid">
+                        <div class="home-card" id="btn-actions">
+                            <span>🎯</span><b>Акции</b><small>Все текущие</small>
+                        </div>
+                        <div class="home-card" id="btn-discounts">
+                            <span>🏷️</span><b>Скидки</b><small>Максимальные %</small>
+                        </div>
+                        <div class="home-card" id="btn-best">
+                            <span>⭐</span><b>Выгодные</b><small>Лучший кэшбек</small>
+                        </div>
+                        <div class="home-card" id="btn-partners">
+                            <span>🤝</span><b>Партнеры</b><small>Проверенные</small>
+                        </div>
+                        <div class="home-card home-card-wide" id="btn-about">
+                            <span>ℹ️</span><b>О нас</b><small>Узнать больше</small>
+                        </div>
+                    </div>
+                    <div class="section-header">
+                        <h3>🔥 Последние акции</h3>
+                        <span class="section-link" id="goToPromo">Все акции →</span>
+                    </div>
+                    <div id="homeLatestCards" class="cards-grid"></div>
+                </div>`;
                 this.content.innerHTML = html;
 
-                var catsContainer = document.getElementById('homeCats');
-                var displayCats = API.categories.filter(c => c.id !== 'all').slice(0, 4);
-                displayCats.forEach(cat => {
-                    var chip = document.createElement('div');
-                    chip.className = 'home-cat-chip';
-                    chip.innerHTML = `<span>${cat.emoji}</span>${cat.name}`;
-                    chip.onclick = function() { self.activeCategory = cat.id; self.renderScreen('promotions'); };
-                    catsContainer.appendChild(chip);
-                });
+                // Обработчики кнопок
+                document.getElementById('btn-actions').onclick = () => self.renderScreen('promotions');
+                document.getElementById('btn-discounts').onclick = () => {
+                    self.activeSort = 'discount';
+                    self.renderScreen('promotions');
+                };
+                document.getElementById('btn-best').onclick = () => {
+                    self.activeSort = 'popular';
+                    self.renderScreen('promotions');
+                };
+                document.getElementById('btn-partners').onclick = () => self.showToast('🤝 Раздел партнёров появится скоро');
+                document.getElementById('btn-about').onclick = () => self.showToast('ℹ️ MAX Выгода — ваш проводник в мире скидок!');
 
-                document.getElementById('goToPromo').onclick = function() { self.renderScreen('promotions'); };
+                document.getElementById('goToPromo').onclick = () => self.renderScreen('promotions');
 
                 var latest = API.filter('all', 'new', '').slice(0, 3);
                 var container = document.getElementById('homeLatestCards');
