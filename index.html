@@ -38,6 +38,12 @@
             --font-large:34px;
             --transition-fast:0.2s cubic-bezier(0.4, 0, 0.2, 1);
             --transition-smooth:0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            /* градиенты для категорий */
+            --cat-purple: linear-gradient(145deg, rgba(112,82,190,0.9) 0%, rgba(48,42,75,0.9) 100%);
+            --cat-blue: linear-gradient(145deg, rgba(57,93,160,0.9) 0%, rgba(39,43,68,0.9) 100%);
+            --cat-green: linear-gradient(145deg, rgba(58,128,104,0.9) 0%, rgba(38,56,57,0.9) 100%);
+            --cat-gold: linear-gradient(145deg, rgba(145,111,54,0.9) 0%, rgba(59,53,43,0.92) 100%);
+            --cat-pink: linear-gradient(145deg, rgba(157,78,122,0.9) 0%, rgba(56,42,62,0.92) 100%);
         }
         * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
         body {
@@ -117,11 +123,13 @@
         .nav-item .nav-icon { width:24px; height:24px; transition:var(--transition-fast); }
         .nav-item .nav-label { font-size:10px; font-weight:600; letter-spacing:-0.1px; }
         .nav-item:active { transform:scale(0.94); }
+
+        /* Центральная кнопка с логотипом */
         .nav-center {
             position:relative;
             top:-18px;
-            width:56px;
-            height:56px;
+            width:64px;
+            height:64px;
             border-radius:50%;
             background:linear-gradient(135deg, var(--primary), var(--primary-2));
             box-shadow:0 8px 30px rgba(139,108,255,0.45);
@@ -133,7 +141,12 @@
             transition:var(--transition-fast);
         }
         .nav-center:active { transform:scale(0.94); }
-        .nav-center .nav-icon { width:28px; height:28px; color:#fff; }
+        .nav-center .nav-logo {
+            width:40px;
+            height:40px;
+            object-fit:contain;
+            filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+        }
 
         /* Page */
         .page { animation:pageIn 0.35s cubic-bezier(0.4, 0, 0.2, 1); }
@@ -213,10 +226,6 @@
             display:flex;
             align-items:center;
             justify-content:center;
-            background:rgba(255,255,255,0.06);
-            backdrop-filter:blur(12px);
-            -webkit-backdrop-filter:blur(12px);
-            border:1px solid rgba(255,255,255,0.08);
             box-shadow:0 6px 20px rgba(0,0,0,0.25);
             transition:var(--transition-fast);
         }
@@ -229,6 +238,13 @@
         }
         .home-menu-btn:active .category-icon img { transform:scale(1.05); }
         .home-menu-btn .btn-text { font-size:var(--font-body); font-weight:600; color:var(--text); }
+
+        /* Цвета иконок категорий */
+        .category-purple { background:var(--cat-purple); }
+        .category-blue { background:var(--cat-blue); }
+        .category-green { background:var(--cat-green); }
+        .category-gold { background:var(--cat-gold); }
+        .category-pink { background:var(--cat-pink); }
 
         /* Promo */
         .promo-header { padding:24px 0 16px 0; }
@@ -572,7 +588,9 @@
             SHEET_OFFERS: 'Акции',
             SHEET_USERS: 'Пользователи',
             APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzQSmlFHGoD3YMPlCyrLFOKZ_J1xacgSljT6iQ6uzRvb1DF3aIUXJyCfjTImEnh368D/exec',
-            COLUMNS: { ID:0, STORE:1, CATEGORY:2, DISCOUNT:3, DESCRIPTION:4, LINK:5, LOGO:6, VIP:7, ACTIVE:8, DATE:9 }
+            COLUMNS: { ID:0, STORE:1, CATEGORY:2, DISCOUNT:3, DESCRIPTION:4, LINK:5, LOGO:6, VIP:7, ACTIVE:8, DATE:9 },
+            // путь к логотипу для центральной кнопки
+            LOGO_URL: 'icons/logo.png'
         };
 
         // --- ХРАНИЛИЩЕ ---
@@ -655,50 +673,13 @@
             }
         };
 
-        // --- 3D Иконки (SVG) ---
-        var Icons3D = {
-            promotions: `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36" fill="none">
-                <circle cx="18" cy="18" r="18" fill="url(#p_grad)"/>
-                <defs><linearGradient id="p_grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#8B6CFF"/><stop offset="100%" stop-color="#D46CFF"/></linearGradient></defs>
-                <path d="M10 14L18 8L26 14L18 20L10 14Z" fill="white" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
-                <path d="M10 20V26L18 32L26 26V20" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>`,
-            discounts: `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36" fill="none">
-                <circle cx="18" cy="18" r="18" fill="url(#d_grad)"/>
-                <defs><linearGradient id="d_grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#D46CFF"/><stop offset="100%" stop-color="#FF5D73"/></linearGradient></defs>
-                <circle cx="13" cy="13" r="2" fill="white"/>
-                <circle cx="23" cy="23" r="2" fill="white"/>
-                <path d="M23 13L13 23" stroke="white" stroke-width="2" stroke-linecap="round"/>
-            </svg>`,
-            offers: `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36" fill="none">
-                <circle cx="18" cy="18" r="18" fill="url(#o_grad)"/>
-                <defs><linearGradient id="o_grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#F3C969"/><stop offset="100%" stop-color="#FF9F43"/></linearGradient></defs>
-                <path d="M18 8L21 15H29L23 19L25 26L18 22L11 26L13 19L7 15H15L18 8Z" fill="white"/>
-            </svg>`,
-            partners: `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36" fill="none">
-                <circle cx="18" cy="18" r="18" fill="url(#pt_grad)"/>
-                <defs><linearGradient id="pt_grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#5B9BFF"/><stop offset="100%" stop-color="#8B6CFF"/></linearGradient></defs>
-                <path d="M12 28V24C12 21.7909 13.7909 20 16 20H20C22.2091 20 24 21.7909 24 24V28" stroke="white" stroke-width="2" stroke-linecap="round"/>
-                <circle cx="18" cy="14" r="4" stroke="white" stroke-width="2"/>
-                <path d="M26 28V24C26 22.1362 24.725 21.1577 23 20.88" stroke="white" stroke-width="2" stroke-linecap="round"/>
-                <path d="M10 28V24C10 22.1362 11.275 21.1577 13 20.88" stroke="white" stroke-width="2" stroke-linecap="round"/>
-            </svg>`,
-            about: `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36" fill="none">
-                <circle cx="18" cy="18" r="18" fill="url(#a_grad)"/>
-                <defs><linearGradient id="a_grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#21D07A"/><stop offset="100%" stop-color="#5B9BFF"/></linearGradient></defs>
-                <circle cx="18" cy="13" r="1.5" fill="white"/>
-                <path d="M18 17V25" stroke="white" stroke-width="2" stroke-linecap="round"/>
-                <circle cx="18" cy="18" r="0" fill="none"/>
-            </svg>`
-        };
-
+        // Иконки для навигации (SVG)
         var NavIcons = {
             home: '<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>',
             promotions: '<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>',
             favorites: '<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>',
             notifications: '<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>',
-            profile: '<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
-            center: '<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>'
+            profile: '<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'
         };
 
         // --- ПРИЛОЖЕНИЕ ---
@@ -754,8 +735,29 @@
                 var s=this, u=Session.get();
                 var h='<div class="page"><div class="home-welcome"><div class="greeting">Привет, '+(u?.name||u?.login||'Гость')+' 👋</div><h1>Выгода рядом</h1></div>';
                 h+='<div class="home-hero"><h2>До 40% кешбэка</h2><p>Лучшие предложения этой недели уже ждут вас</p><div class="hero-btn" id="heroBtn">Смотреть акции</div></div>';
-                // Кнопки категорий с 3D-иконками
-                h+='<div class="home-menu"><div class="home-menu-btn" data-target="promotions"><div class="category-icon">'+Icons3D.promotions+'</div><div class="btn-text">Акции</div></div><div class="home-menu-btn" data-target="discounts"><div class="category-icon">'+Icons3D.discounts+'</div><div class="btn-text">Скидки</div></div><div class="home-menu-btn" data-target="offers"><div class="category-icon">'+Icons3D.offers+'</div><div class="btn-text">Выгодные<br>предложения</div></div><div class="home-menu-btn" data-target="partners"><div class="category-icon">'+Icons3D.partners+'</div><div class="btn-text">Партнеры</div></div><div class="home-menu-btn" data-target="about"><div class="category-icon">'+Icons3D.about+'</div><div class="btn-text">О нас</div></div></div>';
+                // Категории с 3D иконками из папки icons и цветными градиентами
+                h+='<div class="home-menu">'+
+                    '<div class="home-menu-btn" data-target="promotions">'+
+                        '<div class="category-icon category-purple"><img src="icons/promotions.png" alt="" onerror="this.style.display=\'none\'"></div>'+
+                        '<div class="btn-text">Акции</div>'+
+                    '</div>'+
+                    '<div class="home-menu-btn" data-target="discounts">'+
+                        '<div class="category-icon category-pink"><img src="icons/discounts.png" alt="" onerror="this.style.display=\'none\'"></div>'+
+                        '<div class="btn-text">Скидки</div>'+
+                    '</div>'+
+                    '<div class="home-menu-btn" data-target="offers">'+
+                        '<div class="category-icon category-gold"><img src="icons/offers.png" alt="" onerror="this.style.display=\'none\'"></div>'+
+                        '<div class="btn-text">Выгодные<br>предложения</div>'+
+                    '</div>'+
+                    '<div class="home-menu-btn" data-target="partners">'+
+                        '<div class="category-icon category-blue"><img src="icons/partners.png" alt="" onerror="this.style.display=\'none\'"></div>'+
+                        '<div class="btn-text">Партнеры</div>'+
+                    '</div>'+
+                    '<div class="home-menu-btn" data-target="about">'+
+                        '<div class="category-icon category-green"><img src="icons/about.png" alt="" onerror="this.style.display=\'none\'"></div>'+
+                        '<div class="btn-text">О нас</div>'+
+                    '</div>'+
+                '</div>';
                 h+='<div class="section-header"><h2>Последние акции</h2><span class="section-link" id="goToPromo">Все →</span></div><div id="homeLatestCards" class="cards-grid"></div></div>';
                 this.content.innerHTML=h;
                 document.getElementById('heroBtn').onclick=function(){s.renderScreen('promotions');};
@@ -849,20 +851,29 @@
             renderPlaceholder:function(t,text){this.content.innerHTML='<div class="page"><div class="promo-header"><h1>'+t+'</h1></div><div class="empty-state">'+text+'</div></div>';},
             renderNav:function(){
                 var self = this;
+                // новый порядок: Избранное, Акции, (центральная Главная), Уведомления, Профиль
                 var navItems = [
-                    { id:'home', icon: NavIcons.home, label:'Главная' },
-                    { id:'promotions', icon: NavIcons.promotions, label:'Акции' },
                     { id:'favorites', icon: NavIcons.favorites, label:'Избранное' },
+                    { id:'promotions', icon: NavIcons.promotions, label:'Акции' },
+                    { id:'home', icon: '', label:'', isCenter: true }, // центральная кнопка
                     { id:'notifications', icon: NavIcons.notifications, label:'Уведомления' },
                     { id:'profile', icon: NavIcons.profile, label:'Профиль' }
                 ];
                 this.nav.innerHTML = '';
                 navItems.forEach(function(item) {
-                    var el = document.createElement('button');
-                    el.className = 'nav-item' + (self.currentScreen === item.id ? ' active' : '');
-                    el.innerHTML = item.icon + '<span class="nav-label">' + item.label + '</span>';
-                    el.addEventListener('click', function() { self.renderScreen(item.id); });
-                    self.nav.appendChild(el);
+                    if (item.isCenter) {
+                        var el = document.createElement('button');
+                        el.className = 'nav-center';
+                        el.innerHTML = '<img src="'+CONFIG.LOGO_URL+'" class="nav-logo" alt="Главная" onerror="this.style.display=\'none\';">';
+                        el.addEventListener('click', function() { self.renderScreen('home'); });
+                        self.nav.appendChild(el);
+                    } else {
+                        var el = document.createElement('button');
+                        el.className = 'nav-item' + (self.currentScreen === item.id ? ' active' : '');
+                        el.innerHTML = item.icon + '<span class="nav-label">' + item.label + '</span>';
+                        el.addEventListener('click', function() { self.renderScreen(item.id); });
+                        self.nav.appendChild(el);
+                    }
                 });
             },
             showToast:function(msg){
