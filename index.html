@@ -124,30 +124,30 @@
         .nav-item .nav-label { font-size:10px; font-weight:600; letter-spacing:-0.1px; }
         .nav-item:active { transform:scale(0.94); }
 
-        /* Центральная кнопка с логотипом */
-        .nav-center {
-            position:relative;
-            top:-18px;
-            width:64px;
-            height:64px;
-            border-radius:50%;
-            background: radial-gradient(circle at 30% 30%, #333, #000);
-            box-shadow:0 8px 30px rgba(139,108,255,0.45);
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            border:none;
-            cursor:pointer;
-            transition:var(--transition-fast);
-        }
-        .nav-center:active { transform:scale(0.94); }
-        .nav-center .nav-logo {
-            width:40px;
-            height:40px;
-            object-fit:contain;
-            filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));
-        }
-
+     .nav-center {
+    position:relative;
+    top:-18px;
+    width:64px;
+    height:64px;
+    border-radius:50%;
+    background: radial-gradient(circle at 30% 30%, #333, #000);
+    box-shadow:0 8px 30px rgba(139,108,255,0.45);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border:none;
+    cursor:pointer;
+    transition:var(--transition-fast);
+    padding: 0;                  /* убрали возможные отступы */
+}
+.nav-center:active { transform:scale(0.94); }
+.nav-center .nav-logo {
+    width: 100%;                /* было 40px */
+    height: 100%;               /* было 40px */
+    object-fit: cover;          /* заполнит весь круг, обрезая лишнее */
+    border-radius: 50%;         /* сделает изображение круглым */
+    filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
         /* Page */
         .page { animation:pageIn 0.35s cubic-bezier(0.4, 0, 0.2, 1); }
         @keyframes pageIn { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
