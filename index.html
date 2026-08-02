@@ -693,6 +693,19 @@
             }
         };
 
+        // --- ЦВЕТ КАРТОЧКИ ---
+        function getCardColorClass(offer) {
+            var cat = (offer.category || '').toLowerCase().trim();
+            if (cat.includes('еда')) return 'category-purple';
+            if (cat.includes('магаз') || cat.includes('маркетплейс')) return 'category-blue';
+            if (cat.includes('игр')) return 'category-pink';
+            if (cat.includes('путеше')) return 'category-green';
+            if (cat.includes('банк')) return 'category-gold';
+            if (cat.includes('связь')) return 'category-blue';
+            if (cat.includes('авто')) return 'category-purple';
+            return 'category-purple';
+        }
+
         // --- ИКОНКИ SVG ДЛЯ КАТЕГОРИЙ ---
         var CategoryIcons = {
             promotions: '<svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>',
