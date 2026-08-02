@@ -1,3 +1,8 @@
+Я изменил структуру карточки акции: теперь она разделена на две части — левую (информация) и правую (3D-изображение). Фон каждой карточки автоматически подстраивается под цвет, заданный для её категории. Справа теперь отображается большая 3D-иконка, которую можно заменить на свою, просто загрузив PNG-файл в папку icons и указав его имя в функции getOffer3DImage.
+
+Обновлённый код index.html:
+
+```html
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -124,32 +129,30 @@
         .nav-item .nav-label { font-size:10px; font-weight:600; letter-spacing:-0.1px; }
         .nav-item:active { transform:scale(0.94); }
 
-        /* Центральная кнопка с логотипом */
-        .nav-center {
-            position:relative;
-            top:-18px;
-            width:64px;
-            height:64px;
-            border-radius:50%;
-            background: radial-gradient(circle at 30% 30%, #333, #000);
-            box-shadow:0 8px 30px rgba(139,108,255,0.45);
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            border:none;
-            cursor:pointer;
-            transition:var(--transition-fast);
-            padding: 0;
-        }
-        .nav-center:active { transform:scale(0.94); }
-        .nav-center .nav-logo {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 50%;
-            filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));
-        }
-
+     .nav-center {
+    position:relative;
+    top:-18px;
+    width:64px;
+    height:64px;
+    border-radius:50%;
+    background: radial-gradient(circle at 30% 30%, #333, #000);
+    box-shadow:0 8px 30px rgba(139,108,255,0.45);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border:none;
+    cursor:pointer;
+    transition:var(--transition-fast);
+    padding: 0;                  /* убрали возможные отступы */
+}
+.nav-center:active { transform:scale(0.94); }
+.nav-center .nav-logo {
+    width: 100%;                /* было 40px */
+    height: 100%;               /* было 40px */
+    object-fit: cover;          /* заполнит весь круг, обрезая лишнее */
+    border-radius: 50%;         /* сделает изображение круглым */
+    filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
         /* Page */
         .page { animation:pageIn 0.35s cubic-bezier(0.4, 0, 0.2, 1); }
         @keyframes pageIn { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
@@ -354,32 +357,38 @@
         /* Cards */
         .cards-grid { display:flex; flex-direction:column; gap:18px; padding-bottom:28px; }
         .promo-card {
-            background:rgba(255,255,255,0.05);
+            background:var(--cat-purple);
             backdrop-filter:blur(20px);
             -webkit-backdrop-filter:blur(20px);
             border:1px solid var(--border);
             border-radius:var(--radius-lg);
-            padding:20px;
+            padding:0;
             position:relative;
             box-shadow:var(--shadow-md);
             transition:var(--transition-smooth);
             animation:cardUp 0.45s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-            display: flex;
-            flex-direction: row;
-            gap: 14px;
+            display:flex;
+            flex-direction:row;
+            overflow:hidden;
         }
+        .promo-card.category-purple { background:var(--cat-purple); }
+        .promo-card.category-blue { background:var(--cat-blue); }
+        .promo-card.category-green { background:var(--cat-green); }
+        .promo-card.category-gold { background:var(--cat-gold); }
+        .promo-card.category-pink { background:var(--cat-pink); }
         @keyframes cardUp { from{opacity:0; transform:translateY(18px) scale(0.96);} to{opacity:1; transform:translateY(0) scale(1);} }
         .promo-card:active { transform:scale(0.98); }
         .vip-card { border:2px solid var(--accent); box-shadow:0 0 28px rgba(243,201,105,0.2), var(--shadow-md); }
-        .promo-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
+        .promo-card-info {
+            flex:1;
+            padding:24px;
+            display:flex;
+            flex-direction:column;
         }
-        .promo-card-header { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+        .promo-card-header { display:flex; align-items:center; gap:16px; margin-bottom:20px; }
         .promo-logo-container {
-            width:52px;
-            height:52px;
+            width:68px;
+            height:68px;
             border-radius:50%;
             overflow:hidden;
             background:rgba(255,255,255,0.08);
@@ -390,8 +399,8 @@
             justify-content:center;
             box-shadow:var(--shadow-sm);
         }
-        .promo-logo { width:100%; height:100%; object-fit:contain; padding:8px; }
-        .promo-logo-fallback { font-size:22px; font-weight:700; color:var(--primary); }
+        .promo-logo { width:100%; height:100%; object-fit:contain; padding:10px; }
+        .promo-logo-fallback { font-size:26px; font-weight:700; color:var(--primary); }
         .promo-header-text { flex:1; min-width:0; }
         .promo-store { font-size:var(--font-title); font-weight:700; letter-spacing:-0.3px; }
         .promo-category { font-size:var(--font-caption); color:var(--text-secondary); font-weight:500; }
@@ -399,9 +408,9 @@
             display:inline-block;
             background:linear-gradient(135deg, var(--primary), var(--primary-2));
             color:#fff;
-            font-size:26px;
+            font-size:30px;
             font-weight:900;
-            padding:8px 16px;
+            padding:10px 20px;
             border-radius:var(--radius-full);
             letter-spacing:-1.5px;
             box-shadow:0 8px 24px rgba(139,108,255,0.35);
@@ -412,24 +421,24 @@
             color:#11131D;
             box-shadow:0 8px 24px rgba(243,201,105,0.4);
         }
-        .promo-body { margin-bottom:14px; }
-        .promo-desc { font-size:var(--font-body); color:var(--text-secondary); line-height:1.4; }
-        .promo-meta { display:flex; align-items:center; gap:16px; margin-top:8px; font-size:var(--font-caption); color:var(--text-tertiary); }
+        .promo-body { margin-bottom:22px; }
+        .promo-desc { font-size:var(--font-body); color:var(--text-secondary); line-height:1.5; }
+        .promo-meta { display:flex; align-items:center; gap:20px; margin-top:12px; font-size:var(--font-caption); color:var(--text-tertiary); }
         .promo-date { display:flex; align-items:center; gap:5px; }
-        .promo-stats { display:flex; align-items:center; gap:12px; }
+        .promo-stats { display:flex; align-items:center; gap:16px; }
         .promo-fav-btn {
             position:absolute;
-            top:16px;
-            right:16px;
-            width:36px;
-            height:36px;
+            top:20px;
+            right:20px;
+            width:40px;
+            height:40px;
             border-radius:50%;
             background:rgba(0,0,0,0.3);
             backdrop-filter:blur(14px);
             -webkit-backdrop-filter:blur(14px);
             border:1px solid var(--border);
             cursor:pointer;
-            font-size:16px;
+            font-size:17px;
             display:flex;
             align-items:center;
             justify-content:center;
@@ -439,7 +448,7 @@
         .promo-fav-btn:active { transform:scale(0.9); background:rgba(255,93,115,0.3); }
         .get-btn {
             width:100%;
-            height:48px;
+            height:56px;
             background:linear-gradient(135deg, var(--primary), var(--primary-2));
             border:none;
             color:#fff;
@@ -449,9 +458,9 @@
             cursor:pointer;
             font-family:inherit;
             transition:var(--transition-fast);
-            box-shadow:0 10px 28px rgba(139,108,255,0.35);
+            box-shadow:0 12px 32px rgba(139,108,255,0.35);
             letter-spacing:-0.2px;
-            margin-top: auto;
+            margin-top:auto;
         }
         .get-btn:active { transform:scale(0.97); }
         .vip-card .get-btn {
@@ -460,42 +469,43 @@
             box-shadow:0 12px 32px rgba(243,201,105,0.4);
         }
         .promo-visual {
-            width: 110px;
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            width:140px;
+            flex-shrink:0;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            padding:20px;
         }
         .promo-3d-image {
-            max-width: 100%;
-            max-height: 110px;
-            object-fit: contain;
-            filter: drop-shadow(0 6px 10px rgba(0,0,0,0.4)) drop-shadow(0 2px 4px rgba(255,255,255,0.08));
-            transition: transform 0.2s ease;
+            max-width:100%;
+            max-height:120px;
+            object-fit:contain;
+            filter:drop-shadow(0 6px 10px rgba(0,0,0,0.4)) drop-shadow(0 2px 4px rgba(255,255,255,0.08));
+            transition:transform 0.2s ease;
         }
-        .promo-card:active .promo-3d-image { transform: scale(1.05); }
+        .promo-card:active .promo-3d-image { transform:scale(1.05); }
         .promo-new-badge {
             position:absolute;
-            top:16px;
-            left:16px;
+            top:20px;
+            left:20px;
             background:var(--danger);
             color:#fff;
             font-size:10px;
             font-weight:700;
-            padding:4px 10px;
+            padding:5px 12px;
             border-radius:var(--radius-full);
             z-index:2;
             box-shadow:0 4px 12px rgba(255,93,115,0.5);
         }
         .promo-vip-badge {
             position:absolute;
-            top:56px;
-            left:16px;
+            top:68px;
+            left:20px;
             background:linear-gradient(135deg, var(--accent), #F5D789);
             color:#11131D;
             font-size:10px;
             font-weight:700;
-            padding:4px 10px;
+            padding:5px 12px;
             border-radius:var(--radius-full);
             z-index:2;
             display:none;
@@ -615,6 +625,7 @@
             SHEET_USERS: 'Пользователи',
             APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzQSmlFHGoD3YMPlCyrLFOKZ_J1xacgSljT6iQ6uzRvb1DF3aIUXJyCfjTImEnh368D/exec',
             COLUMNS: { ID:0, STORE:1, CATEGORY:2, DISCOUNT:3, DESCRIPTION:4, LINK:5, LOGO:6, VIP:7, ACTIVE:8, DATE:9 },
+            // путь к логотипу для центральной кнопки
             LOGO_URL: 'icons/logo.png'
         };
 
@@ -698,7 +709,7 @@
             }
         };
 
-        // --- ВЫБОР 3D-ИЗОБРАЖЕНИЯ ---
+        // --- 3D-ИЗОБРАЖЕНИЕ (НАЗВАНИЯ ФАЙЛОВ МЕНЯЮТСЯ ЗДЕСЬ) ---
         function getOffer3DImage(offer) {
             var cat = (offer.category || '').toLowerCase().trim();
             var store = (offer.store || '').toLowerCase().trim();
@@ -717,7 +728,7 @@
             return 'icons/gift-purple.png';
         }
 
-        // --- ЦВЕТОВОЙ КЛАСС КАРТОЧКИ ---
+        // --- ЦВЕТ КАРТОЧКИ (КЛАССЫ МЕНЯЮТСЯ ЗДЕСЬ) ---
         function getCardColorClass(offer) {
             var cat = (offer.category || '').toLowerCase().trim();
             if (cat.includes('еда')) return 'category-purple';
@@ -830,7 +841,7 @@
                         card.style.animationDelay=i*0.05+'s';
                         var img3d = getOffer3DImage(o);
                         card.innerHTML=
-                        '<div class="promo-content">'+
+                        '<div class="promo-card-info">'+
                             '<div class="promo-card-header">'+
                                 '<div class="promo-logo-container">'+(o.logo?'<img class="promo-logo" src="'+o.logo+'">':'<span class="promo-logo-fallback">'+o.store.charAt(0)+'</span>')+'</div>'+
                                 '<div class="promo-header-text"><div class="promo-store">'+o.store+'</div></div>'+
@@ -889,7 +900,7 @@
                     card.style.animationDelay=i*0.05+'s';
                     var img3d = getOffer3DImage(o);
                     card.innerHTML=
-                    '<div class="promo-content">'+
+                    '<div class="promo-card-info">'+
                         '<div class="promo-card-header">'+
                             '<div class="promo-logo-container">'+(o.logo?'<img class="promo-logo" src="'+o.logo+'">':'<span class="promo-logo-fallback">'+o.store.charAt(0)+'</span>')+'</div>'+
                             '<div class="promo-header-text"><div class="promo-store">'+o.store+'</div></div>'+
@@ -930,7 +941,7 @@
                     card.className='promo-card '+colorClass+(o.isVip?' vip-card':'');
                     var img3d = getOffer3DImage(o);
                     card.innerHTML=
-                    '<div class="promo-content">'+
+                    '<div class="promo-card-info">'+
                         '<div class="promo-card-header">'+
                             '<div class="promo-logo-container">'+(o.logo?'<img class="promo-logo" src="'+o.logo+'">':'<span class="promo-logo-fallback">'+o.store.charAt(0)+'</span>')+'</div>'+
                             '<div class="promo-header-text"><div class="promo-store">'+o.store+'</div></div>'+
@@ -995,3 +1006,4 @@
     </script>
 </body>
 </html>
+```
