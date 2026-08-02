@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -152,20 +153,16 @@
         .page { animation:pageIn 0.35s cubic-bezier(0.4, 0, 0.2, 1); }
         @keyframes pageIn { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
 
-        /* Section */
-        .section-header { display:flex; justify-content:space-between; align-items:center; margin:28px 0 14px 0; }
-        .section-header h2 { font-size:var(--font-headline); font-weight:700; letter-spacing:-0.5px; }
-        .section-link { color:var(--primary-2); font-size:var(--font-body); font-weight:600; cursor:pointer; }
-
         /* Home */
-        .home-welcome { padding:28px 0 20px 0; text-align:center; }
+        .home-welcome { padding:20px 0 16px 0; text-align:center; }
         .home-logo {
             display: block;
-            max-width: 220px;
             width: 100%;
             height: auto;
-            margin: 0 auto 20px auto;
+            max-height: 80px;
+            object-fit: contain;
             filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+            margin-bottom: 16px;
         }
         .home-hero {
             background:rgba(255,255,255,0.05);
@@ -206,66 +203,72 @@
         }
         .home-hero .hero-btn:active { transform:scale(0.97); }
 
-        /* Новые кнопки категорий */
-        .home-menu {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-bottom: 28px;
+        /* Категории – сетка 2x2 (как прежде) */
+        .home-menu { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:28px; }
+        .home-menu-btn {
+            background:rgba(255,255,255,0.05);
+            backdrop-filter:blur(18px);
+            -webkit-backdrop-filter:blur(18px);
+            border:1px solid var(--border);
+            border-radius:var(--radius-lg);
+            padding:18px;
+            cursor:pointer;
+            transition:var(--transition-smooth);
+            box-shadow:var(--shadow-sm);
+            display:flex;
+            flex-direction:column;
+            gap:14px;
+            font-family:inherit;
+            text-align:left;
+            position:relative;
+            overflow:hidden;
         }
-        .home-menu-btn-3d {
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            gap: 12px;
-            padding: 16px;
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-md);
-            border: 1px solid var(--border);
-            color: var(--text);
-            font-family: inherit;
-            text-align: left;
-            cursor: pointer;
-            transition: var(--transition-smooth);
+        .home-menu-btn:active { transform:scale(0.97); background:rgba(255,255,255,0.08); }
+        .home-menu-btn .category-icon {
+            width:56px;
+            height:56px;
+            border-radius:var(--radius-md);
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            box-shadow:0 6px 20px rgba(0,0,0,0.25);
+            transition:var(--transition-fast);
+            background:rgba(255,255,255,0.1);
         }
-        .home-menu-btn-3d:active { transform: scale(0.98); }
-        .home-menu-btn-3d .category-icon {
-            width: 56px;
-            height: 56px;
-            border-radius: var(--radius-md);
+        .home-menu-btn .category-icon img {
+            width:36px;
+            height:36px;
+            object-fit:contain;
+            filter:drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+            transition:var(--transition-fast);
+        }
+        .home-menu-btn:active .category-icon img { transform:scale(1.05); }
+        .home-menu-btn .btn-text { font-size:var(--font-body); font-weight:600; color:var(--text); }
+        /* 3D‑иконка внутри кнопки (только для акций и скидок) */
+        .home-menu-btn .promo-visual {
+            position: absolute;
+            right: 8px;
+            top: 8px;
+            width: 40px;
+            height: 40px;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.25);
-            background: rgba(255,255,255,0.1);
-            flex-shrink: 0;
         }
-        .home-menu-btn-3d .category-icon img {
-            width: 36px;
-            height: 36px;
-            object-fit: contain;
-            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
-        }
-        .home-menu-btn-3d .btn-text {
-            flex: 1;
-            font-size: var(--font-body);
-            font-weight: 600;
-        }
-        .home-menu-btn-3d .promo-visual {
-            width: 64px;
-            height: 64px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-        .home-menu-btn-3d .promo-visual img {
-            max-width: 64px;
-            max-height: 64px;
+        .home-menu-btn .promo-visual img {
+            max-width: 40px;
+            max-height: 40px;
             object-fit: contain;
             filter: none;
             background: transparent;
         }
+
+        /* Цвета фона для кнопок */
+        .bg-pink { background: var(--cat-pink) !important; }
+        .bg-blue { background: var(--cat-blue) !important; }
+        .bg-gold { background: var(--cat-gold) !important; }
+        .bg-purple { background: var(--cat-purple) !important; }
+        .bg-green { background: var(--cat-green) !important; }
 
         /* Promo */
         .promo-header { padding:24px 0 16px 0; }
@@ -793,26 +796,33 @@
                 h+='<img src="icons/logop.png" class="home-logo" alt="Выгодка" onerror="this.style.display=\'none\'">';
                 h+='</div>';
                 h+='<div class="home-hero"><h2>До 40% кешбэка</h2><p>Лучшие предложения этой недели уже ждут вас</p><div class="hero-btn" id="heroBtn">Смотреть акции</div></div>';
-                // Новые кнопки категорий
-                var categories = [
-                    { target: 'promotions', icon: 'promotions.png', text: 'Акции', gradient: 'var(--cat-pink)', img3d: 'icons/accii.png' },
-                    { target: 'discounts', icon: 'discounts.png', text: 'Скидки', gradient: 'var(--cat-blue)', img3d: 'icons/skido.png' },
-                    { target: 'offers', icon: 'offers.png', text: 'Выгодные<br>предложения', gradient: 'var(--cat-gold)', img3d: 'icons/offers_3d.png' },
-                    { target: 'partners', icon: 'partners.png', text: 'Партнеры', gradient: 'var(--cat-purple)', img3d: 'icons/partners_3d.png' },
-                    { target: 'about', icon: 'about.png', text: 'О нас', gradient: 'var(--cat-green)', img3d: 'icons/about_3d.png' }
-                ];
-                h+='<div class="home-menu">';
-                categories.forEach(function(cat) {
-                    h+='<div class="home-menu-btn-3d" data-target="'+cat.target+'" style="background:'+cat.gradient+';">';
-                    h+='<div class="category-icon"><img src="icons/'+cat.icon+'" alt="" onerror="this.style.display=\'none\'"></div>';
-                    h+='<div class="btn-text">'+cat.text+'</div>';
-                    h+='<div class="promo-visual"><img src="'+cat.img3d+'" alt="" style="max-width:64px; max-height:64px; object-fit:contain; filter:none; background:transparent;" onerror="this.style.display=\'none\'"></div>';
-                    h+='</div>';
-                });
-                h+='</div>';
+                h+='<div class="home-menu">'+
+                    '<div class="home-menu-btn bg-pink" data-target="promotions">'+
+                        '<div class="category-icon"><img src="icons/promotions.png" alt="" onerror="this.style.display=\'none\'"></div>'+
+                        '<div class="btn-text">Акции</div>'+
+                        '<div class="promo-visual"><img src="icons/accii.png" alt="" style="max-width:40px; max-height:40px; object-fit:contain; filter:none; background:transparent;" onerror="this.style.display=\'none\'"></div>'+
+                    '</div>'+
+                    '<div class="home-menu-btn bg-blue" data-target="discounts">'+
+                        '<div class="category-icon"><img src="icons/discounts.png" alt="" onerror="this.style.display=\'none\'"></div>'+
+                        '<div class="btn-text">Скидки</div>'+
+                        '<div class="promo-visual"><img src="icons/skido.png" alt="" style="max-width:40px; max-height:40px; object-fit:contain; filter:none; background:transparent;" onerror="this.style.display=\'none\'"></div>'+
+                    '</div>'+
+                    '<div class="home-menu-btn bg-gold" data-target="offers">'+
+                        '<div class="category-icon"><img src="icons/offers.png" alt="" onerror="this.style.display=\'none\'"></div>'+
+                        '<div class="btn-text">Выгодные<br>предложения</div>'+
+                    '</div>'+
+                    '<div class="home-menu-btn bg-purple" data-target="partners">'+
+                        '<div class="category-icon"><img src="icons/partners.png" alt="" onerror="this.style.display=\'none\'"></div>'+
+                        '<div class="btn-text">Партнеры</div>'+
+                    '</div>'+
+                    '<div class="home-menu-btn bg-green" data-target="about">'+
+                        '<div class="category-icon"><img src="icons/about.png" alt="" onerror="this.style.display=\'none\'"></div>'+
+                        '<div class="btn-text">О нас</div>'+
+                    '</div>'+
+                '</div>';
                 this.content.innerHTML=h;
                 document.getElementById('heroBtn').onclick=function(){s.renderScreen('promotions');};
-                var btns=this.content.querySelectorAll('.home-menu-btn-3d');
+                var btns=this.content.querySelectorAll('.home-menu-btn');
                 btns.forEach(b=>{b.addEventListener('click',function(){var t=this.dataset.target; if(t==='promotions') s.renderScreen('promotions'); else s.showToast('Раздел «'+this.querySelector('.btn-text').textContent.replace(/\n/g,' ')+'» в разработке');});});
             },
             renderPromotionsPage:function(){
