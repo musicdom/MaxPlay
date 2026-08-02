@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -80,8 +79,9 @@
             pointer-events:none;
             z-index:0;
         }
-        .main-content { flex:1; padding:0 16px; overflow-y:auto; scrollbar-width:none; position:relative; z-index:1; }
+        .main-content { flex:1; padding:0; overflow-y:auto; scrollbar-width:none; position:relative; z-index:1; }
         .main-content::-webkit-scrollbar { display:none; }
+        .content-padded { padding: 0 16px; }
 
         /* Bottom Navigation */
         .bottom-nav {
@@ -154,15 +154,17 @@
         @keyframes pageIn { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
 
         /* Home */
-        .home-welcome { padding:20px 0 16px 0; text-align:center; }
-        .home-logo {
+        .home-logo-container {
+            width: 100%;
+            padding: 0 16px;
+            margin-bottom: 20px;
+        }
+        .home-logo-full {
             display: block;
             width: 100%;
             height: auto;
-            max-height: 80px;
             object-fit: contain;
             filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
-            margin-bottom: 16px;
         }
         .home-hero {
             background:rgba(255,255,255,0.05);
@@ -203,7 +205,7 @@
         }
         .home-hero .hero-btn:active { transform:scale(0.97); }
 
-        /* Категории – сетка 2x2 (как прежде) */
+        /* Категории – сетка 2x2 */
         .home-menu { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:28px; }
         .home-menu-btn {
             background:rgba(255,255,255,0.05);
@@ -225,43 +227,28 @@
         }
         .home-menu-btn:active { transform:scale(0.97); background:rgba(255,255,255,0.08); }
         .home-menu-btn .category-icon {
-            width:56px;
-            height:56px;
-            border-radius:var(--radius-md);
+            width:48px;
+            height:48px;
+            border-radius:var(--radius-sm);
             display:flex;
             align-items:center;
             justify-content:center;
             box-shadow:0 6px 20px rgba(0,0,0,0.25);
             transition:var(--transition-fast);
-            background:rgba(255,255,255,0.1);
+            background:rgba(255,255,255,0.12);
+            color: #fff;
         }
-        .home-menu-btn .category-icon img {
-            width:36px;
-            height:36px;
-            object-fit:contain;
-            filter:drop-shadow(0 4px 8px rgba(0,0,0,0.3));
-            transition:var(--transition-fast);
+        .home-menu-btn .category-icon svg {
+            width: 24px;
+            height: 24px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
         }
-        .home-menu-btn:active .category-icon img { transform:scale(1.05); }
+        .home-menu-btn:active .category-icon svg { transform:scale(1.05); }
         .home-menu-btn .btn-text { font-size:var(--font-body); font-weight:600; color:var(--text); }
-        /* 3D‑иконка внутри кнопки (только для акций и скидок) */
-        .home-menu-btn .promo-visual {
-            position: absolute;
-            right: 8px;
-            top: 8px;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .home-menu-btn .promo-visual img {
-            max-width: 40px;
-            max-height: 40px;
-            object-fit: contain;
-            filter: none;
-            background: transparent;
-        }
 
         /* Цвета фона для кнопок */
         .bg-pink { background: var(--cat-pink) !important; }
@@ -701,44 +688,13 @@
             }
         };
 
-        // --- 3D-ИЗОБРАЖЕНИЕ ---
-        function getOffer3DImage(offer) {
-            var cat = (offer.category || '').toLowerCase().trim();
-            var store = (offer.store || '').toLowerCase().trim();
-            if (cat.includes('еда') || cat.includes('food')) {
-                if (store.includes('кофе')) return 'icons/coffee.png';
-                if (store.includes('пицц')) return 'icons/pizza.png';
-                if (store.includes('бургер')) return 'icons/burger.png';
-                return 'icons/food.png';
-            }
-            if (cat.includes('магаз') || cat.includes('маркетплейс') || cat.includes('shopping')) return 'icons/shopping-bag-yellow.png';
-            if (cat.includes('игр')) return 'icons/gift-purple.png';
-            if (cat.includes('путеше')) return 'icons/suitcase.png';
-            if (cat.includes('банк')) return 'icons/cashback.png';
-            if (cat.includes('связь')) return 'icons/smartphone.png';
-            if (cat.includes('авто')) return 'icons/car.png';
-            return 'icons/gift-purple.png';
-        }
-
-        // --- ЦВЕТ КАРТОЧКИ ---
-        function getCardColorClass(offer) {
-            var cat = (offer.category || '').toLowerCase().trim();
-            if (cat.includes('еда')) return 'category-purple';
-            if (cat.includes('магаз') || cat.includes('маркетплейс')) return 'category-blue';
-            if (cat.includes('игр')) return 'category-pink';
-            if (cat.includes('путеше')) return 'category-green';
-            if (cat.includes('банк')) return 'category-gold';
-            if (cat.includes('связь')) return 'category-blue';
-            if (cat.includes('авто')) return 'category-purple';
-            return 'category-purple';
-        }
-
-        var NavIcons = {
-            home: '<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>',
-            promotions: '<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>',
-            favorites: '<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>',
-            notifications: '<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>',
-            profile: '<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'
+        // --- ИКОНКИ SVG ДЛЯ КАТЕГОРИЙ ---
+        var CategoryIcons = {
+            promotions: '<svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>',
+            discounts: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6"/><circle cx="9.5" cy="9.5" r="1.5"/><circle cx="14.5" cy="14.5" r="1.5"/></svg>',
+            offers: '<svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+            partners: '<svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6"/><path d="M23 11h-6"/></svg>',
+            about: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>'
         };
 
         // --- ПРИЛОЖЕНИЕ ---
@@ -792,34 +748,33 @@
             },
             renderHomePage:function(){
                 var s=this, u=Session.get();
-                var h='<div class="page"><div class="home-welcome">';
-                h+='<img src="icons/logop.png" class="home-logo" alt="Выгодка" onerror="this.style.display=\'none\'">';
-                h+='</div>';
+                var h='<div class="page">';
+                h+='<div class="home-logo-container"><img src="icons/logop.png" class="home-logo-full" alt="Выгодка" onerror="this.style.display=\'none\'"></div>';
+                h+='<div class="content-padded">';
                 h+='<div class="home-hero"><h2>До 40% кешбэка</h2><p>Лучшие предложения этой недели уже ждут вас</p><div class="hero-btn" id="heroBtn">Смотреть акции</div></div>';
                 h+='<div class="home-menu">'+
                     '<div class="home-menu-btn bg-pink" data-target="promotions">'+
-                        '<div class="category-icon"><img src="icons/promotions.png" alt="" onerror="this.style.display=\'none\'"></div>'+
+                        '<div class="category-icon">'+CategoryIcons.promotions+'</div>'+
                         '<div class="btn-text">Акции</div>'+
-                        '<div class="promo-visual"><img src="icons/accii.png" alt="" style="max-width:40px; max-height:40px; object-fit:contain; filter:none; background:transparent;" onerror="this.style.display=\'none\'"></div>'+
                     '</div>'+
                     '<div class="home-menu-btn bg-blue" data-target="discounts">'+
-                        '<div class="category-icon"><img src="icons/discounts.png" alt="" onerror="this.style.display=\'none\'"></div>'+
+                        '<div class="category-icon">'+CategoryIcons.discounts+'</div>'+
                         '<div class="btn-text">Скидки</div>'+
-                        '<div class="promo-visual"><img src="icons/skido.png" alt="" style="max-width:40px; max-height:40px; object-fit:contain; filter:none; background:transparent;" onerror="this.style.display=\'none\'"></div>'+
                     '</div>'+
                     '<div class="home-menu-btn bg-gold" data-target="offers">'+
-                        '<div class="category-icon"><img src="icons/offers.png" alt="" onerror="this.style.display=\'none\'"></div>'+
+                        '<div class="category-icon">'+CategoryIcons.offers+'</div>'+
                         '<div class="btn-text">Выгодные<br>предложения</div>'+
                     '</div>'+
                     '<div class="home-menu-btn bg-purple" data-target="partners">'+
-                        '<div class="category-icon"><img src="icons/partners.png" alt="" onerror="this.style.display=\'none\'"></div>'+
+                        '<div class="category-icon">'+CategoryIcons.partners+'</div>'+
                         '<div class="btn-text">Партнеры</div>'+
                     '</div>'+
                     '<div class="home-menu-btn bg-green" data-target="about">'+
-                        '<div class="category-icon"><img src="icons/about.png" alt="" onerror="this.style.display=\'none\'"></div>'+
+                        '<div class="category-icon">'+CategoryIcons.about+'</div>'+
                         '<div class="btn-text">О нас</div>'+
                     '</div>'+
                 '</div>';
+                h+='</div></div>';
                 this.content.innerHTML=h;
                 document.getElementById('heroBtn').onclick=function(){s.renderScreen('promotions');};
                 var btns=this.content.querySelectorAll('.home-menu-btn');
@@ -827,7 +782,7 @@
             },
             renderPromotionsPage:function(){
                 var s=this;
-                var h='<div class="page"><div class="promo-header"><h1>Акции</h1></div><div class="search-container"><span class="search-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></span><input class="search-input" id="searchInput" placeholder="Поиск акций..." value="'+this.searchQuery+'"><button class="search-clear" id="clearSearch">✕</button></div><div class="filters-scroll" id="filtersScroll"></div><div class="sort-container"><span class="sort-label">Сортировка</span><button class="sort-btn active" data-sort="new">Новые</button><button class="sort-btn" data-sort="popular">Популярные</button><button class="sort-btn" data-sort="discount">Макс. скидка</button></div><div id="cardsContainer" class="cards-grid"></div></div>';
+                var h='<div class="page"><div class="content-padded"><div class="promo-header"><h1>Акции</h1></div><div class="search-container"><span class="search-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></span><input class="search-input" id="searchInput" placeholder="Поиск акций..." value="'+this.searchQuery+'"><button class="search-clear" id="clearSearch">✕</button></div><div class="filters-scroll" id="filtersScroll"></div><div class="sort-container"><span class="sort-label">Сортировка</span><button class="sort-btn active" data-sort="new">Новые</button><button class="sort-btn" data-sort="popular">Популярные</button><button class="sort-btn" data-sort="discount">Макс. скидка</button></div><div id="cardsContainer" class="cards-grid"></div></div></div>';
                 this.content.innerHTML=h;
                 var inp=document.getElementById('searchInput'), clr=document.getElementById('clearSearch');
                 inp.addEventListener('input',function(){clr.style.display=this.value?'flex':'none';s.searchQuery=this.value;s.renderCards();});
@@ -887,7 +842,7 @@
             },
             renderFavoritesPage:function(){
                 var s=this;
-                var h='<div class="page"><div class="promo-header"><h1>Избранное</h1></div><button class="back-btn" id="backFromFav">← Назад</button><div id="favContainer" class="cards-grid"></div></div>';
+                var h='<div class="page"><div class="content-padded"><div class="promo-header"><h1>Избранное</h1></div><button class="back-btn" id="backFromFav">← Назад</button><div id="favContainer" class="cards-grid"></div></div></div>';
                 this.content.innerHTML=h;
                 document.getElementById('backFromFav').onclick=function(){s.renderScreen('promotions');};
                 var favIds=Favorites.list();
@@ -919,11 +874,11 @@
             },
             renderProfilePage:function(){
                 var u=Session.get(); if(!u){this.showAuthScreen('login');return;}
-                var h='<div class="page"><div class="promo-header"><h1>Профиль</h1></div><div class="profile-card"><div class="profile-avatar"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div class="profile-name">'+(u.name||u.login)+'</div><div class="profile-login">@'+u.login+'</div><button class="logout-btn" id="logoutBtn">Выйти</button></div></div>';
+                var h='<div class="page"><div class="content-padded"><div class="promo-header"><h1>Профиль</h1></div><div class="profile-card"><div class="profile-avatar"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div class="profile-name">'+(u.name||u.login)+'</div><div class="profile-login">@'+u.login+'</div><button class="logout-btn" id="logoutBtn">Выйти</button></div></div></div>';
                 this.content.innerHTML=h; var s=this;
                 document.getElementById('logoutBtn').onclick=function(){Session.logout();s.nav.style.display='none';s.showAuthScreen('login');};
             },
-            renderPlaceholder:function(t,text){this.content.innerHTML='<div class="page"><div class="promo-header"><h1>'+t+'</h1></div><div class="empty-state">'+text+'</div></div>';},
+            renderPlaceholder:function(t,text){this.content.innerHTML='<div class="page"><div class="content-padded"><div class="promo-header"><h1>'+t+'</h1></div><div class="empty-state">'+text+'</div></div></div>';},
             renderNav:function(){
                 var self = this;
                 var navItems = [
