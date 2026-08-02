@@ -38,11 +38,12 @@
             --font-large:34px;
             --transition-fast:0.2s cubic-bezier(0.4, 0, 0.2, 1);
             --transition-smooth:0.35s cubic-bezier(0.4, 0, 0.2, 1);
-            --cat-purple: linear-gradient(145deg, rgba(112,82,190,0.9) 0%, rgba(48,42,75,0.9) 100%);
-            --cat-blue: linear-gradient(145deg, rgba(57,93,160,0.9) 0%, rgba(39,43,68,0.9) 100%);
-            --cat-green: linear-gradient(145deg, rgba(58,128,104,0.9) 0%, rgba(38,56,57,0.9) 100%);
-            --cat-gold: linear-gradient(145deg, rgba(145,111,54,0.9) 0%, rgba(59,53,43,0.92) 100%);
-            --cat-pink: linear-gradient(145deg, rgba(157,78,122,0.9) 0%, rgba(56,42,62,0.92) 100%);
+            /* градиенты с изменённым направлением (325deg) */
+            --cat-purple: linear-gradient(325deg, rgba(112,82,190,0.9) 0%, rgba(48,42,75,0.9) 100%);
+            --cat-blue: linear-gradient(325deg, rgba(57,93,160,0.9) 0%, rgba(39,43,68,0.9) 100%);
+            --cat-green: linear-gradient(325deg, rgba(58,128,104,0.9) 0%, rgba(38,56,57,0.9) 100%);
+            --cat-gold: linear-gradient(325deg, rgba(145,111,54,0.9) 0%, rgba(59,53,43,0.92) 100%);
+            --cat-pink: linear-gradient(325deg, rgba(157,78,122,0.9) 0%, rgba(56,42,62,0.92) 100%);
         }
         * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
         body {
@@ -773,15 +774,15 @@
                     '<div class="home-menu-btn category-pink" data-target="promotions">'+
                         '<div class="category-icon"><img src="icons/promotions.png" alt="" onerror="this.style.display=\'none\'"></div>'+
                         '<div class="btn-text">Акции</div>'+
-                        '<div style="position:absolute; right:12px; top:50%; transform:translateY(-50%); width:48px; height:48px; display:flex; align-items:center; justify-content:center;">'+
-                            '<img src="icons/accii.png" style="max-width:100%; max-height:100%; object-fit:contain; filter:none; background:transparent;" alt="" onerror="this.style.display=\'none\'">'+
+                        '<div style="position:absolute; right:8px; top:50%; transform:translateY(-50%); width:64px; height:64px; display:flex; align-items:center; justify-content:center;">'+
+                            '<img src="icons/accii.png" style="max-width:64px; max-height:64px; object-fit:contain; filter:none; background:transparent;" alt="" onerror="this.style.display=\'none\'">'+
                         '</div>'+
                     '</div>'+
                     '<div class="home-menu-btn category-blue" data-target="discounts">'+
                         '<div class="category-icon"><img src="icons/discounts.png" alt="" onerror="this.style.display=\'none\'"></div>'+
                         '<div class="btn-text">Скидки</div>'+
-                        '<div style="position:absolute; right:12px; top:50%; transform:translateY(-50%); width:48px; height:48px; display:flex; align-items:center; justify-content:center;">'+
-                            '<img src="icons/skido.png" style="max-width:100%; max-height:100%; object-fit:contain; filter:none; background:transparent;" alt="" onerror="this.style.display=\'none\'">'+
+                        '<div style="position:absolute; right:8px; top:50%; transform:translateY(-50%); width:64px; height:64px; display:flex; align-items:center; justify-content:center;">'+
+                            '<img src="icons/skido.png" style="max-width:64px; max-height:64px; object-fit:contain; filter:none; background:transparent;" alt="" onerror="this.style.display=\'none\'">'+
                         '</div>'+
                     '</div>'+
                     '<div class="home-menu-btn" data-target="offers">'+
@@ -797,38 +798,13 @@
                         '<div class="btn-text">О нас</div>'+
                     '</div>'+
                 '</div>';
-                h+='<div class="section-header"><h2>Последние акции</h2><span class="section-link" id="goToPromo">Все →</span></div><div id="homeLatestCards" class="cards-grid"></div></div>';
+                // Удалена секция «Последние акции» — нет заголовка и карточек
                 this.content.innerHTML=h;
                 document.getElementById('heroBtn').onclick=function(){s.renderScreen('promotions');};
-                document.getElementById('goToPromo').onclick=function(){s.renderScreen('promotions');};
                 var btns=this.content.querySelectorAll('.home-menu-btn');
                 btns.forEach(b=>{b.addEventListener('click',function(){var t=this.dataset.target; if(t==='promotions') s.renderScreen('promotions'); else s.showToast('Раздел «'+this.querySelector('.btn-text').textContent.replace(/\n/g,' ')+'» в разработке');});});
-                var latest=API.filter('all','new','').slice(0,3);
-                var c=document.getElementById('homeLatestCards');
-                if(latest.length===0){c.innerHTML='<div class="empty-state">Пока нет акций</div>';}
-                else{
-                    latest.forEach((o,i)=>{
-                        var card=document.createElement('div');
-                        var colorClass = getCardColorClass(o);
-                        card.className='promo-card '+colorClass+(o.isVip?' vip-card':'');
-                        card.style.animationDelay=i*0.05+'s';
-                        card.innerHTML=
-                        '<div class="promo-card-header">'+
-                            '<div class="promo-logo-container">'+(o.logo?'<img class="promo-logo" src="'+o.logo+'">':'<span class="promo-logo-fallback">'+o.store.charAt(0)+'</span>')+'</div>'+
-                            '<div class="promo-header-text"><div class="promo-store">'+o.store+'</div></div>'+
-                            '<div class="promo-discount-badge">'+o.discount+'</div>'+
-                        '</div>'+
-                        '<div class="promo-body">'+
-                            '<div class="promo-desc">'+o.description+'</div>'+
-                            '<div class="promo-meta"><span class="promo-date">⏳ до '+o.date+'</span></div>'+
-                        '</div>'+
-                        '<button class="get-btn" data-link="'+o.link+'" data-id="'+o.id+'">Забрать выгоду</button>'+
-                        '<button class="promo-fav-btn" data-id="'+o.id+'">'+(Favorites.is(o.id)?'❤️':'🤍')+'</button>'+
-                        (o.isVip?'<div class="promo-vip-badge">VIP</div>':'');
-                        c.appendChild(card);
-                    });
-                }
-                this.attachCardEvents(c);
+                // Дополнительный обработчик для «Все →» больше не нужен, т.к. он был в удалённой секции
+                // Но если он где-то ещё используется, он остался рабочим. Здесь он удалён.
             },
             renderPromotionsPage:function(){
                 var s=this;
