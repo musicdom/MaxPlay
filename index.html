@@ -124,30 +124,32 @@
         .nav-item .nav-label { font-size:10px; font-weight:600; letter-spacing:-0.1px; }
         .nav-item:active { transform:scale(0.94); }
 
-     .nav-center {
-    position:relative;
-    top:-18px;
-    width:64px;
-    height:64px;
-    border-radius:50%;
-    background: radial-gradient(circle at 30% 30%, #333, #000);
-    box-shadow:0 8px 30px rgba(139,108,255,0.45);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    border:none;
-    cursor:pointer;
-    transition:var(--transition-fast);
-    padding: 0;                  /* убрали возможные отступы */
-}
-.nav-center:active { transform:scale(0.94); }
-.nav-center .nav-logo {
-    width: 100%;                /* было 40px */
-    height: 100%;               /* было 40px */
-    object-fit: cover;          /* заполнит весь круг, обрезая лишнее */
-    border-radius: 50%;         /* сделает изображение круглым */
-    filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));
-}
+        /* Центральная кнопка с логотипом */
+        .nav-center {
+            position:relative;
+            top:-18px;
+            width:64px;
+            height:64px;
+            border-radius:50%;
+            background: radial-gradient(circle at 30% 30%, #333, #000);
+            box-shadow:0 8px 30px rgba(139,108,255,0.45);
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            border:none;
+            cursor:pointer;
+            transition:var(--transition-fast);
+            padding: 0;
+        }
+        .nav-center:active { transform:scale(0.94); }
+        .nav-center .nav-logo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+            filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+        }
+
         /* Page */
         .page { animation:pageIn 0.35s cubic-bezier(0.4, 0, 0.2, 1); }
         @keyframes pageIn { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
@@ -357,19 +359,27 @@
             -webkit-backdrop-filter:blur(20px);
             border:1px solid var(--border);
             border-radius:var(--radius-lg);
-            padding:24px;
+            padding:20px;
             position:relative;
             box-shadow:var(--shadow-md);
             transition:var(--transition-smooth);
             animation:cardUp 0.45s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            display: flex;
+            flex-direction: row;
+            gap: 14px;
         }
         @keyframes cardUp { from{opacity:0; transform:translateY(18px) scale(0.96);} to{opacity:1; transform:translateY(0) scale(1);} }
         .promo-card:active { transform:scale(0.98); }
         .vip-card { border:2px solid var(--accent); box-shadow:0 0 28px rgba(243,201,105,0.2), var(--shadow-md); }
-        .promo-card-header { display:flex; align-items:center; gap:16px; margin-bottom:20px; }
+        .promo-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .promo-card-header { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
         .promo-logo-container {
-            width:68px;
-            height:68px;
+            width:52px;
+            height:52px;
             border-radius:50%;
             overflow:hidden;
             background:rgba(255,255,255,0.08);
@@ -380,8 +390,8 @@
             justify-content:center;
             box-shadow:var(--shadow-sm);
         }
-        .promo-logo { width:100%; height:100%; object-fit:contain; padding:10px; }
-        .promo-logo-fallback { font-size:26px; font-weight:700; color:var(--primary); }
+        .promo-logo { width:100%; height:100%; object-fit:contain; padding:8px; }
+        .promo-logo-fallback { font-size:22px; font-weight:700; color:var(--primary); }
         .promo-header-text { flex:1; min-width:0; }
         .promo-store { font-size:var(--font-title); font-weight:700; letter-spacing:-0.3px; }
         .promo-category { font-size:var(--font-caption); color:var(--text-secondary); font-weight:500; }
@@ -389,9 +399,9 @@
             display:inline-block;
             background:linear-gradient(135deg, var(--primary), var(--primary-2));
             color:#fff;
-            font-size:30px;
+            font-size:26px;
             font-weight:900;
-            padding:10px 20px;
+            padding:8px 16px;
             border-radius:var(--radius-full);
             letter-spacing:-1.5px;
             box-shadow:0 8px 24px rgba(139,108,255,0.35);
@@ -402,24 +412,24 @@
             color:#11131D;
             box-shadow:0 8px 24px rgba(243,201,105,0.4);
         }
-        .promo-body { margin-bottom:22px; }
-        .promo-desc { font-size:var(--font-body); color:var(--text-secondary); line-height:1.5; }
-        .promo-meta { display:flex; align-items:center; gap:20px; margin-top:12px; font-size:var(--font-caption); color:var(--text-tertiary); }
+        .promo-body { margin-bottom:14px; }
+        .promo-desc { font-size:var(--font-body); color:var(--text-secondary); line-height:1.4; }
+        .promo-meta { display:flex; align-items:center; gap:16px; margin-top:8px; font-size:var(--font-caption); color:var(--text-tertiary); }
         .promo-date { display:flex; align-items:center; gap:5px; }
-        .promo-stats { display:flex; align-items:center; gap:16px; }
+        .promo-stats { display:flex; align-items:center; gap:12px; }
         .promo-fav-btn {
             position:absolute;
-            top:20px;
-            right:20px;
-            width:40px;
-            height:40px;
+            top:16px;
+            right:16px;
+            width:36px;
+            height:36px;
             border-radius:50%;
             background:rgba(0,0,0,0.3);
             backdrop-filter:blur(14px);
             -webkit-backdrop-filter:blur(14px);
             border:1px solid var(--border);
             cursor:pointer;
-            font-size:17px;
+            font-size:16px;
             display:flex;
             align-items:center;
             justify-content:center;
@@ -429,7 +439,7 @@
         .promo-fav-btn:active { transform:scale(0.9); background:rgba(255,93,115,0.3); }
         .get-btn {
             width:100%;
-            height:56px;
+            height:48px;
             background:linear-gradient(135deg, var(--primary), var(--primary-2));
             border:none;
             color:#fff;
@@ -439,8 +449,9 @@
             cursor:pointer;
             font-family:inherit;
             transition:var(--transition-fast);
-            box-shadow:0 12px 32px rgba(139,108,255,0.35);
+            box-shadow:0 10px 28px rgba(139,108,255,0.35);
             letter-spacing:-0.2px;
+            margin-top: auto;
         }
         .get-btn:active { transform:scale(0.97); }
         .vip-card .get-btn {
@@ -448,28 +459,43 @@
             color:#11131D;
             box-shadow:0 12px 32px rgba(243,201,105,0.4);
         }
+        .promo-visual {
+            width: 110px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .promo-3d-image {
+            max-width: 100%;
+            max-height: 110px;
+            object-fit: contain;
+            filter: drop-shadow(0 6px 10px rgba(0,0,0,0.4)) drop-shadow(0 2px 4px rgba(255,255,255,0.08));
+            transition: transform 0.2s ease;
+        }
+        .promo-card:active .promo-3d-image { transform: scale(1.05); }
         .promo-new-badge {
             position:absolute;
-            top:20px;
-            left:20px;
+            top:16px;
+            left:16px;
             background:var(--danger);
             color:#fff;
             font-size:10px;
             font-weight:700;
-            padding:5px 12px;
+            padding:4px 10px;
             border-radius:var(--radius-full);
             z-index:2;
             box-shadow:0 4px 12px rgba(255,93,115,0.5);
         }
         .promo-vip-badge {
             position:absolute;
-            top:68px;
-            left:20px;
+            top:56px;
+            left:16px;
             background:linear-gradient(135deg, var(--accent), #F5D789);
             color:#11131D;
             font-size:10px;
             font-weight:700;
-            padding:5px 12px;
+            padding:4px 10px;
             border-radius:var(--radius-full);
             z-index:2;
             display:none;
@@ -589,7 +615,6 @@
             SHEET_USERS: 'Пользователи',
             APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzQSmlFHGoD3YMPlCyrLFOKZ_J1xacgSljT6iQ6uzRvb1DF3aIUXJyCfjTImEnh368D/exec',
             COLUMNS: { ID:0, STORE:1, CATEGORY:2, DISCOUNT:3, DESCRIPTION:4, LINK:5, LOGO:6, VIP:7, ACTIVE:8, DATE:9 },
-            // путь к логотипу для центральной кнопки
             LOGO_URL: 'icons/logo.png'
         };
 
@@ -673,7 +698,38 @@
             }
         };
 
-        // Иконки для навигации (SVG)
+        // --- ВЫБОР 3D-ИЗОБРАЖЕНИЯ ---
+        function getOffer3DImage(offer) {
+            var cat = (offer.category || '').toLowerCase().trim();
+            var store = (offer.store || '').toLowerCase().trim();
+            if (cat.includes('еда') || cat.includes('food')) {
+                if (store.includes('кофе')) return 'icons/coffee.png';
+                if (store.includes('пицц')) return 'icons/pizza.png';
+                if (store.includes('бургер')) return 'icons/burger.png';
+                return 'icons/food.png';
+            }
+            if (cat.includes('магаз') || cat.includes('маркетплейс') || cat.includes('shopping')) return 'icons/shopping-bag-yellow.png';
+            if (cat.includes('игр')) return 'icons/gift-purple.png';
+            if (cat.includes('путеше')) return 'icons/suitcase.png';
+            if (cat.includes('банк')) return 'icons/cashback.png';
+            if (cat.includes('связь')) return 'icons/smartphone.png';
+            if (cat.includes('авто')) return 'icons/car.png';
+            return 'icons/gift-purple.png';
+        }
+
+        // --- ЦВЕТОВОЙ КЛАСС КАРТОЧКИ ---
+        function getCardColorClass(offer) {
+            var cat = (offer.category || '').toLowerCase().trim();
+            if (cat.includes('еда')) return 'category-purple';
+            if (cat.includes('магаз') || cat.includes('маркетплейс')) return 'category-blue';
+            if (cat.includes('игр')) return 'category-pink';
+            if (cat.includes('путеше')) return 'category-green';
+            if (cat.includes('банк')) return 'category-gold';
+            if (cat.includes('связь')) return 'category-blue';
+            if (cat.includes('авто')) return 'category-purple';
+            return 'category-purple';
+        }
+
         var NavIcons = {
             home: '<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>',
             promotions: '<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>',
@@ -735,7 +791,6 @@
                 var s=this, u=Session.get();
                 var h='<div class="page"><div class="home-welcome"><div class="greeting">Привет, '+(u?.name||u?.login||'Гость')+' 👋</div><h1>Выгода рядом</h1></div>';
                 h+='<div class="home-hero"><h2>До 40% кешбэка</h2><p>Лучшие предложения этой недели уже ждут вас</p><div class="hero-btn" id="heroBtn">Смотреть акции</div></div>';
-                // Категории с 3D иконками из папки icons и цветными градиентами
                 h+='<div class="home-menu">'+
                     '<div class="home-menu-btn" data-target="promotions">'+
                         '<div class="category-icon category-purple"><img src="icons/promotions.png" alt="" onerror="this.style.display=\'none\'"></div>'+
@@ -770,9 +825,26 @@
                 else{
                     latest.forEach((o,i)=>{
                         var card=document.createElement('div');
-                        card.className='promo-card'+(o.isVip?' vip-card':'');
+                        var colorClass = getCardColorClass(o);
+                        card.className='promo-card '+colorClass+(o.isVip?' vip-card':'');
                         card.style.animationDelay=i*0.05+'s';
-                        card.innerHTML='<div class="promo-card-header"><div class="promo-logo-container">'+(o.logo?'<img class="promo-logo" src="'+o.logo+'">':'<span class="promo-logo-fallback">'+o.store.charAt(0)+'</span>')+'</div><div class="promo-header-text"><div class="promo-store">'+o.store+'</div></div><div class="promo-discount-badge">'+o.discount+'</div></div><div class="promo-body"><div class="promo-desc">'+o.description+'</div><div class="promo-meta"><span class="promo-date">⏳ до '+o.date+'</span></div></div><button class="get-btn" data-link="'+o.link+'" data-id="'+o.id+'">Забрать выгоду</button>'+(o.isVip?'<div class="promo-vip-badge">VIP</div>':'');
+                        var img3d = getOffer3DImage(o);
+                        card.innerHTML=
+                        '<div class="promo-content">'+
+                            '<div class="promo-card-header">'+
+                                '<div class="promo-logo-container">'+(o.logo?'<img class="promo-logo" src="'+o.logo+'">':'<span class="promo-logo-fallback">'+o.store.charAt(0)+'</span>')+'</div>'+
+                                '<div class="promo-header-text"><div class="promo-store">'+o.store+'</div></div>'+
+                                '<div class="promo-discount-badge">'+o.discount+'</div>'+
+                            '</div>'+
+                            '<div class="promo-body">'+
+                                '<div class="promo-desc">'+o.description+'</div>'+
+                                '<div class="promo-meta"><span class="promo-date">⏳ до '+o.date+'</span></div>'+
+                            '</div>'+
+                            '<button class="get-btn" data-link="'+o.link+'" data-id="'+o.id+'">Забрать выгоду</button>'+
+                        '</div>'+
+                        '<div class="promo-visual"><img src="'+img3d+'" class="promo-3d-image" alt="" onerror="this.style.display=\'none\'"></div>'+
+                        '<button class="promo-fav-btn" data-id="'+o.id+'">'+(Favorites.is(o.id)?'❤️':'🤍')+'</button>'+
+                        (o.isVip?'<div class="promo-vip-badge">VIP</div>':'');
                         c.appendChild(card);
                     });
                 }
@@ -780,7 +852,7 @@
             },
             renderPromotionsPage:function(){
                 var s=this;
-                var h='<div class="page"><div class="promo-header"><h1>Акции</h1></div><div class="search-container"><span class="search-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></span><input class="search-input" id="searchInput" placeholder="Поиск акций..." value="'+this.searchQuery+'"><button class="search-clear" id="clearSearch">✕</button></div><div class="filters-scroll" id="filtersScroll"></div><div class="sort-container"><span class="sort-label">Сортировка</span><button class="sort-btn active" data-sort="new">Новые</button><button class="sort-btn" data-sort="popular">Популярные</button><button class="sort-btn" data-sort="discount">Макс. скидка</button></div><div id="cardsContainer"></div></div>';
+                var h='<div class="page"><div class="promo-header"><h1>Акции</h1></div><div class="search-container"><span class="search-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></span><input class="search-input" id="searchInput" placeholder="Поиск акций..." value="'+this.searchQuery+'"><button class="search-clear" id="clearSearch">✕</button></div><div class="filters-scroll" id="filtersScroll"></div><div class="sort-container"><span class="sort-label">Сортировка</span><button class="sort-btn active" data-sort="new">Новые</button><button class="sort-btn" data-sort="popular">Популярные</button><button class="sort-btn" data-sort="discount">Макс. скидка</button></div><div id="cardsContainer" class="cards-grid"></div></div>';
                 this.content.innerHTML=h;
                 var inp=document.getElementById('searchInput'), clr=document.getElementById('clearSearch');
                 inp.addEventListener('input',function(){clr.style.display=this.value?'flex':'none';s.searchQuery=this.value;s.renderCards();});
@@ -808,18 +880,33 @@
                 if(offers.length===0){c.innerHTML='<div class="empty-state">Ничего не найдено</div>';return;}
                 var sortedIds=offers.map(o=>o.id).sort((a,b)=>b-a);
                 var newThreshold=sortedIds[Math.min(2,sortedIds.length-1)];
-                var h='<div class="cards-grid">';
+                c.innerHTML = '';
                 offers.forEach((o,i)=>{
                     var stats=Stats.get(o.id), isNew=o.id>=newThreshold;
-                    h+='<div class="promo-card'+(o.isVip?' vip-card':'')+'" style="animation-delay:'+i*0.05+'s">';
-                    if(isNew) h+='<div class="promo-new-badge">NEW</div>';
-                    if(o.isVip) h+='<div class="promo-vip-badge">VIP</div>';
-                    h+='<button class="promo-fav-btn" data-id="'+o.id+'">'+(Favorites.is(o.id)?'❤️':'🤍')+'</button>';
-                    h+='<div class="promo-card-header"><div class="promo-logo-container">'+(o.logo?'<img class="promo-logo" src="'+o.logo+'">':'<span class="promo-logo-fallback">'+o.store.charAt(0)+'</span>')+'</div><div class="promo-header-text"><div class="promo-store">'+o.store+'</div></div><div class="promo-discount-badge">'+o.discount+'</div></div>';
-                    h+='<div class="promo-body"><div class="promo-desc">'+o.description+'</div><div class="promo-meta"><span class="promo-date">⏳ до '+o.date+'</span><span class="promo-stats">👁 '+stats.views+' 🔗 '+stats.clicks+'</span></div></div>';
-                    h+='<button class="get-btn" data-link="'+o.link+'" data-id="'+o.id+'">Забрать выгоду</button></div>';
+                    var colorClass = getCardColorClass(o);
+                    var card=document.createElement('div');
+                    card.className='promo-card '+colorClass+(o.isVip?' vip-card':'');
+                    card.style.animationDelay=i*0.05+'s';
+                    var img3d = getOffer3DImage(o);
+                    card.innerHTML=
+                    '<div class="promo-content">'+
+                        '<div class="promo-card-header">'+
+                            '<div class="promo-logo-container">'+(o.logo?'<img class="promo-logo" src="'+o.logo+'">':'<span class="promo-logo-fallback">'+o.store.charAt(0)+'</span>')+'</div>'+
+                            '<div class="promo-header-text"><div class="promo-store">'+o.store+'</div></div>'+
+                            '<div class="promo-discount-badge">'+o.discount+'</div>'+
+                        '</div>'+
+                        '<div class="promo-body">'+
+                            '<div class="promo-desc">'+o.description+'</div>'+
+                            '<div class="promo-meta"><span class="promo-date">⏳ до '+o.date+'</span><span class="promo-stats">👁 '+stats.views+' 🔗 '+stats.clicks+'</span></div>'+
+                        '</div>'+
+                        '<button class="get-btn" data-link="'+o.link+'" data-id="'+o.id+'">Забрать выгоду</button>'+
+                    '</div>'+
+                    '<div class="promo-visual"><img src="'+img3d+'" class="promo-3d-image" alt="" onerror="this.style.display=\'none\'"></div>'+
+                    (isNew?'<div class="promo-new-badge">NEW</div>':'')+
+                    (o.isVip?'<div class="promo-vip-badge">VIP</div>':'')+
+                    '<button class="promo-fav-btn" data-id="'+o.id+'">'+(Favorites.is(o.id)?'❤️':'🤍')+'</button>';
+                    c.appendChild(card);
                 });
-                h+='</div>'; c.innerHTML=h;
                 this.attachCardEvents(c);
             },
             attachCardEvents:function(c){
@@ -829,16 +916,37 @@
             },
             renderFavoritesPage:function(){
                 var s=this;
-                var h='<div class="page"><div class="promo-header"><h1>Избранное</h1></div><button class="back-btn" id="backFromFav">← Назад</button><div id="favContainer"></div></div>';
+                var h='<div class="page"><div class="promo-header"><h1>Избранное</h1></div><button class="back-btn" id="backFromFav">← Назад</button><div id="favContainer" class="cards-grid"></div></div>';
                 this.content.innerHTML=h;
                 document.getElementById('backFromFav').onclick=function(){s.renderScreen('promotions');};
                 var favIds=Favorites.list();
                 var offers=API.offers.filter(o=>favIds.indexOf(o.id)>-1);
                 var c=document.getElementById('favContainer');
                 if(offers.length===0){c.innerHTML='<div class="empty-state">Нет избранных акций</div>';return;}
-                var cards='<div class="cards-grid">';
-                offers.forEach(o=>{var stats=Stats.get(o.id);cards+='<div class="promo-card'+(o.isVip?' vip-card':'')+'">'+(o.isVip?'<div class="promo-vip-badge">VIP</div>':'')+'<button class="promo-fav-btn" data-id="'+o.id+'">❤️</button><div class="promo-card-header"><div class="promo-logo-container">'+(o.logo?'<img class="promo-logo" src="'+o.logo+'">':'<span class="promo-logo-fallback">'+o.store.charAt(0)+'</span>')+'</div><div class="promo-header-text"><div class="promo-store">'+o.store+'</div></div><div class="promo-discount-badge">'+o.discount+'</div></div><div class="promo-body"><div class="promo-desc">'+o.description+'</div><div class="promo-meta"><span class="promo-date">⏳ до '+o.date+'</span><span class="promo-stats">👁 '+stats.views+' 🔗 '+stats.clicks+'</span></div></div><button class="get-btn" data-link="'+o.link+'" data-id="'+o.id+'">Забрать выгоду</button></div>';});
-                cards+='</div>'; c.innerHTML=cards;
+                offers.forEach(o=>{
+                    var stats=Stats.get(o.id);
+                    var colorClass = getCardColorClass(o);
+                    var card=document.createElement('div');
+                    card.className='promo-card '+colorClass+(o.isVip?' vip-card':'');
+                    var img3d = getOffer3DImage(o);
+                    card.innerHTML=
+                    '<div class="promo-content">'+
+                        '<div class="promo-card-header">'+
+                            '<div class="promo-logo-container">'+(o.logo?'<img class="promo-logo" src="'+o.logo+'">':'<span class="promo-logo-fallback">'+o.store.charAt(0)+'</span>')+'</div>'+
+                            '<div class="promo-header-text"><div class="promo-store">'+o.store+'</div></div>'+
+                            '<div class="promo-discount-badge">'+o.discount+'</div>'+
+                        '</div>'+
+                        '<div class="promo-body">'+
+                            '<div class="promo-desc">'+o.description+'</div>'+
+                            '<div class="promo-meta"><span class="promo-date">⏳ до '+o.date+'</span><span class="promo-stats">👁 '+stats.views+' 🔗 '+stats.clicks+'</span></div>'+
+                        '</div>'+
+                        '<button class="get-btn" data-link="'+o.link+'" data-id="'+o.id+'">Забрать выгоду</button>'+
+                    '</div>'+
+                    '<div class="promo-visual"><img src="'+img3d+'" class="promo-3d-image" alt="" onerror="this.style.display=\'none\'"></div>'+
+                    (o.isVip?'<div class="promo-vip-badge">VIP</div>':'')+
+                    '<button class="promo-fav-btn" data-id="'+o.id+'">❤️</button>';
+                    c.appendChild(card);
+                });
                 c.querySelectorAll('.get-btn').forEach(b=>{b.addEventListener('click',function(e){e.stopPropagation();Stats.click(parseInt(this.dataset.id));window.open(this.dataset.link,'_blank');});});
                 c.querySelectorAll('.promo-fav-btn').forEach(b=>{b.addEventListener('click',function(e){e.stopPropagation();Favorites.toggle(parseInt(this.dataset.id));s.renderFavoritesPage();s.showToast('Удалено из избранного');});});
             },
@@ -851,11 +959,10 @@
             renderPlaceholder:function(t,text){this.content.innerHTML='<div class="page"><div class="promo-header"><h1>'+t+'</h1></div><div class="empty-state">'+text+'</div></div>';},
             renderNav:function(){
                 var self = this;
-                // новый порядок: Избранное, Акции, (центральная Главная), Уведомления, Профиль
                 var navItems = [
                     { id:'favorites', icon: NavIcons.favorites, label:'Избранное' },
                     { id:'promotions', icon: NavIcons.promotions, label:'Акции' },
-                    { id:'home', icon: '', label:'', isCenter: true }, // центральная кнопка
+                    { id:'home', icon: '', label:'', isCenter: true },
                     { id:'notifications', icon: NavIcons.notifications, label:'Уведомления' },
                     { id:'profile', icon: NavIcons.profile, label:'Профиль' }
                 ];
