@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -124,7 +123,6 @@
         .nav-item .nav-icon { width:24px; height:24px; transition:var(--transition-fast); }
         .nav-item .nav-label { font-size:10px; font-weight:600; letter-spacing:-0.1px; }
         .nav-item:active { transform:scale(0.94); }
-        /* Центральная кнопка не выделяется, чтобы не ломать логику, но можно добавить стиль при желании */
 
         /* Page */
         .page { animation:pageIn 0.35s cubic-bezier(0.4, 0, 0.2, 1); }
@@ -331,7 +329,6 @@
             gap:8px;
             padding-bottom:28px;
         }
-        /* Базовый стиль карточки */
         .promo-card {
             border-radius:var(--radius-md);
             padding:12px;
@@ -342,7 +339,7 @@
             display:flex;
             flex-direction:column;
             justify-content:space-between;
-            background:var(--card-purple); /* цвет по умолчанию, переопределяется классами */
+            background:var(--card-purple);
             color:var(--text);
             backdrop-filter:blur(10px);
             -webkit-backdrop-filter:blur(10px);
@@ -351,7 +348,6 @@
         }
         @keyframes cardUp { from{opacity:0; transform:translateY(12px);} to{opacity:1; transform:translateY(0);} }
         .promo-card:active { transform:scale(0.98); }
-        /* Цветовые варианты */
         .promo-card.purple { background:var(--card-purple); }
         .promo-card.blue { background:var(--card-blue); }
         .promo-card.green { background:var(--card-green); }
@@ -362,7 +358,6 @@
             box-shadow:0 0 20px rgba(243,201,105,0.3), var(--shadow-md);
         }
 
-        /* Элементы внутри карточки */
         .promo-top {
             display:flex;
             justify-content:space-between;
@@ -394,6 +389,7 @@
             align-items:center;
             justify-content:center;
             margin:4px 0;
+            min-height:70px;
         }
         .promo-3d-image {
             max-width:80%;
@@ -403,6 +399,17 @@
             transition:transform 0.2s ease;
         }
         .promo-card:active .promo-3d-image { transform:scale(1.05); }
+        .promo-placeholder {
+            display:none;
+            width:60px;
+            height:60px;
+            border-radius:50%;
+            background:rgba(255,255,255,0.1);
+            align-items:center;
+            justify-content:center;
+            font-size:24px;
+            color:rgba(255,255,255,0.5);
+        }
         .promo-store {
             font-size:11px;
             font-weight:600;
@@ -689,36 +696,58 @@
             }
         };
 
-        // --- Функция выбора 3D-изображения ---
+        // =================================================================
+        //   ФУНКЦИЯ ВЫБОРА 3D-ИЗОБРАЖЕНИЯ ДЛЯ КАРТОЧКИ
+        //   ВСЕ ПУТИ К ИКОНКАМ ПРОПИСЫВАЮТСЯ ЗДЕСЬ
+        //   Изображения должны лежать в папке icons/ (в корне проекта)
+        // =================================================================
         function getOffer3DImage(offer) {
             var cat = (offer.category || '').toLowerCase().trim();
             var store = (offer.store || '').toLowerCase().trim();
-            // Маппинг категорий на иконки
+
+            // ---------- ЕДА ----------
             if (cat.includes('еда') || cat.includes('food')) {
+                // Подставьте свои названия файлов, например 'icons/pizza.png', 'icons/sushi.png' и т.д.
                 if (store.includes('кофе') || store.includes('coffee')) return 'icons/coffee.png';
                 if (store.includes('пицц') || store.includes('pizza')) return 'icons/pizza.png';
                 if (store.includes('бургер') || store.includes('burger')) return 'icons/burger.png';
-                return 'icons/food.png';
+                return 'icons/food.png'; // общая иконка еды
             }
+
+            // ---------- МАГАЗИНЫ / МАРКЕТПЛЕЙСЫ ----------
             if (cat.includes('магаз') || cat.includes('shopping') || cat.includes('маркетплейс') || cat.includes('marketplace')) {
+                // Здесь используется shopping-bag-yellow.png
+                // Можете добавить свои варианты, например 'icons/shopping-bag-blue.png'
                 return 'icons/shopping-bag-yellow.png';
             }
+
+            // ---------- ИГРЫ ----------
             if (cat.includes('игр') || cat.includes('game')) {
-                return 'icons/gift-purple.png'; // заменим на games, если будет
+                // Пока используем gift-purple.png, замените на 'icons/games.png', когда появится
+                return 'icons/gift-purple.png';
             }
+
+            // ---------- ПУТЕШЕСТВИЯ ----------
             if (cat.includes('путеше') || cat.includes('travel')) {
                 return 'icons/suitcase.png';
             }
+
+            // ---------- БАНКИ ----------
             if (cat.includes('банк') || cat.includes('bank')) {
                 return 'icons/cashback.png';
             }
+
+            // ---------- СВЯЗЬ / ТЕЛЕКОМ ----------
             if (cat.includes('связь') || cat.includes('telecom')) {
                 return 'icons/smartphone.png';
             }
+
+            // ---------- АВТО ----------
             if (cat.includes('авто') || cat.includes('auto')) {
                 return 'icons/car.png';
             }
-            // По умолчанию
+
+            // Если категория не определена — показываем универсальную иконку подарка
             return 'icons/gift-purple.png';
         }
 
@@ -732,7 +761,6 @@
             if (cat.includes('банк')) return 'gold';
             if (cat.includes('связь')) return 'blue';
             if (cat.includes('авто')) return 'purple';
-            // случайный выбор из трех для разнообразия
             var colors = ['purple','blue','green','gold','pink'];
             return colors[Math.floor(Math.random() * colors.length)];
         }
@@ -800,7 +828,6 @@
                 var s=this, u=Session.get();
                 var h='<div class="page"><div class="home-welcome"><div class="greeting">Привет, '+(u?.name||u?.login||'Гость')+' 👋</div><h1>Выгода рядом</h1></div>';
                 h+='<div class="home-hero"><h2>До 40% кешбэка</h2><p>Лучшие предложения этой недели уже ждут вас</p><div class="hero-btn" id="heroBtn">Смотреть акции</div></div>';
-                // Категории с 3D иконками (используем встроенные SVG, они маленькие)
                 h+='<div class="home-menu"><div class="home-menu-btn" data-target="promotions"><div class="category-icon"><img src="icons/promotions.png" alt="" onerror="this.style.display=\'none\'"></div><div class="btn-text">Акции</div></div><div class="home-menu-btn" data-target="discounts"><div class="category-icon"><img src="icons/discounts.png" alt="" onerror="this.style.display=\'none\'"></div><div class="btn-text">Скидки</div></div><div class="home-menu-btn" data-target="offers"><div class="category-icon"><img src="icons/offers.png" alt="" onerror="this.style.display=\'none\'"></div><div class="btn-text">Выгодные<br>предложения</div></div><div class="home-menu-btn" data-target="partners"><div class="category-icon"><img src="icons/partners.png" alt="" onerror="this.style.display=\'none\'"></div><div class="btn-text">Партнеры</div></div><div class="home-menu-btn" data-target="about"><div class="category-icon"><img src="icons/about.png" alt="" onerror="this.style.display=\'none\'"></div><div class="btn-text">О нас</div></div></div>';
                 h+='<div class="section-header"><h2>Последние акции</h2><span class="section-link" id="goToPromo">Все →</span></div><div id="homeLatestCards" class="cards-grid"></div></div>';
                 this.content.innerHTML=h;
@@ -818,9 +845,13 @@
                         card.className='promo-card '+colorClass+(o.isVip?' vip-card':'');
                         card.style.animationDelay=i*0.05+'s';
                         var imgPath = getOffer3DImage(o);
+                        // Шаблон карточки с плейсхолдером на случай отсутствия иконки
                         card.innerHTML=
                         '<div class="promo-top"><div class="promo-title">'+(o.store.length>15?o.store.substring(0,15)+'…':o.store)+'</div><div class="promo-discount-badge">'+o.discount+'</div></div>'+
-                        '<div class="promo-visual"><img src="'+imgPath+'" class="promo-3d-image" alt="" onerror="this.style.display=\'none\'"></div>'+
+                        '<div class="promo-visual">'+
+                            '<img src="'+imgPath+'" class="promo-3d-image" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'flex\';">'+
+                            '<div class="promo-placeholder" style="display:none;">'+(offer.category ? offer.category.charAt(0).toUpperCase() : '🎁')+'</div>'+
+                        '</div>'+
                         '<div class="promo-store">'+(o.store.length>12?o.store.substring(0,12)+'…':o.store)+'</div>'+
                         '<div class="promo-description">'+(o.description?o.description.substring(0,25):'')+'</div>'+
                         '<div class="promo-price">+ '+o.discount+'</div>'+
@@ -832,6 +863,7 @@
                 }
                 this.attachCardEvents(c);
             },
+            // ... (остальные методы рендеринга остаются без изменений)
             renderPromotionsPage:function(){
                 var s=this;
                 var h='<div class="page"><div class="promo-header"><h1>Акции</h1></div><div class="search-container"><span class="search-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></span><input class="search-input" id="searchInput" placeholder="Поиск акций..." value="'+this.searchQuery+'"><button class="search-clear" id="clearSearch">✕</button></div><div class="filters-scroll" id="filtersScroll"></div><div class="sort-container"><span class="sort-label">Сортировка</span><button class="sort-btn active" data-sort="new">Новые</button><button class="sort-btn" data-sort="popular">Популярные</button><button class="sort-btn" data-sort="discount">Макс. скидка</button></div><div id="cardsContainer" class="cards-grid"></div></div>';
@@ -872,7 +904,10 @@
                     var imgPath = getOffer3DImage(o);
                     card.innerHTML=
                     '<div class="promo-top"><div class="promo-title">'+(o.store.length>15?o.store.substring(0,15)+'…':o.store)+'</div><div class="promo-discount-badge">'+o.discount+'</div></div>'+
-                    '<div class="promo-visual"><img src="'+imgPath+'" class="promo-3d-image" alt="" onerror="this.style.display=\'none\'"></div>'+
+                    '<div class="promo-visual">'+
+                        '<img src="'+imgPath+'" class="promo-3d-image" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'flex\';">'+
+                        '<div class="promo-placeholder" style="display:none;">'+(o.category ? o.category.charAt(0).toUpperCase() : '🎁')+'</div>'+
+                    '</div>'+
                     '<div class="promo-store">'+(o.store.length>12?o.store.substring(0,12)+'…':o.store)+'</div>'+
                     '<div class="promo-description">'+(o.description?o.description.substring(0,25):'')+'</div>'+
                     '<div class="promo-price">+ '+o.discount+'</div>'+
@@ -906,7 +941,10 @@
                     var imgPath = getOffer3DImage(o);
                     card.innerHTML=
                     '<div class="promo-top"><div class="promo-title">'+o.store+'</div><div class="promo-discount-badge">'+o.discount+'</div></div>'+
-                    '<div class="promo-visual"><img src="'+imgPath+'" class="promo-3d-image" alt="" onerror="this.style.display=\'none\'"></div>'+
+                    '<div class="promo-visual">'+
+                        '<img src="'+imgPath+'" class="promo-3d-image" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'flex\';">'+
+                        '<div class="promo-placeholder" style="display:none;">'+(o.category ? o.category.charAt(0).toUpperCase() : '🎁')+'</div>'+
+                    '</div>'+
                     '<div class="promo-store">'+o.store+'</div>'+
                     '<div class="promo-description">'+o.description+'</div>'+
                     '<div class="promo-price">+ '+o.discount+'</div>'+
@@ -955,4 +993,3 @@
     </script>
 </body>
 </html>
-```
