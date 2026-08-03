@@ -317,7 +317,6 @@
                             link: r[CONFIG.LENTA_COLUMNS.LINK] || '#',
                             image: parseImageUrl(r[CONFIG.LENTA_COLUMNS.IMAGE] || '')
                         }));
-                    // предзагрузка
                     preloadImages(self.lentaSlides.map(function(slide) { return slide.image; }));
                     return self.lentaSlides;
                 });
@@ -434,14 +433,23 @@
                 this.content=document.getElementById('main-content');
                 this.nav=document.getElementById('bottom-nav');
                 var u=Session.get();
-                if(u){this.nav.style.display='flex';this.loadApp();}
-                else{this.nav.style.display='none';this.showAuthScreen('login');}
+                if(u){
+                    this.nav.style.display='flex';
+                    this.loadApp();
+                } else {
+                    this.nav.style.display='none';
+                    // Загружаем пользователей перед показом формы входа
+                    var self = this;
+                    API.loadUsers().then(function() {
+                        self.showAuthScreen('login');
+                    }).catch(function() {
+                        self.showAuthScreen('login');
+                    });
+                }
             },
             loadApp:function(){
                 var s=this; this.showLoader();
-                // Сначала загружаем ленту, потом офферы
                 API.loadLenta().then(function() {
-                    // после загрузки ленты предзагрузка уже выполнена в loadLenta
                     API.loadOffersBySheet(s.currentCategoryKey).then(function() {
                         s.renderScreen('home');
                     }).catch(function(e) {
@@ -449,7 +457,6 @@
                         s.renderNav();
                     });
                 }).catch(function() {
-                    // если лента не загрузилась, продолжим без неё
                     API.loadOffersBySheet(s.currentCategoryKey).then(function() {
                         s.renderScreen('home');
                     }).catch(function(e) {
@@ -459,6 +466,99 @@
                 });
             },
             showLoader:function(){this.content.innerHTML='<div style="text-align:center;padding:60px;color:var(--text-tertiary);">Загрузка...</div>';},
+            // ========== НОВЫЕ МЕТОДЫ АВТОРИЗАЦИИ ==========
+            showAuthScreen: function(mode) {
+                var self = this;
+                this.nav.style.display = 'none';
+                var isLogin = (mode === 'login');
+                var html = `<div class="auth-page">
+                    <div class="auth-card">
+                        <div class="auth-title">${isLogin ? 'Вход' : 'Регистрация'}</div>
+                        <div class="auth-error" id="authError" style="display:none;"></div>
+                        ${!isLogin ? '<input class="auth-input" id="regName" placeholder="Имя">' : ''}
+                        <input class="auth-input" id="authLogin" placeholder="Логин" autocomplete="username">
+                        <input class="auth-input" type="password" id="authPassword" placeholder="Пароль" autocomplete="${isLogin ? 'current-password' : 'new-password'}">
+                        ${isLogin ? '<label class="auth-checkbox"><input type="checkbox" id="rememberMe" checked> Запомнить меня</label>' : ''}
+                        <button class="auth-btn" id="authBtn">${isLogin ? 'Войти' : 'Зарегистрироваться'}</button>
+                        <div class="auth-link" id="switchAuth">${isLogin ? 'Нет аккаунта? Зарегистрироваться' : 'Есть аккаунт? Войти'}</div>
+                    </div>
+                </div>`;
+                this.content.innerHTML = html;
+
+                function showError(msg) {
+                    var errEl = document.getElementById('authError');
+                    if (errEl) {
+                        errEl.textContent = msg;
+                        errEl.style.display = 'block';
+                    }
+                }
+
+                document.getElementById('switchAuth').onclick = function() {
+                    self.showAuthScreen(isLogin ? 'register' : 'login');
+                };
+
+                document.getElementById('authBtn').onclick = function() {
+                    var login = document.getElementById('authLogin').value.trim();
+                    var password = document.getElementById('authPassword').value.trim();
+                    var name = !isLogin ? document.getElementById('regName')?.value.trim() : '';
+
+                    if (!login || !password || (!isLogin && !name)) {
+                        showError('Заполните все поля');
+                        return;
+                    }
+
+                    if (isLogin) {
+                        var btn = document.getElementById('authBtn');
+                        btn.disabled = true;
+                        btn.textContent = 'Вход...';
+                        // Пользователи уже загружены в API.users при инициализации
+                        var found = API.users.find(function(u) {
+                            return u.login === login && u.password === password;
+                        });
+                        if (found) {
+                            var remember = document.getElementById('rememberMe')?.checked || false;
+                            Session.save(found, remember);
+                            self.nav.style.display = 'flex';
+                            self.loadApp();
+                        } else {
+                            showError('Неверный логин или пароль');
+                            btn.disabled = false;
+                            btn.textContent = 'Войти';
+                        }
+                    } else {
+                        var btn = document.getElementById('authBtn');
+                        btn.disabled = true;
+                        btn.textContent = 'Отправка...';
+                        API.registerUser(login, password, name).then(function(res) {
+                            if (res.success) {
+                                var user = { login: login, password: password, name: name, role: 'user' };
+                                Session.save(user, true);
+                                self.nav.style.display = 'flex';
+                                self.loadApp();
+                            } else {
+                                showError(res.error || 'Ошибка регистрации');
+                                btn.disabled = false;
+                                btn.textContent = 'Зарегистрироваться';
+                            }
+                        }).catch(function() {
+                            showError('Ошибка соединения');
+                            btn.disabled = false;
+                            btn.textContent = 'Зарегистрироваться';
+                        });
+                    }
+                };
+
+                // Enter в полях
+                var inputs = document.querySelectorAll('.auth-input');
+                inputs.forEach(function(inp) {
+                    inp.addEventListener('keypress', function(e) {
+                        if (e.key === 'Enter') {
+                            document.getElementById('authBtn').click();
+                        }
+                    });
+                });
+            },
+            // ========== КОНЕЦ НОВЫХ МЕТОДОВ ==========
             startHeroRotation: function() {
                 if (this.heroTimer) clearInterval(this.heroTimer);
                 var slides = API.lentaSlides;
@@ -475,7 +575,6 @@
                 var hero = document.querySelector('.home-hero');
                 if (!hero) return;
                 var slide = slides[this.heroIndex];
-                // Устанавливаем фон
                 if (slide.image) {
                     hero.style.backgroundImage = 'url("' + slide.image + '")';
                 } else {
@@ -486,19 +585,7 @@
                 var btn = hero.querySelector('.hero-btn');
                 btn.textContent = slide.btnText;
                 btn.setAttribute('data-link', slide.link);
-                // Обновляем индикаторы
                 var dots = document.querySelectorAll('.hero-dot');
-                dots.forEach(function(dot, idx) {
-                    if (idx === self.heroIndex) {
-                        dot.classList.add('active');
-                    } else {
-                        dot.classList.remove('active');
-                    }
-                });
-                // Примечание: self определена глобально через var self = this; внутри App методов, но здесь this.App? 
-                // Используем замыкание: сохраним this в переменную, доступную внутри updateHeroContent.
-                // Проще всего: в startHeroRotation мы уже используем self, значит self – это App. 
-                // Но updateHeroContent может вызываться отдельно, поэтому внутри неё используем this.heroIndex (App).
                 var that = this;
                 dots.forEach(function(dot, idx) {
                     if (idx === that.heroIndex) {
@@ -507,7 +594,6 @@
                         dot.classList.remove('active');
                     }
                 });
-                // Исправим: заменим self на that или this. Явно пропишем this.heroIndex.
             },
             renderHomePage:function(){
                 var s=this;
@@ -520,7 +606,6 @@
                     image: ''
                 };
                 var h='<div class="page">';
-                // Hero block
                 if (slides.length > 0) {
                     var firstSlide = slides[0];
                     h += `<div class="home-hero" style="background-image: url(${firstSlide.image || ''});">
@@ -530,14 +615,12 @@
                         ${slides.length > 1 ? '<div class="hero-indicators">' + slides.map(function(_, idx) { return '<span class="hero-dot' + (idx === 0 ? ' active' : '') + '" data-index="' + idx + '"></span>'; }).join('') + '</div>' : ''}
                     </div>`;
                 } else {
-                    // Статичный Hero (если лента не загружена)
                     h += `<div class="home-hero">
                         <h2>${defaultSlide.title}</h2>
                         <p>${defaultSlide.description}</p>
                         <div class="hero-btn" data-link="${defaultSlide.link}">${defaultSlide.btnText}</div>
                     </div>`;
                 }
-                // Категории
                 h+='<div class="home-menu">'+
                     '<div class="home-menu-btn bg-pink" data-target="promotions"><div class="category-icon">'+CategoryIcons.promotions+'</div><div class="btn-text">Акции</div></div>'+
                     '<div class="home-menu-btn bg-blue" data-target="discounts"><div class="category-icon">'+CategoryIcons.discounts+'</div><div class="btn-text">Скидки</div></div>'+
@@ -550,7 +633,6 @@
                 h+='</div>';
                 this.content.innerHTML=h;
 
-                // Обработчик кнопки Hero
                 var heroBtn = this.content.querySelector('.hero-btn');
                 if (heroBtn) {
                     heroBtn.addEventListener('click', function(e) {
@@ -564,7 +646,6 @@
                     });
                 }
 
-                // Обработчики точек
                 var dots = this.content.querySelectorAll('.hero-dot');
                 dots.forEach(function(dot) {
                     dot.addEventListener('click', function() {
@@ -573,7 +654,6 @@
                     });
                 });
 
-                // Обработчики категорий
                 var btns=this.content.querySelectorAll('.home-menu-btn');
                 btns.forEach(function(b){
                     b.addEventListener('click', function(){
@@ -587,63 +667,23 @@
                     });
                 });
 
-                // Запускаем ротацию, если слайдов больше одного
                 if (slides.length > 1) {
                     s.heroIndex = 0;
                     s.startHeroRotation();
                 }
             },
-            // Переход по точке
             goToHeroSlide: function(index) {
                 var slides = API.lentaSlides;
                 if (!slides || index < 0 || index >= slides.length) return;
                 if (this.heroTimer) clearInterval(this.heroTimer);
                 this.heroIndex = index;
                 this.updateHeroContent();
-                // Перезапускаем таймер
                 if (slides.length > 1) {
                     this.startHeroRotation();
                 }
             },
-            updateHeroContent: function() {
-                var slides = API.lentaSlides;
-                if (!slides || slides.length === 0) return;
-                var hero = document.querySelector('.home-hero');
-                if (!hero) return;
-                var slide = slides[this.heroIndex];
-                if (slide.image) {
-                    hero.style.backgroundImage = 'url("' + slide.image + '")';
-                } else {
-                    hero.style.backgroundImage = '';
-                }
-                hero.querySelector('h2').textContent = slide.title;
-                hero.querySelector('p').textContent = slide.description;
-                var btn = hero.querySelector('.hero-btn');
-                btn.textContent = slide.btnText;
-                btn.setAttribute('data-link', slide.link);
-                // Обновляем индикаторы
-                var dots = document.querySelectorAll('.hero-dot');
-                dots.forEach(function(dot, idx) {
-                    if (idx === self.heroIndex) {
-                        dot.classList.add('active');
-                    } else {
-                        dot.classList.remove('active');
-                    }
-                });
-                // Исправление: используем this вместо self
-                var that = this;
-                dots.forEach(function(dot, idx) {
-                    if (idx === that.heroIndex) {
-                        dot.classList.add('active');
-                    } else {
-                        dot.classList.remove('active');
-                    }
-                });
-            },
-            // При переходе на главную из других экранов нужно обновить hero и таймер
             renderScreen:function(screen){
                 this.currentScreen = screen;
-                // Очищаем таймер при уходе с главной
                 if (this.heroTimer && screen !== 'home') {
                     clearInterval(this.heroTimer);
                     this.heroTimer = null;
