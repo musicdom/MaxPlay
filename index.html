@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -72,36 +71,8 @@
             padding-bottom:100px;
             padding-top:env(safe-area-inset-top);
         }
-        .app-container::before {
-            content:'';
-            position:fixed;
-            inset:0;
-            background:radial-gradient(ellipse at 30% 0%, rgba(139,108,255,0.06) 0%, transparent 50%),
-                       radial-gradient(ellipse at 70% 10%, rgba(212,108,255,0.04) 0%, transparent 50%),
-                       radial-gradient(ellipse at 50% 80%, rgba(243,201,105,0.03) 0%, transparent 50%);
-            pointer-events:none;
-            z-index:0;
-        }
-        .main-content { flex:1; overflow-y:auto; scrollbar-width:none; position:relative; z-index:1; }
+        .main-content { flex:1; overflow-y:auto; scrollbar-width:none; position:relative; z-index:1; padding:0 16px; }
         .main-content::-webkit-scrollbar { display:none; }
-
-        /* Баннер на всю ширину */
-        .top-banner {
-            width: 100%;
-            background: #000000;
-            padding: 12px 0;
-            text-align: center;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-        }
-        .top-banner img {
-            display: block;
-            width: 100%;
-            max-height: 80px;
-            object-fit: contain;
-            filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3));
-        }
-
-        .content-padded { padding: 0 16px; }
 
         /* Bottom Navigation */
         .bottom-nav {
@@ -181,20 +152,10 @@
             border:1px solid var(--border);
             border-radius:var(--radius-lg);
             padding:28px;
-            margin-bottom:28px;
+            margin:24px 0 28px 0;
             box-shadow:var(--shadow-md);
             position:relative;
             overflow:hidden;
-        }
-        .home-hero::after {
-            content:'';
-            position:absolute;
-            top:-20%;
-            right:-20%;
-            width:70%;
-            height:70%;
-            background:radial-gradient(circle, rgba(212,108,255,0.12) 0%, transparent 70%);
-            pointer-events:none;
         }
         .home-hero h2 { font-size:var(--font-headline); font-weight:700; margin-bottom:8px; position:relative; }
         .home-hero p { font-size:var(--font-body); color:var(--text-secondary); line-height:1.5; margin-bottom:20px; position:relative; }
@@ -263,9 +224,9 @@
         .bg-blue { background: var(--cat-blue) !important; }
         .bg-gold { background: var(--cat-gold) !important; }
         .bg-purple { background: var(--cat-purple) !important; }
-        .bg-green { background: var(--cat-green) !important; }
         .bg-teal { background: var(--cat-teal) !important; }
         .bg-orange { background: var(--cat-orange) !important; }
+        .bg-green { background: var(--cat-green) !important; }
 
         /* Promo */
         .promo-header { padding:24px 0 16px 0; }
@@ -782,8 +743,6 @@
             renderHomePage:function(){
                 var s=this;
                 var h='<div class="page">';
-                h+='<div class="top-banner"><img src="icons/logop.png" alt="Выгодка" onerror="this.style.display=\'none\'"></div>';
-                h+='<div class="content-padded">';
                 h+='<div class="home-hero"><h2>До 40% кешбэка</h2><p>Лучшие предложения этой недели уже ждут вас</p><div class="hero-btn" id="heroBtn">Смотреть акции</div></div>';
                 h+='<div class="home-menu">'+
                     '<div class="home-menu-btn bg-pink" data-target="promotions">'+
@@ -815,7 +774,6 @@
                         '<div class="btn-text">О нас</div>'+
                     '</div>'+
                 '</div>';
-                h+='</div></div>';
                 this.content.innerHTML=h;
                 document.getElementById('heroBtn').onclick=function(){s.renderScreen('promotions');};
                 var btns=this.content.querySelectorAll('.home-menu-btn');
@@ -833,7 +791,7 @@
             },
             renderPromotionsPage:function(){
                 var s=this;
-                var h='<div class="page"><div class="content-padded"><div class="promo-header"><h1>Акции</h1></div><div class="search-container"><span class="search-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></span><input class="search-input" id="searchInput" placeholder="Поиск акций..." value="'+this.searchQuery+'"><button class="search-clear" id="clearSearch">✕</button></div><div class="filters-scroll" id="filtersScroll"></div><div class="sort-container"><span class="sort-label">Сортировка</span><button class="sort-btn active" data-sort="new">Новые</button><button class="sort-btn" data-sort="popular">Популярные</button><button class="sort-btn" data-sort="discount">Макс. скидка</button></div><div id="cardsContainer" class="cards-grid"></div></div></div>';
+                var h='<div class="page"><div class="promo-header"><h1>Акции</h1></div><div class="search-container"><span class="search-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></span><input class="search-input" id="searchInput" placeholder="Поиск акций..." value="'+this.searchQuery+'"><button class="search-clear" id="clearSearch">✕</button></div><div class="filters-scroll" id="filtersScroll"></div><div class="sort-container"><span class="sort-label">Сортировка</span><button class="sort-btn active" data-sort="new">Новые</button><button class="sort-btn" data-sort="popular">Популярные</button><button class="sort-btn" data-sort="discount">Макс. скидка</button></div><div id="cardsContainer" class="cards-grid"></div></div>';
                 this.content.innerHTML=h;
                 var inp=document.getElementById('searchInput'), clr=document.getElementById('clearSearch');
                 inp.addEventListener('input',function(){clr.style.display=this.value?'flex':'none';s.searchQuery=this.value;s.renderCards();});
@@ -893,7 +851,7 @@
             },
             renderFavoritesPage:function(){
                 var s=this;
-                var h='<div class="page"><div class="content-padded"><div class="promo-header"><h1>Избранное</h1></div><button class="back-btn" id="backFromFav">← Назад</button><div id="favContainer" class="cards-grid"></div></div></div>';
+                var h='<div class="page"><div class="promo-header"><h1>Избранное</h1></div><button class="back-btn" id="backFromFav">← Назад</button><div id="favContainer" class="cards-grid"></div></div>';
                 this.content.innerHTML=h;
                 document.getElementById('backFromFav').onclick=function(){s.renderScreen('promotions');};
                 var favIds=Favorites.list();
@@ -925,11 +883,11 @@
             },
             renderProfilePage:function(){
                 var u=Session.get(); if(!u){this.showAuthScreen('login');return;}
-                var h='<div class="page"><div class="content-padded"><div class="promo-header"><h1>Профиль</h1></div><div class="profile-card"><div class="profile-avatar"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div class="profile-name">'+(u.name||u.login)+'</div><div class="profile-login">@'+u.login+'</div><button class="logout-btn" id="logoutBtn">Выйти</button></div></div></div>';
+                var h='<div class="page"><div class="promo-header"><h1>Профиль</h1></div><div class="profile-card"><div class="profile-avatar"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div class="profile-name">'+(u.name||u.login)+'</div><div class="profile-login">@'+u.login+'</div><button class="logout-btn" id="logoutBtn">Выйти</button></div></div>';
                 this.content.innerHTML=h; var s=this;
                 document.getElementById('logoutBtn').onclick=function(){Session.logout();s.nav.style.display='none';s.showAuthScreen('login');};
             },
-            renderPlaceholder:function(t,text){this.content.innerHTML='<div class="page"><div class="content-padded"><div class="promo-header"><h1>'+t+'</h1></div><div class="empty-state">'+text+'</div></div></div>';},
+            renderPlaceholder:function(t,text){this.content.innerHTML='<div class="page"><div class="promo-header"><h1>'+t+'</h1></div><div class="empty-state">'+text+'</div></div>';},
             renderNav:function(){
                 var self = this;
                 var navItems = [
