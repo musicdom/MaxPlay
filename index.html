@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -43,6 +44,8 @@
             --cat-green: linear-gradient(325deg, rgba(58,128,104,0.9) 0%, rgba(38,56,57,0.9) 100%);
             --cat-gold: linear-gradient(325deg, rgba(145,111,54,0.9) 0%, rgba(59,53,43,0.92) 100%);
             --cat-pink: linear-gradient(325deg, rgba(157,78,122,0.9) 0%, rgba(56,42,62,0.92) 100%);
+            --cat-teal: linear-gradient(325deg, rgba(45,130,130,0.9) 0%, rgba(30,70,70,0.9) 100%);
+            --cat-orange: linear-gradient(325deg, rgba(200,110,50,0.9) 0%, rgba(80,50,30,0.9) 100%);
         }
         * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
         body {
@@ -210,7 +213,7 @@
         }
         .home-hero .hero-btn:active { transform:scale(0.97); }
 
-        /* Категории – сетка 2x2 */
+        /* Категории – сетка 2 колонки */
         .home-menu { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:28px; }
         .home-menu-btn {
             background:rgba(255,255,255,0.05);
@@ -261,6 +264,8 @@
         .bg-gold { background: var(--cat-gold) !important; }
         .bg-purple { background: var(--cat-purple) !important; }
         .bg-green { background: var(--cat-green) !important; }
+        .bg-teal { background: var(--cat-teal) !important; }
+        .bg-orange { background: var(--cat-orange) !important; }
 
         /* Promo */
         .promo-header { padding:24px 0 16px 0; }
@@ -712,7 +717,9 @@
             discounts: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6"/><circle cx="9.5" cy="9.5" r="1.5"/><circle cx="14.5" cy="14.5" r="1.5"/></svg>',
             offers: '<svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
             partners: '<svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6"/><path d="M23 11h-6"/></svg>',
-            about: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>'
+            about: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>',
+            cards: '<svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 10h20"/></svg>',
+            sim: '<svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8"/><path d="M8 10h8"/><path d="M8 14h6"/><circle cx="12" cy="18" r="1"/></svg>'
         };
 
         var NavIcons = {
@@ -795,6 +802,14 @@
                         '<div class="category-icon">'+CategoryIcons.partners+'</div>'+
                         '<div class="btn-text">Партнеры</div>'+
                     '</div>'+
+                    '<div class="home-menu-btn bg-teal" data-target="cards">'+
+                        '<div class="category-icon">'+CategoryIcons.cards+'</div>'+
+                        '<div class="btn-text">Выгодные<br>карты</div>'+
+                    '</div>'+
+                    '<div class="home-menu-btn bg-orange" data-target="sim">'+
+                        '<div class="category-icon">'+CategoryIcons.sim+'</div>'+
+                        '<div class="btn-text">SIM-карты</div>'+
+                    '</div>'+
                     '<div class="home-menu-btn bg-green" data-target="about">'+
                         '<div class="category-icon">'+CategoryIcons.about+'</div>'+
                         '<div class="btn-text">О нас</div>'+
@@ -873,7 +888,7 @@
             },
             attachCardEvents:function(c){
                 c.querySelectorAll('.get-btn').forEach(b=>{b.addEventListener('click',function(e){e.stopPropagation();Stats.click(parseInt(this.dataset.id));window.open(this.dataset.link,'_blank');});});
-                c.querySelectorAll('.promo-fav-btn').forEach(b=>{b.addEventListener('click',function(e){e.stopPropagation();var id=parseInt(this.dataset.id);var a=Favorites.toggle(id);this.innerHTML=a?'❤️':'🤍';App.showToast(a?'Добавлено в избранное':'Удалено');});});
+                c.querySelectorAll('.promo-fav-btn').forEach(b=>{b.addEventListener('click',function(e){e.stopPropagation();var id=parseInt(this.dataset.id);var a=Favorites.toggle(id);this.innerHTML=a?'❤️':'🤍';App.showToast(a?'Добавлено в избранное':'Удалено из избранного');});});
                 c.querySelectorAll('.promo-card').forEach(card=>{var id=parseInt(card.querySelector('.promo-fav-btn')?.dataset.id);if(id)Stats.view(id);});
             },
             renderFavoritesPage:function(){
@@ -952,4 +967,4 @@
         document.addEventListener('DOMContentLoaded', function(){ App.init(); });
     </script>
 </body>
-</html> 
+</html>
