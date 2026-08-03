@@ -24,6 +24,7 @@
             --cat-pink: linear-gradient(325deg, rgba(157,78,122,0.9) 0%, rgba(56,42,62,0.92) 100%);
             --cat-teal: linear-gradient(325deg, rgba(45,130,130,0.9) 0%, rgba(30,70,70,0.9) 100%);
             --cat-orange: linear-gradient(325deg, rgba(200,110,50,0.9) 0%, rgba(80,50,30,0.9) 100%);
+            --cat-red: linear-gradient(325deg, rgba(190,60,60,0.9) 0%, rgba(80,30,30,0.9) 100%);
         }
         * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
         body { font-family:'Inter', sans-serif; background:var(--bg); color:var(--text); overflow-x:hidden; min-height:100vh; -webkit-font-smoothing:antialiased; }
@@ -96,6 +97,9 @@
         .promo-card.category-green { background:var(--cat-green); }
         .promo-card.category-gold { background:var(--cat-gold); }
         .promo-card.category-pink { background:var(--cat-pink); }
+        .promo-card.category-teal { background:var(--cat-teal); }
+        .promo-card.category-orange { background:var(--cat-orange); }
+        .promo-card.category-red { background:var(--cat-red); }
         @keyframes cardUp { from{opacity:0; transform:translateY(18px) scale(0.96);} to{opacity:1; transform:translateY(0) scale(1);} }
         .promo-card:active { transform:scale(0.98); }
         .vip-card { border:2px solid var(--accent); box-shadow:0 0 28px rgba(243,201,105,0.2), var(--shadow-md); }
@@ -159,9 +163,8 @@
             API_KEY: 'AIzaSyAbTbin2-mkFRspURGKRXxyCpjy_Dez8ts',
             SHEET_USERS: 'Пользователи',
             APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzQSmlFHGoD3YMPlCyrLFOKZ_J1xacgSljT6iQ6uzRvb1DF3aIUXJyCfjTImEnh368D/exec',
-            COLUMNS: { ID:0, STORE:1, CATEGORY:2, DISCOUNT:3, DESCRIPTION:4, LINK:5, LOGO:6, VIP:7, ACTIVE:8, DATE:9 },
+            COLUMNS: { ID:0, STORE:1, CATEGORY:2, DISCOUNT:3, DESCRIPTION:4, LINK:5, LOGO:6, VIP:7, ACTIVE:8, DATE:9, COLOR:10 },
             LOGO_URL: 'icons/logo.png',
-            // Маппинг кнопок на листы Google Таблицы
             SHEETS: {
                 promotions: 'Акции',
                 discounts: 'Скидки',
@@ -219,11 +222,10 @@
 
         // --- API ---
         var API = {
-            categoryOffers: {},   // { 'promotions': [...], 'discounts': [...], ... }
+            categoryOffers: {},
             currentCategory: 'promotions',
             categories: [],
             users: [],
-            // Загрузка из конкретного листа
             loadOffersBySheet: function(categoryKey) {
                 var sheetName = CONFIG.SHEETS[categoryKey];
                 if (!sheetName) return Promise.reject('Неизвестная категория');
@@ -242,7 +244,8 @@
                             link: r[CONFIG.COLUMNS.LINK]||'#',
                             logo: r[CONFIG.COLUMNS.LOGO]||'',
                             isVip: r[CONFIG.COLUMNS.VIP]&&r[CONFIG.COLUMNS.VIP].toLowerCase().trim()==='да',
-                            date: r[CONFIG.COLUMNS.DATE]||''
+                            date: r[CONFIG.COLUMNS.DATE]||'',
+                            color: r[CONFIG.COLUMNS.COLOR] || ''
                         }));
                     self.categoryOffers[categoryKey] = offers;
                     self.categories = self.buildCategories(offers);
@@ -265,7 +268,6 @@
                 offers.forEach(x=>{var k=x.category.toLowerCase().trim(); if(k&&!set[k]){set[k]=true;c.push({id:k,name:x.category,emoji:m[k]||'📌'});}});
                 return c;
             },
-            // Получить все предложения для избранного
             getAllOffers: function() {
                 var all = [];
                 for (var key in this.categoryOffers) {
@@ -289,7 +291,12 @@
             }
         };
 
+        // Обновленная функция: сначала проверяет offer.color, затем категорию
         function getCardColorClass(offer) {
+            var validColors = ['purple','blue','green','gold','pink','orange','teal','red'];
+            if (offer.color && validColors.indexOf(offer.color.toLowerCase().trim()) !== -1) {
+                return 'category-' + offer.color.toLowerCase().trim();
+            }
             var cat = (offer.category || '').toLowerCase().trim();
             if (cat.includes('еда')) return 'category-purple';
             if (cat.includes('магаз') || cat.includes('маркетплейс')) return 'category-blue';
@@ -325,7 +332,7 @@
             activeCategory:'all',
             activeSort:'new',
             searchQuery:'',
-            currentCategoryKey: 'promotions', // категория по умолчанию
+            currentCategoryKey: 'promotions',
             init:function(){
                 this.content=document.getElementById('main-content');
                 this.nav=document.getElementById('bottom-nav');
@@ -335,7 +342,6 @@
             },
             loadApp:function(){
                 var s=this; this.showLoader();
-                // Загружаем категорию по умолчанию, чтобы было что показывать
                 API.loadOffersBySheet(this.currentCategoryKey).then(()=>{
                     s.renderScreen('home');
                 }).catch(e=>{
@@ -372,7 +378,7 @@
             renderScreen:function(s){
                 this.currentScreen=s; this.content.innerHTML='';
                 if(s==='home') this.renderHomePage();
-                else if(s==='promotions') this.renderCategoryPage();  // страница категорий
+                else if(s==='promotions') this.renderCategoryPage();
                 else if(s==='favorites') this.renderFavoritesPage();
                 else if(s==='profile') this.renderProfilePage();
                 else if(s==='notifications') this.renderPlaceholder('Уведомления','Здесь будут уведомления');
@@ -402,11 +408,10 @@
                             return;
                         }
                         s.currentCategoryKey = t;
-                        s.renderScreen('promotions'); // открываем страницу категорий
+                        s.renderScreen('promotions');
                     });
                 });
             },
-            // Универсальная страница категорий
             renderCategoryPage: function() {
                 var s=this;
                 var catName = CONFIG.CATEGORY_NAMES[this.currentCategoryKey] || 'Категория';
@@ -422,7 +427,6 @@
                 clr.addEventListener('click',function(){inp.value='';clr.style.display='none';s.searchQuery='';s.renderCards();});
                 clr.style.display = inp.value ? 'flex' : 'none';
 
-                // Загружаем данные из нужного листа
                 API.loadOffersBySheet(this.currentCategoryKey).then(()=>{
                     s.renderFilters();
                     s.renderSort();
