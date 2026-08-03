@@ -9,35 +9,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800;14..32,900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg:#11131D;
-            --bg-secondary:#151724;
-            --surface:rgba(255,255,255,0.07);
-            --surface-strong:rgba(255,255,255,0.12);
-            --primary:#8B6CFF;
-            --primary-2:#D46CFF;
-            --accent:#F3C969;
-            --danger:#FF5D73;
-            --success:#21D07A;
-            --text:#FFFFFF;
-            --text-secondary:rgba(255,255,255,0.62);
-            --text-tertiary:rgba(255,255,255,0.38);
-            --border:rgba(255,255,255,0.09);
-            --border-strong:rgba(255,255,255,0.14);
-            --shadow-sm:0 4px 12px rgba(0,0,0,0.2);
-            --shadow-md:0 10px 35px rgba(0,0,0,0.3);
-            --shadow-lg:0 18px 50px rgba(0,0,0,0.45);
-            --radius-sm:14px;
-            --radius-md:20px;
-            --radius-lg:28px;
-            --radius-xl:34px;
-            --radius-full:9999px;
-            --font-caption:13px;
-            --font-body:15px;
-            --font-title:20px;
-            --font-headline:26px;
-            --font-large:34px;
-            --transition-fast:0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            --transition-smooth:0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            --bg:#11131D; --bg-secondary:#151724; --surface:rgba(255,255,255,0.07); --surface-strong:rgba(255,255,255,0.12);
+            --primary:#8B6CFF; --primary-2:#D46CFF; --accent:#F3C969; --danger:#FF5D73; --success:#21D07A;
+            --text:#FFFFFF; --text-secondary:rgba(255,255,255,0.62); --text-tertiary:rgba(255,255,255,0.38);
+            --border:rgba(255,255,255,0.09); --border-strong:rgba(255,255,255,0.14);
+            --shadow-sm:0 4px 12px rgba(0,0,0,0.2); --shadow-md:0 10px 35px rgba(0,0,0,0.3); --shadow-lg:0 18px 50px rgba(0,0,0,0.45);
+            --radius-sm:14px; --radius-md:20px; --radius-lg:28px; --radius-xl:34px; --radius-full:9999px;
+            --font-caption:13px; --font-body:15px; --font-title:20px; --font-headline:26px; --font-large:34px;
+            --transition-fast:0.2s cubic-bezier(0.4, 0, 0.2, 1); --transition-smooth:0.35s cubic-bezier(0.4, 0, 0.2, 1);
             --cat-purple: linear-gradient(325deg, rgba(112,82,190,0.9) 0%, rgba(48,42,75,0.9) 100%);
             --cat-blue: linear-gradient(325deg, rgba(57,93,160,0.9) 0%, rgba(39,43,68,0.9) 100%);
             --cat-green: linear-gradient(325deg, rgba(58,128,104,0.9) 0%, rgba(38,56,57,0.9) 100%);
@@ -47,179 +26,38 @@
             --cat-orange: linear-gradient(325deg, rgba(200,110,50,0.9) 0%, rgba(80,50,30,0.9) 100%);
         }
         * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-        body {
-            font-family:'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background:var(--bg);
-            color:var(--text);
-            overflow-x:hidden;
-            min-height:100vh;
-            min-height:100dvh;
-            -webkit-font-smoothing:antialiased;
-            -moz-osx-font-smoothing:grayscale;
-            user-select:none;
-            -webkit-user-select:none;
-        }
-        .app-container {
-            max-width:440px;
-            margin:0 auto;
-            min-height:100vh;
-            min-height:100dvh;
-            display:flex;
-            flex-direction:column;
-            position:relative;
-            background:var(--bg);
-            padding-bottom:100px;
-            padding-top:env(safe-area-inset-top);
-        }
+        body { font-family:'Inter', sans-serif; background:var(--bg); color:var(--text); overflow-x:hidden; min-height:100vh; -webkit-font-smoothing:antialiased; }
+        .app-container { max-width:440px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; position:relative; background:var(--bg); padding-bottom:100px; padding-top:env(safe-area-inset-top); }
         .main-content { flex:1; overflow-y:auto; scrollbar-width:none; position:relative; z-index:1; padding:0 16px; }
         .main-content::-webkit-scrollbar { display:none; }
 
-        /* Bottom Navigation */
-        .bottom-nav {
-            position:fixed;
-            bottom:0;
-            left:50%;
-            transform:translateX(-50%);
-            width:100%;
-            max-width:440px;
-            height:84px;
-            background:rgba(21,23,36,0.85);
-            backdrop-filter:blur(25px);
-            -webkit-backdrop-filter:blur(25px);
-            border-top:1px solid var(--border);
-            display:flex;
-            align-items:center;
-            justify-content:space-around;
-            z-index:100;
-            padding-bottom:env(safe-area-inset-bottom);
-        }
-        .nav-item {
-            display:flex;
-            flex-direction:column;
-            align-items:center;
-            justify-content:center;
-            gap:4px;
-            padding:6px 0;
-            cursor:pointer;
-            color:var(--text-secondary);
-            transition:var(--transition-fast);
-            background:none;
-            border:none;
-            font-family:inherit;
-            width:68px;
-            border-radius:16px;
-            position:relative;
-        }
+        .bottom-nav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:440px; height:84px; background:rgba(21,23,36,0.85); backdrop-filter:blur(25px); border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-around; z-index:100; padding-bottom:env(safe-area-inset-bottom); }
+        .nav-item { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:6px 0; cursor:pointer; color:var(--text-secondary); transition:var(--transition-fast); background:none; border:none; font-family:inherit; width:68px; border-radius:16px; position:relative; }
         .nav-item.active { color:var(--text); }
         .nav-item .nav-icon { width:24px; height:24px; transition:var(--transition-fast); }
         .nav-item .nav-label { font-size:10px; font-weight:600; letter-spacing:-0.1px; }
         .nav-item:active { transform:scale(0.94); }
-
-        .nav-center {
-            position:relative;
-            top:-18px;
-            width:64px;
-            height:64px;
-            border-radius:50%;
-            background: radial-gradient(circle at 30% 30%, #333, #000);
-            box-shadow:0 8px 30px rgba(139,108,255,0.45);
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            border:none;
-            cursor:pointer;
-            transition:var(--transition-fast);
-            padding: 0;
-        }
+        .nav-center { position:relative; top:-18px; width:64px; height:64px; border-radius:50%; background: radial-gradient(circle at 30% 30%, #333, #000); box-shadow:0 8px 30px rgba(139,108,255,0.45); display:flex; align-items:center; justify-content:center; border:none; cursor:pointer; transition:var(--transition-fast); padding:0; }
         .nav-center:active { transform:scale(0.94); }
-        .nav-center .nav-logo {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 50%;
-            filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));
-        }
+        .nav-center .nav-logo { width:100%; height:100%; object-fit:cover; border-radius:50%; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
 
-        /* Page */
         .page { animation:pageIn 0.35s cubic-bezier(0.4, 0, 0.2, 1); }
         @keyframes pageIn { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
 
-        /* Home */
-        .home-hero {
-            background:rgba(255,255,255,0.05);
-            backdrop-filter:blur(20px);
-            -webkit-backdrop-filter:blur(20px);
-            border:1px solid var(--border);
-            border-radius:var(--radius-lg);
-            padding:28px;
-            margin:24px 0 28px 0;
-            box-shadow:var(--shadow-md);
-            position:relative;
-            overflow:hidden;
-        }
-        .home-hero h2 { font-size:var(--font-headline); font-weight:700; margin-bottom:8px; position:relative; }
-        .home-hero p { font-size:var(--font-body); color:var(--text-secondary); line-height:1.5; margin-bottom:20px; position:relative; }
-        .home-hero .hero-btn {
-            display:inline-block;
-            background:linear-gradient(135deg, var(--primary), var(--primary-2));
-            color:#fff;
-            padding:14px 28px;
-            border-radius:var(--radius-md);
-            font-weight:700;
-            font-size:var(--font-caption);
-            cursor:pointer;
-            box-shadow:0 10px 28px rgba(139,108,255,0.35);
-            transition:var(--transition-fast);
-            position:relative;
-        }
+        .home-hero { background:rgba(255,255,255,0.05); backdrop-filter:blur(20px); border:1px solid var(--border); border-radius:var(--radius-lg); padding:28px; margin:24px 0 28px 0; box-shadow:var(--shadow-md); position:relative; overflow:hidden; }
+        .home-hero h2 { font-size:var(--font-headline); font-weight:700; margin-bottom:8px; }
+        .home-hero p { font-size:var(--font-body); color:var(--text-secondary); line-height:1.5; margin-bottom:20px; }
+        .home-hero .hero-btn { display:inline-block; background:linear-gradient(135deg, var(--primary), var(--primary-2)); color:#fff; padding:14px 28px; border-radius:var(--radius-md); font-weight:700; font-size:var(--font-caption); cursor:pointer; box-shadow:0 10px 28px rgba(139,108,255,0.35); transition:var(--transition-fast); }
         .home-hero .hero-btn:active { transform:scale(0.97); }
 
-        /* Категории – сетка 2 колонки */
         .home-menu { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:28px; }
-        .home-menu-btn {
-            background:rgba(255,255,255,0.05);
-            backdrop-filter:blur(18px);
-            -webkit-backdrop-filter:blur(18px);
-            border:1px solid var(--border);
-            border-radius:var(--radius-lg);
-            padding:18px;
-            cursor:pointer;
-            transition:var(--transition-smooth);
-            box-shadow:var(--shadow-sm);
-            display:flex;
-            flex-direction:column;
-            gap:14px;
-            font-family:inherit;
-            text-align:left;
-            position:relative;
-            overflow:hidden;
-        }
+        .home-menu-btn { background:rgba(255,255,255,0.05); backdrop-filter:blur(18px); border:1px solid var(--border); border-radius:var(--radius-lg); padding:18px; cursor:pointer; transition:var(--transition-smooth); box-shadow:var(--shadow-sm); display:flex; flex-direction:column; gap:14px; font-family:inherit; text-align:left; position:relative; overflow:hidden; }
         .home-menu-btn:active { transform:scale(0.97); background:rgba(255,255,255,0.08); }
-        .home-menu-btn .category-icon {
-            width:48px;
-            height:48px;
-            border-radius:var(--radius-sm);
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            box-shadow:0 6px 20px rgba(0,0,0,0.25);
-            transition:var(--transition-fast);
-            background:rgba(255,255,255,0.12);
-            color: #fff;
-        }
-        .home-menu-btn .category-icon svg {
-            width: 24px;
-            height: 24px;
-            stroke: currentColor;
-            fill: none;
-            stroke-width: 2;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
+        .home-menu-btn .category-icon { width:48px; height:48px; border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; box-shadow:0 6px 20px rgba(0,0,0,0.25); background:rgba(255,255,255,0.12); color:#fff; }
+        .home-menu-btn .category-icon svg { width:24px; height:24px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
         .home-menu-btn:active .category-icon svg { transform:scale(1.05); }
-        .home-menu-btn .btn-text { font-size:var(--font-body); font-weight:600; color:var(--text); }
+        .home-menu-btn .btn-text { font-size:var(--font-body); font-weight:600; }
 
-        /* Цвета фона для кнопок */
         .bg-pink { background: var(--cat-pink) !important; }
         .bg-blue { background: var(--cat-blue) !important; }
         .bg-gold { background: var(--cat-gold) !important; }
@@ -228,123 +66,31 @@
         .bg-orange { background: var(--cat-orange) !important; }
         .bg-green { background: var(--cat-green) !important; }
 
-        /* Promo */
         .promo-header { padding:24px 0 16px 0; }
         .promo-header h1 { font-size:var(--font-large); font-weight:800; letter-spacing:-1.5px; }
 
-        /* Search */
-        .search-container {
-            background:rgba(255,255,255,0.06);
-            backdrop-filter:blur(22px);
-            -webkit-backdrop-filter:blur(22px);
-            border:1px solid var(--border);
-            border-radius:var(--radius-full);
-            padding:4px 4px 4px 20px;
-            display:flex;
-            align-items:center;
-            margin-bottom:18px;
-            box-shadow:var(--shadow-sm);
-            transition:var(--transition-fast);
-            height:56px;
-        }
+        .search-container { background:rgba(255,255,255,0.06); backdrop-filter:blur(22px); border:1px solid var(--border); border-radius:var(--radius-full); padding:4px 4px 4px 20px; display:flex; align-items:center; margin-bottom:18px; box-shadow:var(--shadow-sm); height:56px; }
         .search-container:focus-within { border-color:rgba(139,108,255,0.4); box-shadow:0 0 0 3px rgba(139,108,255,0.1); }
         .search-icon { width:20px; height:20px; color:var(--text-secondary); margin-right:10px; }
-        .search-input {
-            flex:1;
-            background:transparent;
-            border:none;
-            color:var(--text);
-            font-size:var(--font-body);
-            padding:0;
-            outline:none;
-            font-family:inherit;
-        }
+        .search-input { flex:1; background:transparent; border:none; color:var(--text); font-size:var(--font-body); padding:0; outline:none; font-family:inherit; }
         .search-input::placeholder { color:var(--text-tertiary); }
-        .search-clear {
-            background:rgba(255,255,255,0.08);
-            border:none;
-            color:var(--text-secondary);
-            width:32px;
-            height:32px;
-            border-radius:50%;
-            display:none;
-            align-items:center;
-            justify-content:center;
-            cursor:pointer;
-            margin-right:8px;
-            font-size:14px;
-            transition:var(--transition-fast);
-        }
+        .search-clear { background:rgba(255,255,255,0.08); border:none; color:var(--text-secondary); width:32px; height:32px; border-radius:50%; display:none; align-items:center; justify-content:center; cursor:pointer; margin-right:8px; font-size:14px; }
         .search-clear:active { background:rgba(255,255,255,0.15); }
 
-        /* Filters */
-        .filters-scroll { display:flex; gap:8px; overflow-x:auto; padding-bottom:6px; margin-bottom:18px; scrollbar-width:none; }
-        .filters-scroll::-webkit-scrollbar { display:none; }
-        .filter-chip {
-            flex-shrink:0;
-            background:rgba(255,255,255,0.05);
-            backdrop-filter:blur(14px);
-            -webkit-backdrop-filter:blur(14px);
-            border:1px solid var(--border);
-            border-radius:var(--radius-full);
-            padding:10px 20px;
-            font-size:var(--font-caption);
-            font-weight:600;
-            color:var(--text-secondary);
-            cursor:pointer;
-            transition:var(--transition-fast);
-            font-family:inherit;
-            box-shadow:var(--shadow-sm);
-        }
-        .filter-chip.active {
-            background:linear-gradient(135deg, var(--primary), var(--primary-2));
-            color:#fff;
-            border-color:transparent;
-            box-shadow:0 6px 20px rgba(139,108,255,0.35);
-        }
+        .filters-scroll { display:flex; gap:8px; overflow-x:auto; padding-bottom:6px; margin-bottom:18px; }
+        .filter-chip { flex-shrink:0; background:rgba(255,255,255,0.05); backdrop-filter:blur(14px); border:1px solid var(--border); border-radius:var(--radius-full); padding:10px 20px; font-size:var(--font-caption); font-weight:600; color:var(--text-secondary); cursor:pointer; transition:var(--transition-fast); font-family:inherit; box-shadow:var(--shadow-sm); }
+        .filter-chip.active { background:linear-gradient(135deg, var(--primary), var(--primary-2)); color:#fff; border-color:transparent; box-shadow:0 6px 20px rgba(139,108,255,0.35); }
         .filter-chip:active { transform:scale(0.95); }
         .filter-chip span { margin-right:5px; }
 
-        /* Sort */
         .sort-container { display:flex; align-items:center; gap:8px; margin-bottom:16px; }
         .sort-label { font-size:var(--font-caption); color:var(--text-tertiary); font-weight:500; }
-        .sort-btn {
-            background:rgba(255,255,255,0.05);
-            backdrop-filter:blur(14px);
-            -webkit-backdrop-filter:blur(14px);
-            border:1px solid var(--border);
-            border-radius:var(--radius-full);
-            padding:8px 16px;
-            font-size:var(--font-caption);
-            font-weight:600;
-            color:var(--text-secondary);
-            cursor:pointer;
-            transition:var(--transition-fast);
-            font-family:inherit;
-            box-shadow:var(--shadow-sm);
-        }
-        .sort-btn.active {
-            background:linear-gradient(135deg, var(--primary), var(--primary-2));
-            color:#fff;
-            border-color:transparent;
-            box-shadow:0 6px 20px rgba(139,108,255,0.35);
-        }
+        .sort-btn { background:rgba(255,255,255,0.05); backdrop-filter:blur(14px); border:1px solid var(--border); border-radius:var(--radius-full); padding:8px 16px; font-size:var(--font-caption); font-weight:600; color:var(--text-secondary); cursor:pointer; transition:var(--transition-fast); font-family:inherit; box-shadow:var(--shadow-sm); }
+        .sort-btn.active { background:linear-gradient(135deg, var(--primary), var(--primary-2)); color:#fff; border-color:transparent; }
         .sort-btn:active { transform:scale(0.95); }
 
-        /* Cards */
         .cards-grid { display:flex; flex-direction:column; gap:18px; padding-bottom:28px; }
-        .promo-card {
-            background:var(--cat-purple);
-            backdrop-filter:blur(20px);
-            -webkit-backdrop-filter:blur(20px);
-            border:1px solid var(--border);
-            border-radius:var(--radius-lg);
-            padding:24px;
-            position:relative;
-            box-shadow:var(--shadow-md);
-            transition:var(--transition-smooth);
-            animation:cardUp 0.45s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-        }
+        .promo-card { background:var(--cat-purple); backdrop-filter:blur(20px); border:1px solid var(--border); border-radius:var(--radius-lg); padding:24px; position:relative; box-shadow:var(--shadow-md); transition:var(--transition-smooth); animation:cardUp 0.45s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
         .promo-card.category-purple { background:var(--cat-purple); }
         .promo-card.category-blue { background:var(--cat-blue); }
         .promo-card.category-green { background:var(--cat-green); }
@@ -354,210 +100,49 @@
         .promo-card:active { transform:scale(0.98); }
         .vip-card { border:2px solid var(--accent); box-shadow:0 0 28px rgba(243,201,105,0.2), var(--shadow-md); }
         .promo-card-header { display:flex; align-items:center; gap:16px; margin-bottom:20px; }
-        .promo-logo-container {
-            width:68px;
-            height:68px;
-            border-radius:50%;
-            overflow:hidden;
-            background:rgba(255,255,255,0.08);
-            border:1px solid var(--border-strong);
-            flex-shrink:0;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            box-shadow:var(--shadow-sm);
-        }
+        .promo-logo-container { width:68px; height:68px; border-radius:50%; overflow:hidden; background:rgba(255,255,255,0.08); border:1px solid var(--border-strong); flex-shrink:0; display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow-sm); }
         .promo-logo { width:100%; height:100%; object-fit:contain; padding:10px; }
         .promo-logo-fallback { font-size:26px; font-weight:700; color:var(--primary); }
         .promo-header-text { flex:1; min-width:0; }
         .promo-store { font-size:var(--font-title); font-weight:700; letter-spacing:-0.3px; }
-        .promo-category { font-size:var(--font-caption); color:var(--text-secondary); font-weight:500; }
-        .promo-discount-badge {
-            display:inline-block;
-            background:linear-gradient(135deg, var(--primary), var(--primary-2));
-            color:#fff;
-            font-size:30px;
-            font-weight:900;
-            padding:10px 20px;
-            border-radius:var(--radius-full);
-            letter-spacing:-1.5px;
-            box-shadow:0 8px 24px rgba(139,108,255,0.35);
-            line-height:1;
-        }
-        .vip-card .promo-discount-badge {
-            background:linear-gradient(135deg, var(--accent), #F5D789);
-            color:#11131D;
-            box-shadow:0 8px 24px rgba(243,201,105,0.4);
-        }
+        .promo-discount-badge { display:inline-block; background:linear-gradient(135deg, var(--primary), var(--primary-2)); color:#fff; font-size:30px; font-weight:900; padding:10px 20px; border-radius:var(--radius-full); letter-spacing:-1.5px; box-shadow:0 8px 24px rgba(139,108,255,0.35); line-height:1; }
+        .vip-card .promo-discount-badge { background:linear-gradient(135deg, var(--accent), #F5D789); color:#11131D; }
         .promo-body { margin-bottom:22px; }
         .promo-desc { font-size:var(--font-body); color:var(--text-secondary); line-height:1.5; }
         .promo-meta { display:flex; align-items:center; gap:20px; margin-top:12px; font-size:var(--font-caption); color:var(--text-tertiary); }
-        .promo-date { display:flex; align-items:center; gap:5px; }
-        .promo-stats { display:flex; align-items:center; gap:16px; }
-        .promo-fav-btn {
-            position:absolute;
-            top:20px;
-            right:20px;
-            width:40px;
-            height:40px;
-            border-radius:50%;
-            background:rgba(0,0,0,0.3);
-            backdrop-filter:blur(14px);
-            -webkit-backdrop-filter:blur(14px);
-            border:1px solid var(--border);
-            cursor:pointer;
-            font-size:17px;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            z-index:2;
-            transition:var(--transition-fast);
-        }
+        .promo-fav-btn { position:absolute; top:20px; right:20px; width:40px; height:40px; border-radius:50%; background:rgba(0,0,0,0.3); backdrop-filter:blur(14px); border:1px solid var(--border); cursor:pointer; font-size:17px; display:flex; align-items:center; justify-content:center; z-index:2; }
         .promo-fav-btn:active { transform:scale(0.9); background:rgba(255,93,115,0.3); }
-        .get-btn {
-            width:100%;
-            height:56px;
-            background:linear-gradient(135deg, var(--primary), var(--primary-2));
-            border:none;
-            color:#fff;
-            border-radius:var(--radius-md);
-            font-weight:700;
-            font-size:var(--font-body);
-            cursor:pointer;
-            font-family:inherit;
-            transition:var(--transition-fast);
-            box-shadow:0 12px 32px rgba(139,108,255,0.35);
-            letter-spacing:-0.2px;
-        }
+        .get-btn { width:100%; height:56px; background:linear-gradient(135deg, var(--primary), var(--primary-2)); border:none; color:#fff; border-radius:var(--radius-md); font-weight:700; font-size:var(--font-body); cursor:pointer; font-family:inherit; transition:var(--transition-fast); box-shadow:0 12px 32px rgba(139,108,255,0.35); letter-spacing:-0.2px; }
         .get-btn:active { transform:scale(0.97); }
-        .vip-card .get-btn {
-            background:linear-gradient(135deg, var(--accent), #F5D789);
-            color:#11131D;
-            box-shadow:0 12px 32px rgba(243,201,105,0.4);
-        }
-        .promo-new-badge {
-            position:absolute;
-            top:20px;
-            left:20px;
-            background:var(--danger);
-            color:#fff;
-            font-size:10px;
-            font-weight:700;
-            padding:5px 12px;
-            border-radius:var(--radius-full);
-            z-index:2;
-            box-shadow:0 4px 12px rgba(255,93,115,0.5);
-        }
-        .promo-vip-badge {
-            position:absolute;
-            top:68px;
-            left:20px;
-            background:linear-gradient(135deg, var(--accent), #F5D789);
-            color:#11131D;
-            font-size:10px;
-            font-weight:700;
-            padding:5px 12px;
-            border-radius:var(--radius-full);
-            z-index:2;
-            display:none;
-            box-shadow:0 4px 12px rgba(243,201,105,0.5);
-        }
+        .vip-card .get-btn { background:linear-gradient(135deg, var(--accent), #F5D789); color:#11131D; }
+        .promo-new-badge { position:absolute; top:20px; left:20px; background:var(--danger); color:#fff; font-size:10px; font-weight:700; padding:5px 12px; border-radius:var(--radius-full); z-index:2; }
+        .promo-vip-badge { position:absolute; top:68px; left:20px; background:linear-gradient(135deg, var(--accent), #F5D789); color:#11131D; font-size:10px; font-weight:700; padding:5px 12px; border-radius:var(--radius-full); z-index:2; display:none; }
         .vip-card .promo-vip-badge { display:block; }
 
-        /* Auth */
         .auth-page { display:flex; align-items:center; justify-content:center; min-height:100vh; padding:24px; background:var(--bg); }
-        .auth-card { width:100%; max-width:380px; background:rgba(255,255,255,0.05); backdrop-filter:blur(25px); -webkit-backdrop-filter:blur(25px); border:1px solid var(--border); border-radius:var(--radius-lg); padding:36px 28px; box-shadow:var(--shadow-lg); }
+        .auth-card { width:100%; max-width:380px; background:rgba(255,255,255,0.05); backdrop-filter:blur(25px); border:1px solid var(--border); border-radius:var(--radius-lg); padding:36px 28px; box-shadow:var(--shadow-lg); }
         .auth-title { font-size:var(--font-large); font-weight:800; text-align:center; margin-bottom:28px; }
-        .auth-input {
-            width:100%;
-            background:rgba(255,255,255,0.05);
-            border:1px solid var(--border);
-            border-radius:var(--radius-md);
-            padding:16px 18px;
-            color:var(--text);
-            font-size:var(--font-body);
-            margin-bottom:16px;
-            outline:none;
-            font-family:inherit;
-            transition:var(--transition-fast);
-        }
+        .auth-input { width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:var(--radius-md); padding:16px 18px; color:var(--text); font-size:var(--font-body); margin-bottom:16px; outline:none; font-family:inherit; }
         .auth-input:focus { border-color:var(--primary); box-shadow:0 0 0 3px rgba(139,108,255,0.15); }
-        .auth-btn {
-            width:100%;
-            height:56px;
-            background:linear-gradient(135deg, var(--primary), var(--primary-2));
-            border:none;
-            border-radius:var(--radius-md);
-            color:#fff;
-            font-weight:700;
-            font-size:var(--font-body);
-            cursor:pointer;
-            margin-top:12px;
-            font-family:inherit;
-            box-shadow:0 12px 32px rgba(139,108,255,0.35);
-            transition:var(--transition-fast);
-        }
+        .auth-btn { width:100%; height:56px; background:linear-gradient(135deg, var(--primary), var(--primary-2)); border:none; border-radius:var(--radius-md); color:#fff; font-weight:700; font-size:var(--font-body); cursor:pointer; margin-top:12px; font-family:inherit; box-shadow:0 12px 32px rgba(139,108,255,0.35); }
         .auth-btn:active { transform:scale(0.97); }
         .auth-link { color:var(--primary-2); text-align:center; margin-top:20px; cursor:pointer; font-size:var(--font-body); font-weight:500; }
         .auth-error { color:var(--danger); font-size:var(--font-caption); margin-bottom:8px; text-align:center; }
         .auth-checkbox { display:flex; align-items:center; gap:10px; font-size:var(--font-caption); color:var(--text-secondary); margin-bottom:16px; }
         .auth-checkbox input { accent-color:var(--primary); width:18px; height:18px; }
 
-        /* Profile */
-        .profile-card { background:rgba(255,255,255,0.05); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border:1px solid var(--border); border-radius:var(--radius-lg); padding:36px 28px; text-align:center; box-shadow:var(--shadow-md); }
+        .profile-card { background:rgba(255,255,255,0.05); backdrop-filter:blur(20px); border:1px solid var(--border); border-radius:var(--radius-lg); padding:36px 28px; text-align:center; box-shadow:var(--shadow-md); }
         .profile-avatar { width:96px; height:96px; border-radius:50%; background:linear-gradient(135deg, var(--primary), var(--primary-2)); margin:0 auto 24px; display:flex; align-items:center; justify-content:center; font-size:40px; box-shadow:0 8px 24px rgba(139,108,255,0.35); }
         .profile-name { font-size:var(--font-headline); font-weight:700; }
         .profile-login { font-size:var(--font-body); color:var(--text-tertiary); margin-top:4px; }
-        .logout-btn {
-            width:100%;
-            height:56px;
-            margin-top:28px;
-            background:rgba(255,93,115,0.12);
-            border:1px solid rgba(255,93,115,0.25);
-            color:var(--danger);
-            border-radius:var(--radius-md);
-            font-weight:600;
-            cursor:pointer;
-            font-size:var(--font-body);
-            font-family:inherit;
-            transition:var(--transition-fast);
-        }
+        .logout-btn { width:100%; height:56px; margin-top:28px; background:rgba(255,93,115,0.12); border:1px solid rgba(255,93,115,0.25); color:var(--danger); border-radius:var(--radius-md); font-weight:600; cursor:pointer; font-size:var(--font-body); font-family:inherit; }
         .logout-btn:active { background:rgba(255,93,115,0.2); }
 
         .empty-state { text-align:center; padding:56px 20px; color:var(--text-tertiary); font-size:var(--font-body); }
         .toast-container { position:fixed; top:20px; left:50%; transform:translateX(-50%); z-index:9999; width:calc(100% - 40px); max-width:400px; }
-        .toast {
-            background:rgba(0,0,0,0.85);
-            backdrop-filter:blur(20px);
-            -webkit-backdrop-filter:blur(20px);
-            border:1px solid var(--border);
-            color:#fff;
-            border-radius:var(--radius-full);
-            padding:14px 24px;
-            text-align:center;
-            font-size:var(--font-body);
-            font-weight:600;
-            animation:toastIn 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow:var(--shadow-lg);
-        }
+        .toast { background:rgba(0,0,0,0.85); backdrop-filter:blur(20px); border:1px solid var(--border); color:#fff; border-radius:var(--radius-full); padding:14px 24px; text-align:center; font-size:var(--font-body); font-weight:600; animation:toastIn 0.35s cubic-bezier(0.4, 0, 0.2, 1); box-shadow:var(--shadow-lg); }
         @keyframes toastIn { from{opacity:0; transform:translateY(-16px) scale(0.9);} to{opacity:1; transform:translateY(0) scale(1);} }
-
-        .back-btn {
-            background:rgba(255,255,255,0.05);
-            backdrop-filter:blur(14px);
-            -webkit-backdrop-filter:blur(14px);
-            border:1px solid var(--border);
-            border-radius:var(--radius-full);
-            padding:10px 20px;
-            color:var(--primary-2);
-            font-weight:600;
-            font-size:var(--font-caption);
-            cursor:pointer;
-            font-family:inherit;
-            margin-bottom:18px;
-            transition:var(--transition-fast);
-            box-shadow:var(--shadow-sm);
-        }
+        .back-btn { background:rgba(255,255,255,0.05); backdrop-filter:blur(14px); border:1px solid var(--border); border-radius:var(--radius-full); padding:10px 20px; color:var(--primary-2); font-weight:600; font-size:var(--font-caption); cursor:pointer; font-family:inherit; margin-bottom:18px; }
         .back-btn:active { transform:scale(0.96); }
     </style>
 </head>
@@ -572,11 +157,28 @@
         var CONFIG = {
             GOOGLE_SHEET_ID: '1Wtv4kA1W_hb4bvjyc7ruecrVw5s4Gh-TBQR1PRJYo2c',
             API_KEY: 'AIzaSyAbTbin2-mkFRspURGKRXxyCpjy_Dez8ts',
-            SHEET_OFFERS: 'Акции',
             SHEET_USERS: 'Пользователи',
             APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzQSmlFHGoD3YMPlCyrLFOKZ_J1xacgSljT6iQ6uzRvb1DF3aIUXJyCfjTImEnh368D/exec',
             COLUMNS: { ID:0, STORE:1, CATEGORY:2, DISCOUNT:3, DESCRIPTION:4, LINK:5, LOGO:6, VIP:7, ACTIVE:8, DATE:9 },
-            LOGO_URL: 'icons/logo.png'
+            LOGO_URL: 'icons/logo.png',
+            // Маппинг кнопок на листы Google Таблицы
+            SHEETS: {
+                promotions: 'Акции',
+                discounts: 'Скидки',
+                offers: 'Выгодные предложения',
+                partners: 'Партнеры',
+                cards: 'Выгодные карты',
+                sim: 'SIM-карты'
+            },
+            CATEGORY_NAMES: {
+                promotions: 'Акции',
+                discounts: 'Скидки',
+                offers: 'Выгодные предложения',
+                partners: 'Партнеры',
+                cards: 'Выгодные карты',
+                sim: 'SIM-карты',
+                about: 'О нас'
+            }
         };
 
         // --- ХРАНИЛИЩЕ ---
@@ -617,49 +219,76 @@
 
         // --- API ---
         var API = {
-            offers:[], categories:[], users:[],
-            loadOffers:function(){
-                var s=this;
-                return fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.GOOGLE_SHEET_ID}/values/${CONFIG.SHEET_OFFERS}?key=${CONFIG.API_KEY}`)
-                .then(r=>r.json()).then(d=>{
+            categoryOffers: {},   // { 'promotions': [...], 'discounts': [...], ... }
+            currentCategory: 'promotions',
+            categories: [],
+            users: [],
+            // Загрузка из конкретного листа
+            loadOffersBySheet: function(categoryKey) {
+                var sheetName = CONFIG.SHEETS[categoryKey];
+                if (!sheetName) return Promise.reject('Неизвестная категория');
+                var url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.GOOGLE_SHEET_ID}/values/${encodeURIComponent(sheetName)}?key=${CONFIG.API_KEY}`;
+                var self = this;
+                return fetch(url).then(r=>r.json()).then(d=>{
                     if(!d.values||d.values.length<2) throw new Error('Нет данных');
-                    var rows=d.values.slice(1);
-                    s.offers=rows.filter(r=>r[CONFIG.COLUMNS.STORE]&&r[CONFIG.COLUMNS.ACTIVE]?.toLowerCase().trim()==='да')
-                    .map((r,i)=>({id:r[CONFIG.COLUMNS.ID]||(i+1),store:r[CONFIG.COLUMNS.STORE],category:r[CONFIG.COLUMNS.CATEGORY]||'',discount:r[CONFIG.COLUMNS.DISCOUNT]||'',description:r[CONFIG.COLUMNS.DESCRIPTION]||'',link:r[CONFIG.COLUMNS.LINK]||'#',logo:r[CONFIG.COLUMNS.LOGO]||'',isVip:r[CONFIG.COLUMNS.VIP]&&r[CONFIG.COLUMNS.VIP].toLowerCase().trim()==='да',date:r[CONFIG.COLUMNS.DATE]||''}));
-                    s.categories=s.buildCategories(s.offers); return s.offers;
+                    var rows = d.values.slice(1);
+                    var offers = rows.filter(r=>r[CONFIG.COLUMNS.STORE]&&r[CONFIG.COLUMNS.ACTIVE]?.toLowerCase().trim()==='да')
+                        .map((r,i)=>({
+                            id: r[CONFIG.COLUMNS.ID]||(i+1),
+                            store: r[CONFIG.COLUMNS.STORE],
+                            category: r[CONFIG.COLUMNS.CATEGORY]||'',
+                            discount: r[CONFIG.COLUMNS.DISCOUNT]||'',
+                            description: r[CONFIG.COLUMNS.DESCRIPTION]||'',
+                            link: r[CONFIG.COLUMNS.LINK]||'#',
+                            logo: r[CONFIG.COLUMNS.LOGO]||'',
+                            isVip: r[CONFIG.COLUMNS.VIP]&&r[CONFIG.COLUMNS.VIP].toLowerCase().trim()==='да',
+                            date: r[CONFIG.COLUMNS.DATE]||''
+                        }));
+                    self.categoryOffers[categoryKey] = offers;
+                    self.categories = self.buildCategories(offers);
+                    return offers;
                 });
             },
-            loadUsers:function(){
-                var s=this;
-                return fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.GOOGLE_SHEET_ID}/values/${CONFIG.SHEET_USERS}?key=${CONFIG.API_KEY}`)
-                .then(r=>r.json()).then(d=>{
-                    if(!d.values||d.values.length<2){s.users=[];return[];}
-                    s.users=d.values.slice(1).map(r=>({id:r[0],login:r[1],password:r[2],name:r[3],role:r[4]||'user'}));
-                    return s.users;
+            loadUsers: function() {
+                var url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.GOOGLE_SHEET_ID}/values/${CONFIG.SHEET_USERS}?key=${CONFIG.API_KEY}`;
+                var self = this;
+                return fetch(url).then(r=>r.json()).then(d=>{
+                    if(!d.values||d.values.length<2){ self.users=[]; return []; }
+                    self.users = d.values.slice(1).map(r=>({id:r[0],login:r[1],password:r[2],name:r[3],role:r[4]||'user'}));
+                    return self.users;
                 });
             },
-            buildCategories:function(o){
+            buildCategories: function(offers) {
                 var c=[{id:'all',name:'Все',emoji:'🔥'}];
                 var m={'еда':'🍕','маркетплейсы':'📦','банки':'💳','связь':'📱','игры':'🎮','путешествия':'✈️','магазины':'🏪','авто':'🚗'};
                 var set={};
-                o.forEach(x=>{var k=x.category.toLowerCase().trim(); if(k&&!set[k]){set[k]=true;c.push({id:k,name:x.category,emoji:m[k]||'📌'});}});
+                offers.forEach(x=>{var k=x.category.toLowerCase().trim(); if(k&&!set[k]){set[k]=true;c.push({id:k,name:x.category,emoji:m[k]||'📌'});}});
                 return c;
             },
-            filter:function(cat,sort,query){
-                var f=this.offers.slice();
-                if(cat&&cat!=='all') f=f.filter(o=>o.category.toLowerCase()===cat);
-                if(query){var q=query.toLowerCase(); f=f.filter(o=>o.store.toLowerCase().indexOf(q)>-1||o.description.toLowerCase().indexOf(q)>-1);}
+            // Получить все предложения для избранного
+            getAllOffers: function() {
+                var all = [];
+                for (var key in this.categoryOffers) {
+                    if (this.categoryOffers.hasOwnProperty(key)) {
+                        all = all.concat(this.categoryOffers[key]);
+                    }
+                }
+                return all;
+            },
+            filter: function(offers, cat, sort, query) {
+                var f = offers.slice();
+                if(cat&&cat!=='all') f = f.filter(o=>o.category.toLowerCase()===cat);
+                if(query){ var q=query.toLowerCase(); f = f.filter(o=>o.store.toLowerCase().indexOf(q)>-1||o.description.toLowerCase().indexOf(q)>-1); }
                 if(sort==='popular') f.sort((a,b)=>(Stats.get(b.id).views||0)-(Stats.get(a.id).views||0));
                 else if(sort==='discount') f.sort((a,b)=>(parseInt(b.discount)||0)-(parseInt(a.discount)||0));
                 else f.sort((a,b)=>b.id-a.id);
                 return f;
             },
-            registerUser:function(l,p,n){
+            registerUser: function(l,p,n) {
                 return fetch(CONFIG.APPS_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({login:l,password:p,name:n})}).then(r=>r.json());
             }
         };
 
-        // --- ЦВЕТ КАРТОЧКИ ---
         function getCardColorClass(offer) {
             var cat = (offer.category || '').toLowerCase().trim();
             if (cat.includes('еда')) return 'category-purple';
@@ -672,7 +301,6 @@
             return 'category-purple';
         }
 
-        // --- ИКОНКИ SVG ДЛЯ КАТЕГОРИЙ ---
         var CategoryIcons = {
             promotions: '<svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>',
             discounts: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6"/><circle cx="9.5" cy="9.5" r="1.5"/><circle cx="14.5" cy="14.5" r="1.5"/></svg>',
@@ -693,7 +321,11 @@
 
         // --- ПРИЛОЖЕНИЕ ---
         var App = {
-            currentScreen:'home', activeCategory:'all', activeSort:'new', searchQuery:'',
+            currentScreen:'home',
+            activeCategory:'all',
+            activeSort:'new',
+            searchQuery:'',
+            currentCategoryKey: 'promotions', // категория по умолчанию
             init:function(){
                 this.content=document.getElementById('main-content');
                 this.nav=document.getElementById('bottom-nav');
@@ -703,7 +335,13 @@
             },
             loadApp:function(){
                 var s=this; this.showLoader();
-                API.loadOffers().then(()=>{s.renderScreen('home');}).catch(e=>{s.content.innerHTML='<div class="empty-state"><p>❌ Ошибка загрузки</p><p>'+e.message+'</p></div>';s.renderNav();});
+                // Загружаем категорию по умолчанию, чтобы было что показывать
+                API.loadOffersBySheet(this.currentCategoryKey).then(()=>{
+                    s.renderScreen('home');
+                }).catch(e=>{
+                    s.content.innerHTML='<div class="empty-state"><p>❌ Ошибка загрузки</p><p>'+e.message+'</p></div>';
+                    s.renderNav();
+                });
             },
             showLoader:function(){this.content.innerHTML='<div style="text-align:center;padding:60px;color:var(--text-tertiary);">Загрузка...</div>';},
             showAuthScreen:function(m){
@@ -734,7 +372,7 @@
             renderScreen:function(s){
                 this.currentScreen=s; this.content.innerHTML='';
                 if(s==='home') this.renderHomePage();
-                else if(s==='promotions') this.renderPromotionsPage();
+                else if(s==='promotions') this.renderCategoryPage();  // страница категорий
                 else if(s==='favorites') this.renderFavoritesPage();
                 else if(s==='profile') this.renderProfilePage();
                 else if(s==='notifications') this.renderPlaceholder('Уведомления','Здесь будут уведомления');
@@ -745,63 +383,60 @@
                 var h='<div class="page">';
                 h+='<div class="home-hero"><h2>До 40% кешбэка</h2><p>Лучшие предложения этой недели уже ждут вас</p><div class="hero-btn" id="heroBtn">Смотреть акции</div></div>';
                 h+='<div class="home-menu">'+
-                    '<div class="home-menu-btn bg-pink" data-target="promotions">'+
-                        '<div class="category-icon">'+CategoryIcons.promotions+'</div>'+
-                        '<div class="btn-text">Акции</div>'+
-                    '</div>'+
-                    '<div class="home-menu-btn bg-blue" data-target="discounts">'+
-                        '<div class="category-icon">'+CategoryIcons.discounts+'</div>'+
-                        '<div class="btn-text">Скидки</div>'+
-                    '</div>'+
-                    '<div class="home-menu-btn bg-gold" data-target="offers">'+
-                        '<div class="category-icon">'+CategoryIcons.offers+'</div>'+
-                        '<div class="btn-text">Выгодные<br>предложения</div>'+
-                    '</div>'+
-                    '<div class="home-menu-btn bg-purple" data-target="partners">'+
-                        '<div class="category-icon">'+CategoryIcons.partners+'</div>'+
-                        '<div class="btn-text">Партнеры</div>'+
-                    '</div>'+
-                    '<div class="home-menu-btn bg-teal" data-target="cards">'+
-                        '<div class="category-icon">'+CategoryIcons.cards+'</div>'+
-                        '<div class="btn-text">Выгодные<br>карты</div>'+
-                    '</div>'+
-                    '<div class="home-menu-btn bg-orange" data-target="sim">'+
-                        '<div class="category-icon">'+CategoryIcons.sim+'</div>'+
-                        '<div class="btn-text">SIM-карты</div>'+
-                    '</div>'+
-                    '<div class="home-menu-btn bg-green" data-target="about">'+
-                        '<div class="category-icon">'+CategoryIcons.about+'</div>'+
-                        '<div class="btn-text">О нас</div>'+
-                    '</div>'+
+                    '<div class="home-menu-btn bg-pink" data-target="promotions"><div class="category-icon">'+CategoryIcons.promotions+'</div><div class="btn-text">Акции</div></div>'+
+                    '<div class="home-menu-btn bg-blue" data-target="discounts"><div class="category-icon">'+CategoryIcons.discounts+'</div><div class="btn-text">Скидки</div></div>'+
+                    '<div class="home-menu-btn bg-gold" data-target="offers"><div class="category-icon">'+CategoryIcons.offers+'</div><div class="btn-text">Выгодные<br>предложения</div></div>'+
+                    '<div class="home-menu-btn bg-purple" data-target="partners"><div class="category-icon">'+CategoryIcons.partners+'</div><div class="btn-text">Партнеры</div></div>'+
+                    '<div class="home-menu-btn bg-teal" data-target="cards"><div class="category-icon">'+CategoryIcons.cards+'</div><div class="btn-text">Выгодные<br>карты</div></div>'+
+                    '<div class="home-menu-btn bg-orange" data-target="sim"><div class="category-icon">'+CategoryIcons.sim+'</div><div class="btn-text">SIM-карты</div></div>'+
+                    '<div class="home-menu-btn bg-green" data-target="about"><div class="category-icon">'+CategoryIcons.about+'</div><div class="btn-text">О нас</div></div>'+
                 '</div>';
                 this.content.innerHTML=h;
-                document.getElementById('heroBtn').onclick=function(){s.renderScreen('promotions');};
+                document.getElementById('heroBtn').onclick=function(){s.currentCategoryKey='promotions'; s.renderScreen('promotions');};
                 var btns=this.content.querySelectorAll('.home-menu-btn');
                 btns.forEach(function(b){
                     b.addEventListener('click', function(){
                         var t = this.getAttribute('data-target');
-                        if (t === 'promotions') {
-                            s.renderScreen('promotions');
-                        } else {
-                            var text = this.querySelector('.btn-text').textContent.replace(/\n/g, ' ');
-                            s.showToast('Раздел «' + text + '» в разработке');
+                        if (t === 'about') {
+                            s.showToast('Раздел «О нас» в разработке');
+                            return;
                         }
+                        s.currentCategoryKey = t;
+                        s.renderScreen('promotions'); // открываем страницу категорий
                     });
                 });
             },
-            renderPromotionsPage:function(){
+            // Универсальная страница категорий
+            renderCategoryPage: function() {
                 var s=this;
-                var h='<div class="page"><div class="promo-header"><h1>Акции</h1></div><div class="search-container"><span class="search-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></span><input class="search-input" id="searchInput" placeholder="Поиск акций..." value="'+this.searchQuery+'"><button class="search-clear" id="clearSearch">✕</button></div><div class="filters-scroll" id="filtersScroll"></div><div class="sort-container"><span class="sort-label">Сортировка</span><button class="sort-btn active" data-sort="new">Новые</button><button class="sort-btn" data-sort="popular">Популярные</button><button class="sort-btn" data-sort="discount">Макс. скидка</button></div><div id="cardsContainer" class="cards-grid"></div></div>';
-                this.content.innerHTML=h;
+                var catName = CONFIG.CATEGORY_NAMES[this.currentCategoryKey] || 'Категория';
+                var h = '<div class="page"><div class="promo-header"><h1>'+catName+'</h1></div>';
+                h += '<div class="search-container"><span class="search-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></span><input class="search-input" id="searchInput" placeholder="Поиск..." value="'+this.searchQuery+'"><button class="search-clear" id="clearSearch">✕</button></div>';
+                h += '<div class="filters-scroll" id="filtersScroll"></div>';
+                h += '<div class="sort-container"><span class="sort-label">Сортировка</span><button class="sort-btn active" data-sort="new">Новые</button><button class="sort-btn" data-sort="popular">Популярные</button><button class="sort-btn" data-sort="discount">Макс. скидка</button></div>';
+                h += '<div id="cardsContainer" class="cards-grid">Загрузка...</div></div>';
+                this.content.innerHTML = h;
+
                 var inp=document.getElementById('searchInput'), clr=document.getElementById('clearSearch');
                 inp.addEventListener('input',function(){clr.style.display=this.value?'flex':'none';s.searchQuery=this.value;s.renderCards();});
                 clr.addEventListener('click',function(){inp.value='';clr.style.display='none';s.searchQuery='';s.renderCards();});
-                clr.style.display=inp.value?'flex':'none';
-                this.renderFilters(); this.renderSort(); this.renderCards();
+                clr.style.display = inp.value ? 'flex' : 'none';
+
+                // Загружаем данные из нужного листа
+                API.loadOffersBySheet(this.currentCategoryKey).then(()=>{
+                    s.renderFilters();
+                    s.renderSort();
+                    s.renderCards();
+                }).catch(e=>{
+                    document.getElementById('cardsContainer').innerHTML = '<div class="empty-state">Ошибка загрузки: '+e.message+'</div>';
+                });
             },
             renderFilters:function(){
-                var c=document.getElementById('filtersScroll'); c.innerHTML=''; var s=this;
-                API.categories.forEach(cat=>{
+                var c=document.getElementById('filtersScroll'); if(!c) return;
+                c.innerHTML=''; var s=this;
+                var offers = API.categoryOffers[this.currentCategoryKey] || [];
+                var categories = API.buildCategories(offers);
+                categories.forEach(cat=>{
                     var chip=document.createElement('button');
                     chip.className='filter-chip'+(cat.id===s.activeCategory?' active':'');
                     chip.innerHTML='<span>'+cat.emoji+'</span>'+cat.name;
@@ -815,7 +450,9 @@
             },
             renderCards:function(){
                 var c=document.getElementById('cardsContainer');
-                var offers=API.filter(this.activeCategory,this.activeSort,this.searchQuery);
+                if (!c) return;
+                var offers = API.categoryOffers[this.currentCategoryKey] || [];
+                offers = API.filter(offers, this.activeCategory, this.activeSort, this.searchQuery);
                 if(offers.length===0){c.innerHTML='<div class="empty-state">Ничего не найдено</div>';return;}
                 var sortedIds=offers.map(o=>o.id).sort((a,b)=>b-a);
                 var newThreshold=sortedIds[Math.min(2,sortedIds.length-1)];
@@ -855,7 +492,8 @@
                 this.content.innerHTML=h;
                 document.getElementById('backFromFav').onclick=function(){s.renderScreen('promotions');};
                 var favIds=Favorites.list();
-                var offers=API.offers.filter(o=>favIds.indexOf(o.id)>-1);
+                var allOffers = API.getAllOffers();
+                var offers = allOffers.filter(o=>favIds.indexOf(o.id)>-1);
                 var c=document.getElementById('favContainer');
                 if(offers.length===0){c.innerHTML='<div class="empty-state">Нет избранных акций</div>';return;}
                 offers.forEach(o=>{
