@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800;14..32,900&display=swap" rel="stylesheet">
     <style>
+        /* все стили остались прежними, добавились только стили для индикаторов */
         :root {
             --bg:#11131D; --bg-secondary:#151724; --surface:rgba(255,255,255,0.07); --surface-strong:rgba(255,255,255,0.12);
             --primary:#8B6CFF; --primary-2:#D46CFF; --accent:#F3C969; --danger:#FF5D73; --success:#21D07A;
@@ -32,6 +33,7 @@
         .main-content { flex:1; overflow-y:auto; scrollbar-width:none; position:relative; z-index:1; padding:0 16px; }
         .main-content::-webkit-scrollbar { display:none; }
 
+        /* Bottom Navigation и прочее – без изменений */
         .bottom-nav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:440px; height:84px; background:rgba(21,23,36,0.85); backdrop-filter:blur(25px); border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-around; z-index:100; padding-bottom:env(safe-area-inset-bottom); }
         .nav-item { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:6px 0; cursor:pointer; color:var(--text-secondary); transition:var(--transition-fast); background:none; border:none; font-family:inherit; width:68px; border-radius:16px; position:relative; }
         .nav-item.active { color:var(--text); }
@@ -45,12 +47,62 @@
         .page { animation:pageIn 0.35s cubic-bezier(0.4, 0, 0.2, 1); }
         @keyframes pageIn { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
 
-        .home-hero { background:rgba(255,255,255,0.05); backdrop-filter:blur(20px); border:1px solid var(--border); border-radius:var(--radius-lg); padding:28px; margin:24px 0 28px 0; box-shadow:var(--shadow-md); position:relative; overflow:hidden; }
+        /* Hero Block */
+        .home-hero {
+            position:relative;
+            border:1px solid var(--border);
+            border-radius:var(--radius-lg);
+            padding:28px;
+            margin:24px 0 28px 0;
+            box-shadow:var(--shadow-md);
+            overflow:hidden;
+            background-size:cover;
+            background-position:center;
+            background-repeat:no-repeat;
+            transition: background-image 0.5s ease-in-out;
+        }
+        .home-hero::before {
+            content:'';
+            position:absolute;
+            inset:0;
+            background: rgba(0,0,0,0.45);
+            z-index:0;
+        }
+        .home-hero > * { position:relative; z-index:1; }
         .home-hero h2 { font-size:var(--font-headline); font-weight:700; margin-bottom:8px; }
         .home-hero p { font-size:var(--font-body); color:var(--text-secondary); line-height:1.5; margin-bottom:20px; }
-        .home-hero .hero-btn { display:inline-block; background:linear-gradient(135deg, var(--primary), var(--primary-2)); color:#fff; padding:14px 28px; border-radius:var(--radius-md); font-weight:700; font-size:var(--font-caption); cursor:pointer; box-shadow:0 10px 28px rgba(139,108,255,0.35); transition:var(--transition-fast); }
+        .home-hero .hero-btn {
+            display:inline-block;
+            background:linear-gradient(135deg, var(--primary), var(--primary-2));
+            color:#fff;
+            padding:14px 28px;
+            border-radius:var(--radius-md);
+            font-weight:700;
+            font-size:var(--font-caption);
+            cursor:pointer;
+            box-shadow:0 10px 28px rgba(139,108,255,0.35);
+            transition:var(--transition-fast);
+        }
         .home-hero .hero-btn:active { transform:scale(0.97); }
+        /* Индикаторы */
+        .hero-indicators {
+            display:flex;
+            justify-content:center;
+            gap:8px;
+            margin-top:18px;
+            position:relative;
+            z-index:1;
+        }
+        .hero-dot {
+            width:8px;
+            height:8px;
+            border-radius:50%;
+            background:rgba(255,255,255,0.4);
+            transition: background 0.3s;
+        }
+        .hero-dot.active { background:#fff; }
 
+        /* Остальные стили без изменений */
         .home-menu { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:28px; }
         .home-menu-btn { background:rgba(255,255,255,0.05); backdrop-filter:blur(18px); border:1px solid var(--border); border-radius:var(--radius-lg); padding:18px; cursor:pointer; transition:var(--transition-smooth); box-shadow:var(--shadow-sm); display:flex; flex-direction:column; gap:14px; font-family:inherit; text-align:left; position:relative; overflow:hidden; }
         .home-menu-btn:active { transform:scale(0.97); background:rgba(255,255,255,0.08); }
@@ -162,8 +214,10 @@
             GOOGLE_SHEET_ID: '1Wtv4kA1W_hb4bvjyc7ruecrVw5s4Gh-TBQR1PRJYo2c',
             API_KEY: 'AIzaSyAbTbin2-mkFRspURGKRXxyCpjy_Dez8ts',
             SHEET_USERS: 'Пользователи',
+            SHEET_LENTA: 'ЛЕНТА',
             APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzQSmlFHGoD3YMPlCyrLFOKZ_J1xacgSljT6iQ6uzRvb1DF3aIUXJyCfjTImEnh368D/exec',
             COLUMNS: { ID:0, STORE:1, CATEGORY:2, DISCOUNT:3, DESCRIPTION:4, LINK:5, LOGO:6, VIP:7, ACTIVE:8, DATE:9, COLOR:10 },
+            LENTA_COLUMNS: { ID:0, TITLE:1, DESC:2, BTN_TEXT:3, LINK:4, IMAGE:5, ACTIVE:6 },
             LOGO_URL: 'icons/logo.png',
             SHEETS: {
                 promotions: 'Акции',
@@ -226,6 +280,26 @@
             currentCategory: 'promotions',
             categories: [],
             users: [],
+            lentaSlides: [],
+            loadLenta: function() {
+                var self = this;
+                var url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.GOOGLE_SHEET_ID}/values/${CONFIG.SHEET_LENTA}?key=${CONFIG.API_KEY}`;
+                return fetch(url).then(r=>r.json()).then(data=>{
+                    if (!data.values || data.values.length < 2) { self.lentaSlides = []; return []; }
+                    var rows = data.values.slice(1);
+                    self.lentaSlides = rows
+                        .filter(r => r[CONFIG.LENTA_COLUMNS.ACTIVE] && r[CONFIG.LENTA_COLUMNS.ACTIVE].toLowerCase().trim() === 'да')
+                        .map(r => ({
+                            id: r[CONFIG.LENTA_COLUMNS.ID] || '',
+                            title: r[CONFIG.LENTA_COLUMNS.TITLE] || '',
+                            description: r[CONFIG.LENTA_COLUMNS.DESC] || '',
+                            btnText: r[CONFIG.LENTA_COLUMNS.BTN_TEXT] || 'Смотреть акции',
+                            link: r[CONFIG.LENTA_COLUMNS.LINK] || '#',
+                            image: r[CONFIG.LENTA_COLUMNS.IMAGE] || ''
+                        }));
+                    return self.lentaSlides;
+                });
+            },
             loadOffersBySheet: function(categoryKey) {
                 var sheetName = CONFIG.SHEETS[categoryKey];
                 if (!sheetName) return Promise.reject('Неизвестная категория');
@@ -291,7 +365,6 @@
             }
         };
 
-        // Обновленная функция: сначала проверяет offer.color, затем категорию
         function getCardColorClass(offer) {
             var validColors = ['purple','blue','green','gold','pink','orange','teal','red'];
             if (offer.color && validColors.indexOf(offer.color.toLowerCase().trim()) !== -1) {
@@ -333,6 +406,8 @@
             activeSort:'new',
             searchQuery:'',
             currentCategoryKey: 'promotions',
+            heroIndex: 0,
+            heroTimer: null,
             init:function(){
                 this.content=document.getElementById('main-content');
                 this.nav=document.getElementById('bottom-nav');
@@ -342,52 +417,83 @@
             },
             loadApp:function(){
                 var s=this; this.showLoader();
-                API.loadOffersBySheet(this.currentCategoryKey).then(()=>{
-                    s.renderScreen('home');
-                }).catch(e=>{
-                    s.content.innerHTML='<div class="empty-state"><p>❌ Ошибка загрузки</p><p>'+e.message+'</p></div>';
-                    s.renderNav();
+                // Сначала загружаем ленту, потом офферы
+                API.loadLenta().then(()=>{
+                    API.loadOffersBySheet(s.currentCategoryKey).then(()=>{
+                        s.renderScreen('home');
+                    }).catch(e=>{
+                        s.content.innerHTML='<div class="empty-state"><p>❌ Ошибка загрузки</p><p>'+e.message+'</p></div>';
+                        s.renderNav();
+                    });
+                }).catch(()=>{
+                    // если лента не загрузилась, продолжим без неё
+                    API.loadOffersBySheet(s.currentCategoryKey).then(()=>{
+                        s.renderScreen('home');
+                    }).catch(e=>{
+                        s.content.innerHTML='<div class="empty-state"><p>❌ Ошибка загрузки</p><p>'+e.message+'</p></div>';
+                        s.renderNav();
+                    });
                 });
             },
             showLoader:function(){this.content.innerHTML='<div style="text-align:center;padding:60px;color:var(--text-tertiary);">Загрузка...</div>';},
-            showAuthScreen:function(m){
-                var s=this; this.nav.style.display='none';
-                var h='<div class="auth-page"><div class="auth-card"><div class="auth-title">'+(m==='login'?'Вход':'Регистрация')+'</div><div class="auth-error" id="authError"></div>'+(m==='register'?'<input class="auth-input" id="regName" placeholder="Имя">':'')+'<input class="auth-input" id="authLogin" placeholder="Логин"><input class="auth-input" type="password" id="authPassword" placeholder="Пароль">'+(m==='login'?'<label class="auth-checkbox"><input type="checkbox" id="rememberMe" checked> Запомнить меня</label>':'')+'<button class="auth-btn" id="authBtn">'+(m==='login'?'Войти':'Зарегистрироваться')+'</button><div class="auth-link" id="switchAuth">'+(m==='login'?'Нет аккаунта? Зарегистрироваться':'Есть аккаунт? Войти')+'</div></div></div>';
-                this.content.innerHTML=h;
-                document.getElementById('switchAuth').onclick=function(){s.showAuthScreen(m==='login'?'register':'login');};
-                document.getElementById('authBtn').onclick=function(){
-                    var l=document.getElementById('authLogin').value.trim();
-                    var p=document.getElementById('authPassword').value.trim();
-                    var n=m==='register'?document.getElementById('regName')?.value.trim():'';
-                    if(!l||!p||(m==='register'&&!n)){document.getElementById('authError').textContent='Заполните все поля';return;}
-                    if(m==='login'){
-                        s.showLoader(); API.loadUsers().then(u=>{
-                            var f=u.find(x=>x.login===l&&x.password===p);
-                            if(f){var r=document.getElementById('rememberMe')?.checked||false; Session.save(f,r); s.nav.style.display='flex'; s.loadApp();}
-                            else{s.showAuthScreen('login');setTimeout(()=>{document.getElementById('authError').textContent='Неверный логин или пароль';},100);}
-                        }).catch(()=>{s.showAuthScreen('login');setTimeout(()=>{document.getElementById('authError').textContent='Ошибка сети';},100);});
-                    }else{
-                        document.getElementById('authBtn').disabled=true; document.getElementById('authBtn').textContent='Отправка...';
-                        API.registerUser(l,p,n).then(r=>{
-                            if(r.success){var u={login:l,password:p,name:n,role:'user'}; Session.save(u,true); s.nav.style.display='flex'; s.loadApp();}
-                            else{document.getElementById('authError').textContent=r.error||'Ошибка регистрации'; document.getElementById('authBtn').disabled=false; document.getElementById('authBtn').textContent='Зарегистрироваться';}
-                        }).catch(()=>{document.getElementById('authError').textContent='Ошибка соединения'; document.getElementById('authBtn').disabled=false; document.getElementById('authBtn').textContent='Зарегистрироваться';});
-                    }
-                };
+            startHeroRotation: function() {
+                if (this.heroTimer) clearInterval(this.heroTimer);
+                var slides = API.lentaSlides;
+                if (!slides || slides.length <= 1) return;
+                var self = this;
+                this.heroTimer = setInterval(function() {
+                    self.heroIndex = (self.heroIndex + 1) % slides.length;
+                    self.updateHeroContent();
+                }, 5000);
             },
-            renderScreen:function(s){
-                this.currentScreen=s; this.content.innerHTML='';
-                if(s==='home') this.renderHomePage();
-                else if(s==='promotions') this.renderCategoryPage();
-                else if(s==='favorites') this.renderFavoritesPage();
-                else if(s==='profile') this.renderProfilePage();
-                else if(s==='notifications') this.renderPlaceholder('Уведомления','Здесь будут уведомления');
-                this.renderNav();
+            updateHeroContent: function() {
+                var slides = API.lentaSlides;
+                if (!slides || slides.length === 0) return;
+                var hero = document.querySelector('.home-hero');
+                if (!hero) return;
+                var slide = slides[this.heroIndex];
+                hero.style.backgroundImage = slide.image ? `url(${slide.image})` : '';
+                hero.querySelector('h2').textContent = slide.title;
+                hero.querySelector('p').textContent = slide.description;
+                var btn = hero.querySelector('.hero-btn');
+                btn.textContent = slide.btnText;
+                btn.setAttribute('data-link', slide.link);
+                // Обновляем индикаторы
+                var dots = document.querySelectorAll('.hero-dot');
+                dots.forEach(function(dot, idx) {
+                    if (idx === self.heroIndex) dot.classList.add('active');
+                    else dot.classList.remove('active');
+                });
             },
             renderHomePage:function(){
                 var s=this;
+                var slides = API.lentaSlides || [];
+                var defaultSlide = {
+                    title: 'До 40% кешбэка',
+                    description: 'Лучшие предложения этой недели уже ждут вас',
+                    btnText: 'Смотреть акции',
+                    link: '#',
+                    image: ''
+                };
                 var h='<div class="page">';
-                h+='<div class="home-hero"><h2>До 40% кешбэка</h2><p>Лучшие предложения этой недели уже ждут вас</p><div class="hero-btn" id="heroBtn">Смотреть акции</div></div>';
+                // Hero block
+                if (slides.length > 0) {
+                    var firstSlide = slides[0];
+                    h += `<div class="home-hero" style="background-image: url(${firstSlide.image || ''});">
+                        <h2>${firstSlide.title}</h2>
+                        <p>${firstSlide.description}</p>
+                        <div class="hero-btn" data-link="${firstSlide.link}">${firstSlide.btnText}</div>
+                        ${slides.length > 1 ? '<div class="hero-indicators">' + slides.map(function(_, idx) { return '<span class="hero-dot' + (idx === 0 ? ' active' : '') + '"></span>'; }).join('') + '</div>' : ''}
+                    </div>`;
+                } else {
+                    // Статичный Hero (если лента не загружена)
+                    h += `<div class="home-hero">
+                        <h2>${defaultSlide.title}</h2>
+                        <p>${defaultSlide.description}</p>
+                        <div class="hero-btn" data-link="${defaultSlide.link}">${defaultSlide.btnText}</div>
+                    </div>`;
+                }
+                // Категории
                 h+='<div class="home-menu">'+
                     '<div class="home-menu-btn bg-pink" data-target="promotions"><div class="category-icon">'+CategoryIcons.promotions+'</div><div class="btn-text">Акции</div></div>'+
                     '<div class="home-menu-btn bg-blue" data-target="discounts"><div class="category-icon">'+CategoryIcons.discounts+'</div><div class="btn-text">Скидки</div></div>'+
@@ -397,8 +503,24 @@
                     '<div class="home-menu-btn bg-orange" data-target="sim"><div class="category-icon">'+CategoryIcons.sim+'</div><div class="btn-text">SIM-карты</div></div>'+
                     '<div class="home-menu-btn bg-green" data-target="about"><div class="category-icon">'+CategoryIcons.about+'</div><div class="btn-text">О нас</div></div>'+
                 '</div>';
+                h+='</div>';
                 this.content.innerHTML=h;
-                document.getElementById('heroBtn').onclick=function(){s.currentCategoryKey='promotions'; s.renderScreen('promotions');};
+
+                // Обработчик кнопки Hero
+                var heroBtn = this.content.querySelector('.hero-btn');
+                if (heroBtn) {
+                    heroBtn.addEventListener('click', function(e) {
+                        var link = this.getAttribute('data-link');
+                        if (link && link !== '#') {
+                            window.open(link, '_blank');
+                        } else {
+                            s.currentCategoryKey = 'promotions';
+                            s.renderScreen('promotions');
+                        }
+                    });
+                }
+
+                // Обработчики категорий
                 var btns=this.content.querySelectorAll('.home-menu-btn');
                 btns.forEach(function(b){
                     b.addEventListener('click', function(){
@@ -411,6 +533,33 @@
                         s.renderScreen('promotions');
                     });
                 });
+
+                // Запускаем ротацию, если слайдов больше одного
+                if (slides.length > 1) {
+                    s.heroIndex = 0;
+                    s.startHeroRotation();
+                }
+            },
+            // При переходе на главную из других экранов нужно обновить hero и таймер
+            renderScreen:function(screen){
+                this.currentScreen = screen;
+                // Очищаем таймер при уходе с главной
+                if (this.heroTimer && screen !== 'home') {
+                    clearInterval(this.heroTimer);
+                    this.heroTimer = null;
+                }
+                if (screen === 'home') {
+                    this.renderHomePage();
+                } else if (screen === 'promotions') {
+                    this.renderCategoryPage();
+                } else if (screen === 'favorites') {
+                    this.renderFavoritesPage();
+                } else if (screen === 'profile') {
+                    this.renderProfilePage();
+                } else if (screen === 'notifications') {
+                    this.renderPlaceholder('Уведомления','Здесь будут уведомления');
+                }
+                this.renderNav();
             },
             renderCategoryPage: function() {
                 var s=this;
