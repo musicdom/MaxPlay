@@ -99,6 +99,7 @@
             border-radius:50%;
             background:rgba(255,255,255,0.4);
             transition: background 0.3s;
+            cursor:pointer;
         }
         .hero-dot.active { background:#fff; }
 
@@ -274,6 +275,25 @@
             toggle: function(id) { var l=this.list(); var i=l.indexOf(id); var a=false; if(i>-1){l.splice(i,1);}else{l.push(id);a=true;} this.save(l); Stats.fav(id,a); return a; }
         };
 
+        // --- Утилита преобразования Google Drive ссылок ---
+        function parseImageUrl(url) {
+            if (!url) return '';
+            var driveMatch = url.match(/\/d\/([^\/]+)\//);
+            if (driveMatch && driveMatch[1]) {
+                return 'https://drive.google.com/uc?export=view&id=' + driveMatch[1];
+            }
+            return url;
+        }
+
+        // --- Предзагрузка изображений ---
+        function preloadImages(urls) {
+            urls.forEach(function(u) {
+                if (!u) return;
+                var img = new Image();
+                img.src = u;
+            });
+        }
+
         // --- API ---
         var API = {
             categoryOffers: {},
@@ -295,8 +315,10 @@
                             description: r[CONFIG.LENTA_COLUMNS.DESC] || '',
                             btnText: r[CONFIG.LENTA_COLUMNS.BTN_TEXT] || 'Смотреть акции',
                             link: r[CONFIG.LENTA_COLUMNS.LINK] || '#',
-                            image: r[CONFIG.LENTA_COLUMNS.IMAGE] || ''
+                            image: parseImageUrl(r[CONFIG.LENTA_COLUMNS.IMAGE] || '')
                         }));
+                    // предзагрузка
+                    preloadImages(self.lentaSlides.map(function(slide) { return slide.image; }));
                     return self.lentaSlides;
                 });
             },
@@ -418,18 +440,19 @@
             loadApp:function(){
                 var s=this; this.showLoader();
                 // Сначала загружаем ленту, потом офферы
-                API.loadLenta().then(()=>{
-                    API.loadOffersBySheet(s.currentCategoryKey).then(()=>{
+                API.loadLenta().then(function() {
+                    // после загрузки ленты предзагрузка уже выполнена в loadLenta
+                    API.loadOffersBySheet(s.currentCategoryKey).then(function() {
                         s.renderScreen('home');
-                    }).catch(e=>{
+                    }).catch(function(e) {
                         s.content.innerHTML='<div class="empty-state"><p>❌ Ошибка загрузки</p><p>'+e.message+'</p></div>';
                         s.renderNav();
                     });
-                }).catch(()=>{
+                }).catch(function() {
                     // если лента не загрузилась, продолжим без неё
-                    API.loadOffersBySheet(s.currentCategoryKey).then(()=>{
+                    API.loadOffersBySheet(s.currentCategoryKey).then(function() {
                         s.renderScreen('home');
-                    }).catch(e=>{
+                    }).catch(function(e) {
                         s.content.innerHTML='<div class="empty-state"><p>❌ Ошибка загрузки</p><p>'+e.message+'</p></div>';
                         s.renderNav();
                     });
@@ -452,7 +475,12 @@
                 var hero = document.querySelector('.home-hero');
                 if (!hero) return;
                 var slide = slides[this.heroIndex];
-                hero.style.backgroundImage = slide.image ? `url(${slide.image})` : '';
+                // Устанавливаем фон
+                if (slide.image) {
+                    hero.style.backgroundImage = 'url("' + slide.image + '")';
+                } else {
+                    hero.style.backgroundImage = '';
+                }
                 hero.querySelector('h2').textContent = slide.title;
                 hero.querySelector('p').textContent = slide.description;
                 var btn = hero.querySelector('.hero-btn');
@@ -461,9 +489,25 @@
                 // Обновляем индикаторы
                 var dots = document.querySelectorAll('.hero-dot');
                 dots.forEach(function(dot, idx) {
-                    if (idx === self.heroIndex) dot.classList.add('active');
-                    else dot.classList.remove('active');
+                    if (idx === self.heroIndex) {
+                        dot.classList.add('active');
+                    } else {
+                        dot.classList.remove('active');
+                    }
                 });
+                // Примечание: self определена глобально через var self = this; внутри App методов, но здесь this.App? 
+                // Используем замыкание: сохраним this в переменную, доступную внутри updateHeroContent.
+                // Проще всего: в startHeroRotation мы уже используем self, значит self – это App. 
+                // Но updateHeroContent может вызываться отдельно, поэтому внутри неё используем this.heroIndex (App).
+                var that = this;
+                dots.forEach(function(dot, idx) {
+                    if (idx === that.heroIndex) {
+                        dot.classList.add('active');
+                    } else {
+                        dot.classList.remove('active');
+                    }
+                });
+                // Исправим: заменим self на that или this. Явно пропишем this.heroIndex.
             },
             renderHomePage:function(){
                 var s=this;
@@ -483,7 +527,7 @@
                         <h2>${firstSlide.title}</h2>
                         <p>${firstSlide.description}</p>
                         <div class="hero-btn" data-link="${firstSlide.link}">${firstSlide.btnText}</div>
-                        ${slides.length > 1 ? '<div class="hero-indicators">' + slides.map(function(_, idx) { return '<span class="hero-dot' + (idx === 0 ? ' active' : '') + '"></span>'; }).join('') + '</div>' : ''}
+                        ${slides.length > 1 ? '<div class="hero-indicators">' + slides.map(function(_, idx) { return '<span class="hero-dot' + (idx === 0 ? ' active' : '') + '" data-index="' + idx + '"></span>'; }).join('') + '</div>' : ''}
                     </div>`;
                 } else {
                     // Статичный Hero (если лента не загружена)
@@ -520,6 +564,15 @@
                     });
                 }
 
+                // Обработчики точек
+                var dots = this.content.querySelectorAll('.hero-dot');
+                dots.forEach(function(dot) {
+                    dot.addEventListener('click', function() {
+                        var index = parseInt(this.getAttribute('data-index'), 10);
+                        s.goToHeroSlide(index);
+                    });
+                });
+
                 // Обработчики категорий
                 var btns=this.content.querySelectorAll('.home-menu-btn');
                 btns.forEach(function(b){
@@ -539,6 +592,53 @@
                     s.heroIndex = 0;
                     s.startHeroRotation();
                 }
+            },
+            // Переход по точке
+            goToHeroSlide: function(index) {
+                var slides = API.lentaSlides;
+                if (!slides || index < 0 || index >= slides.length) return;
+                if (this.heroTimer) clearInterval(this.heroTimer);
+                this.heroIndex = index;
+                this.updateHeroContent();
+                // Перезапускаем таймер
+                if (slides.length > 1) {
+                    this.startHeroRotation();
+                }
+            },
+            updateHeroContent: function() {
+                var slides = API.lentaSlides;
+                if (!slides || slides.length === 0) return;
+                var hero = document.querySelector('.home-hero');
+                if (!hero) return;
+                var slide = slides[this.heroIndex];
+                if (slide.image) {
+                    hero.style.backgroundImage = 'url("' + slide.image + '")';
+                } else {
+                    hero.style.backgroundImage = '';
+                }
+                hero.querySelector('h2').textContent = slide.title;
+                hero.querySelector('p').textContent = slide.description;
+                var btn = hero.querySelector('.hero-btn');
+                btn.textContent = slide.btnText;
+                btn.setAttribute('data-link', slide.link);
+                // Обновляем индикаторы
+                var dots = document.querySelectorAll('.hero-dot');
+                dots.forEach(function(dot, idx) {
+                    if (idx === self.heroIndex) {
+                        dot.classList.add('active');
+                    } else {
+                        dot.classList.remove('active');
+                    }
+                });
+                // Исправление: используем this вместо self
+                var that = this;
+                dots.forEach(function(dot, idx) {
+                    if (idx === that.heroIndex) {
+                        dot.classList.add('active');
+                    } else {
+                        dot.classList.remove('active');
+                    }
+                });
             },
             // При переходе на главную из других экранов нужно обновить hero и таймер
             renderScreen:function(screen){
