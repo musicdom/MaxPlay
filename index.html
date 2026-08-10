@@ -8,7 +8,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800;14..32,900&display=swap" rel="stylesheet">
     <style>
-        /* все стили остались прежними, добавились только стили для индикаторов */
         :root {
             --bg:#11131D; --bg-secondary:#151724; --surface:rgba(255,255,255,0.07); --surface-strong:rgba(255,255,255,0.12);
             --primary:#8B6CFF; --primary-2:#D46CFF; --accent:#F3C969; --danger:#FF5D73; --success:#21D07A;
@@ -33,7 +32,30 @@
         .main-content { flex:1; overflow-y:auto; scrollbar-width:none; position:relative; z-index:1; padding:0 16px; }
         .main-content::-webkit-scrollbar { display:none; }
 
-        /* Bottom Navigation и прочее – без изменений */
+        /* Splash screen */
+        .splash-screen {
+            position:fixed; top:0; left:0; width:100%; height:100%;
+            background: var(--bg);
+            display:flex; align-items:center; justify-content:center;
+            z-index:9999; flex-direction:column; gap:20px;
+            animation: splashFadeOut 0.6s ease-in-out 5.5s forwards;
+            pointer-events:all;
+        }
+        .splash-logo {
+            width:120px; height:120px; object-fit:contain;
+            filter:drop-shadow(0 0 30px rgba(139,108,255,0.5));
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); opacity:0.8; }
+            50% { transform: scale(1.05); opacity:1; }
+            100% { transform: scale(1); opacity:0.8; }
+        }
+        @keyframes splashFadeOut {
+            to { opacity:0; pointer-events:none; }
+        }
+
+        /* Bottom Navigation */
         .bottom-nav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:440px; height:84px; background:rgba(21,23,36,0.85); backdrop-filter:blur(25px); border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-around; z-index:100; padding-bottom:env(safe-area-inset-bottom); }
         .nav-item { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:6px 0; cursor:pointer; color:var(--text-secondary); transition:var(--transition-fast); background:none; border:none; font-family:inherit; width:68px; border-radius:16px; position:relative; }
         .nav-item.active { color:var(--text); }
@@ -47,7 +69,7 @@
         .page { animation:pageIn 0.35s cubic-bezier(0.4, 0, 0.2, 1); }
         @keyframes pageIn { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
 
-        /* Hero Block */
+        /* Hero */
         .home-hero {
             position:relative;
             border:1px solid var(--border);
@@ -84,7 +106,6 @@
             transition:var(--transition-fast);
         }
         .home-hero .hero-btn:active { transform:scale(0.97); }
-        /* Индикаторы */
         .hero-indicators {
             display:flex;
             justify-content:center;
@@ -176,18 +197,6 @@
         .promo-vip-badge { position:absolute; top:68px; left:20px; background:linear-gradient(135deg, var(--accent), #F5D789); color:#11131D; font-size:10px; font-weight:700; padding:5px 12px; border-radius:var(--radius-full); z-index:2; display:none; }
         .vip-card .promo-vip-badge { display:block; }
 
-        .auth-page { display:flex; align-items:center; justify-content:center; min-height:100vh; padding:24px; background:var(--bg); }
-        .auth-card { width:100%; max-width:380px; background:rgba(255,255,255,0.05); backdrop-filter:blur(25px); border:1px solid var(--border); border-radius:var(--radius-lg); padding:36px 28px; box-shadow:var(--shadow-lg); }
-        .auth-title { font-size:var(--font-large); font-weight:800; text-align:center; margin-bottom:28px; }
-        .auth-input { width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:var(--radius-md); padding:16px 18px; color:var(--text); font-size:var(--font-body); margin-bottom:16px; outline:none; font-family:inherit; }
-        .auth-input:focus { border-color:var(--primary); box-shadow:0 0 0 3px rgba(139,108,255,0.15); }
-        .auth-btn { width:100%; height:56px; background:linear-gradient(135deg, var(--primary), var(--primary-2)); border:none; border-radius:var(--radius-md); color:#fff; font-weight:700; font-size:var(--font-body); cursor:pointer; margin-top:12px; font-family:inherit; box-shadow:0 12px 32px rgba(139,108,255,0.35); }
-        .auth-btn:active { transform:scale(0.97); }
-        .auth-link { color:var(--primary-2); text-align:center; margin-top:20px; cursor:pointer; font-size:var(--font-body); font-weight:500; }
-        .auth-error { color:var(--danger); font-size:var(--font-caption); margin-bottom:8px; text-align:center; }
-        .auth-checkbox { display:flex; align-items:center; gap:10px; font-size:var(--font-caption); color:var(--text-secondary); margin-bottom:16px; }
-        .auth-checkbox input { accent-color:var(--primary); width:18px; height:18px; }
-
         .profile-card { background:rgba(255,255,255,0.05); backdrop-filter:blur(20px); border:1px solid var(--border); border-radius:var(--radius-lg); padding:36px 28px; text-align:center; box-shadow:var(--shadow-md); }
         .profile-avatar { width:96px; height:96px; border-radius:50%; background:linear-gradient(135deg, var(--primary), var(--primary-2)); margin:0 auto 24px; display:flex; align-items:center; justify-content:center; font-size:40px; box-shadow:0 8px 24px rgba(139,108,255,0.35); }
         .profile-name { font-size:var(--font-headline); font-weight:700; }
@@ -205,6 +214,10 @@
 </head>
 <body>
     <div id="app" class="app-container">
+        <!-- Splash screen -->
+        <div id="splashScreen" class="splash-screen">
+            <img src="icons/logo.png" class="splash-logo" alt="Загрузка" onerror="this.style.display='none';">
+        </div>
         <main id="main-content" class="main-content"></main>
         <nav id="bottom-nav" class="bottom-nav"></nav>
     </div>
@@ -246,14 +259,25 @@
             remove: function(key) { try { localStorage.removeItem(key); } catch(e) {} }
         };
 
+        // Фиктивная сессия для гостя (без регистрации)
         var Session = {
-            KEY: 'max_user_session',
-            save: function(user, remember) { Storage.set(this.KEY, user); },
-            get: function() { return Storage.get(this.KEY); },
-            logout: function() { Storage.remove(this.KEY); }
+            getUser: function() {
+                // Всегда возвращаем гостя, игнорируем сохранённые данные
+                return { login: 'guest', name: 'Гость', role: 'user' };
+            },
+            save: function(user, remember) { /* ничего не делаем */ },
+            logout: function() {
+                // Очищаем избранное и статистику при выходе
+                Storage.remove('max_favs');
+                Storage.remove('max_stats');
+                window.location.reload();
+            }
         };
 
-        function userKey(baseKey) { var u = Session.get(); return u ? `${u.login}_${baseKey}` : baseKey; }
+        function userKey(baseKey) {
+            var u = Session.getUser();
+            return u ? `${u.login}_${baseKey}` : baseKey;
+        }
 
         // --- СТАТИСТИКА ---
         var Stats = {
@@ -299,7 +323,6 @@
             categoryOffers: {},
             currentCategory: 'promotions',
             categories: [],
-            users: [],
             lentaSlides: [],
             loadLenta: function() {
                 var self = this;
@@ -347,15 +370,6 @@
                     return offers;
                 });
             },
-            loadUsers: function() {
-                var url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.GOOGLE_SHEET_ID}/values/${CONFIG.SHEET_USERS}?key=${CONFIG.API_KEY}`;
-                var self = this;
-                return fetch(url).then(r=>r.json()).then(d=>{
-                    if(!d.values||d.values.length<2){ self.users=[]; return []; }
-                    self.users = d.values.slice(1).map(r=>({id:r[0],login:r[1],password:r[2],name:r[3],role:r[4]||'user'}));
-                    return self.users;
-                });
-            },
             buildCategories: function(offers) {
                 var c=[{id:'all',name:'Все',emoji:'🔥'}];
                 var m={'еда':'🍕','маркетплейсы':'📦','банки':'💳','связь':'📱','игры':'🎮','путешествия':'✈️','магазины':'🏪','авто':'🚗'};
@@ -380,9 +394,6 @@
                 else if(sort==='discount') f.sort((a,b)=>(parseInt(b.discount)||0)-(parseInt(a.discount)||0));
                 else f.sort((a,b)=>b.id-a.id);
                 return f;
-            },
-            registerUser: function(l,p,n) {
-                return fetch(CONFIG.APPS_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({login:l,password:p,name:n})}).then(r=>r.json());
             }
         };
 
@@ -432,20 +443,12 @@
             init:function(){
                 this.content=document.getElementById('main-content');
                 this.nav=document.getElementById('bottom-nav');
-                var u=Session.get();
-                if(u){
-                    this.nav.style.display='flex';
-                    this.loadApp();
-                } else {
-                    this.nav.style.display='none';
-                    // Загружаем пользователей перед показом формы входа
-                    var self = this;
-                    API.loadUsers().then(function() {
-                        self.showAuthScreen('login');
-                    }).catch(function() {
-                        self.showAuthScreen('login');
-                    });
-                }
+                this.nav.style.display='flex';
+                // Показываем splash на 5.5 секунд (затем скроется через CSS), после этого загружаем приложение
+                var self = this;
+                setTimeout(function() {
+                    self.loadApp();
+                }, 5500); // примерно 5-10 секунд, выбрали 5.5
             },
             loadApp:function(){
                 var s=this; this.showLoader();
@@ -466,99 +469,6 @@
                 });
             },
             showLoader:function(){this.content.innerHTML='<div style="text-align:center;padding:60px;color:var(--text-tertiary);">Загрузка...</div>';},
-            // ========== НОВЫЕ МЕТОДЫ АВТОРИЗАЦИИ ==========
-            showAuthScreen: function(mode) {
-                var self = this;
-                this.nav.style.display = 'none';
-                var isLogin = (mode === 'login');
-                var html = `<div class="auth-page">
-                    <div class="auth-card">
-                        <div class="auth-title">${isLogin ? 'Вход' : 'Регистрация'}</div>
-                        <div class="auth-error" id="authError" style="display:none;"></div>
-                        ${!isLogin ? '<input class="auth-input" id="regName" placeholder="Имя">' : ''}
-                        <input class="auth-input" id="authLogin" placeholder="Логин" autocomplete="username">
-                        <input class="auth-input" type="password" id="authPassword" placeholder="Пароль" autocomplete="${isLogin ? 'current-password' : 'new-password'}">
-                        ${isLogin ? '<label class="auth-checkbox"><input type="checkbox" id="rememberMe" checked> Запомнить меня</label>' : ''}
-                        <button class="auth-btn" id="authBtn">${isLogin ? 'Войти' : 'Зарегистрироваться'}</button>
-                        <div class="auth-link" id="switchAuth">${isLogin ? 'Нет аккаунта? Зарегистрироваться' : 'Есть аккаунт? Войти'}</div>
-                    </div>
-                </div>`;
-                this.content.innerHTML = html;
-
-                function showError(msg) {
-                    var errEl = document.getElementById('authError');
-                    if (errEl) {
-                        errEl.textContent = msg;
-                        errEl.style.display = 'block';
-                    }
-                }
-
-                document.getElementById('switchAuth').onclick = function() {
-                    self.showAuthScreen(isLogin ? 'register' : 'login');
-                };
-
-                document.getElementById('authBtn').onclick = function() {
-                    var login = document.getElementById('authLogin').value.trim();
-                    var password = document.getElementById('authPassword').value.trim();
-                    var name = !isLogin ? document.getElementById('regName')?.value.trim() : '';
-
-                    if (!login || !password || (!isLogin && !name)) {
-                        showError('Заполните все поля');
-                        return;
-                    }
-
-                    if (isLogin) {
-                        var btn = document.getElementById('authBtn');
-                        btn.disabled = true;
-                        btn.textContent = 'Вход...';
-                        // Пользователи уже загружены в API.users при инициализации
-                        var found = API.users.find(function(u) {
-                            return u.login === login && u.password === password;
-                        });
-                        if (found) {
-                            var remember = document.getElementById('rememberMe')?.checked || false;
-                            Session.save(found, remember);
-                            self.nav.style.display = 'flex';
-                            self.loadApp();
-                        } else {
-                            showError('Неверный логин или пароль');
-                            btn.disabled = false;
-                            btn.textContent = 'Войти';
-                        }
-                    } else {
-                        var btn = document.getElementById('authBtn');
-                        btn.disabled = true;
-                        btn.textContent = 'Отправка...';
-                        API.registerUser(login, password, name).then(function(res) {
-                            if (res.success) {
-                                var user = { login: login, password: password, name: name, role: 'user' };
-                                Session.save(user, true);
-                                self.nav.style.display = 'flex';
-                                self.loadApp();
-                            } else {
-                                showError(res.error || 'Ошибка регистрации');
-                                btn.disabled = false;
-                                btn.textContent = 'Зарегистрироваться';
-                            }
-                        }).catch(function() {
-                            showError('Ошибка соединения');
-                            btn.disabled = false;
-                            btn.textContent = 'Зарегистрироваться';
-                        });
-                    }
-                };
-
-                // Enter в полях
-                var inputs = document.querySelectorAll('.auth-input');
-                inputs.forEach(function(inp) {
-                    inp.addEventListener('keypress', function(e) {
-                        if (e.key === 'Enter') {
-                            document.getElementById('authBtn').click();
-                        }
-                    });
-                });
-            },
-            // ========== КОНЕЦ НОВЫХ МЕТОДОВ ==========
             startHeroRotation: function() {
                 if (this.heroTimer) clearInterval(this.heroTimer);
                 var slides = API.lentaSlides;
@@ -813,10 +723,12 @@
                 c.querySelectorAll('.promo-fav-btn').forEach(b=>{b.addEventListener('click',function(e){e.stopPropagation();Favorites.toggle(parseInt(this.dataset.id));s.renderFavoritesPage();s.showToast('Удалено из избранного');});});
             },
             renderProfilePage:function(){
-                var u=Session.get(); if(!u){this.showAuthScreen('login');return;}
-                var h='<div class="page"><div class="promo-header"><h1>Профиль</h1></div><div class="profile-card"><div class="profile-avatar"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div class="profile-name">'+(u.name||u.login)+'</div><div class="profile-login">@'+u.login+'</div><button class="logout-btn" id="logoutBtn">Выйти</button></div></div>';
+                var u=Session.getUser(); // всегда гость
+                var h='<div class="page"><div class="promo-header"><h1>Профиль</h1></div><div class="profile-card"><div class="profile-avatar"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div class="profile-name">'+(u.name||u.login)+'</div><div class="profile-login">@'+u.login+'</div><button class="logout-btn" id="logoutBtn">Очистить данные</button></div></div>';
                 this.content.innerHTML=h; var s=this;
-                document.getElementById('logoutBtn').onclick=function(){Session.logout();s.nav.style.display='none';s.showAuthScreen('login');};
+                document.getElementById('logoutBtn').onclick=function(){
+                    Session.logout(); // очистит избранное и перезагрузит
+                };
             },
             renderPlaceholder:function(t,text){this.content.innerHTML='<div class="page"><div class="promo-header"><h1>'+t+'</h1></div><div class="empty-state">'+text+'</div></div>';},
             renderNav:function(){
