@@ -215,9 +215,10 @@ function renderGiftCards(){
  items.forEach(gift=>{
   const card=document.createElement('article');card.className='gift-card';
   const top=document.createElement('div');top.className='gift-card-top';
-  const icon=document.createElement('div');icon.className='gift-card-icon';icon.textContent='🎁';
+  const visual=({project:['✳️','Подарок проекта'],family_heart:['💗','Сердце для родных'],friend:['🎁','Подарок другу']})[gift.giftType]||['🎁','Подарок'];
+  const icon=document.createElement('div');icon.className='gift-card-icon';icon.textContent=visual[0];
   const details=document.createElement('div');
-  const title=document.createElement('div');title.className='gift-card-title';title.textContent='Подарок «'+gift.giftType+'»';
+  const title=document.createElement('div');title.className='gift-card-title';title.textContent=visual[1];
   const meta=document.createElement('div');meta.className='gift-card-meta';meta.textContent=activeGiftFilter==='mine'?'Отправлен вам':'Получатель MAX ID: '+gift.recipientId;
   details.append(title,meta);top.append(icon,details);card.append(top);
   if(gift.message){const message=document.createElement('div');message.className='gift-card-meta';message.style.marginTop='10px';message.textContent=gift.message;card.append(message);}
@@ -231,9 +232,16 @@ function renderGiftCards(){
     if(remaining>0){timer.dataset.target=String(gift.opensAt);timer.dataset.mode='opens';timer.textContent='Открыть можно через '+formatRemaining(remaining);}
     else {timer.dataset.target=String(gift.expiresAt);timer.dataset.mode='expires';timer.textContent='Подарок готов! На открытие осталось '+formatRemaining(gift.expiresAt-Date.now());const open=document.createElement('button');open.textContent='Открыть подарок';open.addEventListener('click',()=>giftAction('/api/gifts/open',gift.id));actions.append(open);}
   }else if(activeGiftFilter==='mine'&&gift.status==='opened'){
-    timer.textContent='Подарок открыт — теперь его можно переслать.';
-    const forward=document.createElement('button');forward.textContent='Переслать';forward.addEventListener('click',()=>{const id=window.prompt('Введите MAX ID получателя');if(id)giftAction('/api/gifts/forward',gift.id,{recipientId:id});});actions.append(forward);
-  }else if(gift.status==='sent'){timer.textContent='Ожидает, когда получатель заберёт подарок.';}
+    timer.textContent='Подарок открыт и сохранён в вашей коллекции.';
+    if(currentFullyAuthorized){
+      const forward=document.createElement('button');forward.className='secondary';forward.textContent='Переслать';forward.addEventListener('click',()=>{const id=window.prompt('Введите MAX ID получателя');if(id)giftAction('/api/gifts/forward',gift.id,{recipientId:id});});actions.append(forward);
+    }
+  }else if(gift.status==='sent'){
+    timer.textContent=activeGiftFilter==='mine'?'Вам отправили подарок. Заберите его, чтобы запустить таймер.':'Ожидает, когда получатель заберёт подарок.';
+    if(activeGiftFilter==='sent'&&gift.shareUrl){
+      const copy=document.createElement('button');copy.className='secondary';copy.textContent='Скопировать ссылку';copy.addEventListener('click',()=>navigator.clipboard?.writeText(gift.shareUrl).then(()=>copy.textContent='Скопировано'));actions.append(copy);
+    }
+  }else if(gift.status==='forwarded'){timer.textContent='Подарок переслан другому человеку.';}
   else {timer.textContent='Статус: '+gift.status;}
   list.append(card);
  });
