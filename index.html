@@ -104,6 +104,32 @@ html,body{background:#edf1ff;color:#17172b;font-family:var(--sans)}
 .consent-error{min-height:18px;margin-top:10px;color:#c03958;font-size:11px;line-height:1.5}
 .consent-loading{font-size:13px;color:#777b96;text-align:center;padding:30px 10px}
 
+
+/* Gift cabinet and lifecycle */
+.gift-list{display:grid;gap:10px;margin-top:12px}
+.gift-card{padding:14px;border:1px solid #e7eaff;border-radius:15px;background:#fff;box-shadow:0 5px 18px #424b9410}
+.gift-card-top{display:flex;align-items:center;gap:11px}
+.gift-card-icon{width:45px;height:45px;flex:none;border-radius:13px;display:grid;place-items:center;background:linear-gradient(140deg,#e2f8ff,#eee5ff);font-size:23px}
+.gift-card-main{min-width:0;flex:1}.gift-card-main b{display:block;font-size:11px;color:#252344}.gift-card-main small{display:block;margin-top:4px;color:#8287a2;font-size:8px}
+.gift-card-message{margin:11px 0 0;color:#626985;font-size:9px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
+.gift-timer{margin-top:10px;padding:9px 10px;border-radius:10px;background:#f1efff;color:#5634f5;font-size:9px;font-weight:800}
+.gift-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:11px}
+.gift-action{border:0;border-radius:9px;padding:10px 12px;background:#5634f5;color:#fff;font-size:9px;font-weight:800}
+.gift-action.secondary{background:#f0efff;color:#5634f5}
+.gift-action:disabled{opacity:.45}
+.gift-type-grid{display:grid;grid-template-columns:1fr;gap:10px;margin-top:14px}
+.gift-type-card{padding:14px;border:1px solid #e4e8ff;border-radius:15px;background:#fff;display:flex;align-items:center;gap:12px}
+.gift-type-card .gift-card-icon{width:50px;height:50px}
+.gift-type-card b{display:block;font-size:11px}.gift-type-card small{display:block;color:#8186a1;font-size:8px;line-height:1.5;margin-top:4px}
+.auth-hint{margin-top:12px;padding:12px;border-radius:12px;background:#f0efff;color:#4c438e;font-size:9px;line-height:1.6}
+.gift-modal-backdrop{position:fixed;inset:0;z-index:50;background:#17172b88;display:none;align-items:flex-end;justify-content:center;padding:14px}
+.gift-modal-backdrop.open{display:flex}
+.gift-modal{width:min(520px,100%);max-height:90vh;overflow:auto;border-radius:22px;background:#fff;padding:20px;box-shadow:0 20px 70px #11152c45}
+.gift-modal h2{margin:0 0 5px;font-size:19px}.gift-modal>p{margin:0 0 15px;color:#8287a2;font-size:9px;line-height:1.6}
+.gift-form-field{display:grid;gap:6px;margin-top:11px}.gift-form-field label{font-size:9px;font-weight:800;color:#555b79}.gift-form-field input,.gift-form-field textarea,.gift-form-field select{width:100%;border:1px solid #e2e6fa;border-radius:10px;padding:11px;background:#fbfcff;color:#24233d;font-size:11px;outline:none}.gift-form-field textarea{min-height:75px;resize:vertical}
+.gift-modal-footer{display:flex;gap:8px;margin-top:16px}.gift-modal-footer button{flex:1}
+.gift-profile-tier{margin-top:10px;padding:12px;border-radius:12px;background:#fff;border:1px solid #e5e8fb;font-size:9px;color:#6f7593;line-height:1.6}
+.gift-share-link{display:block;margin-top:8px;padding:10px;border-radius:9px;background:#f3f1ff;color:#5634f5;font-size:8px;overflow-wrap:anywhere}
 </style>
 </head>
 <body>
@@ -130,21 +156,44 @@ html,body{background:#edf1ff;color:#17172b;font-family:var(--sans)}
 <button class="primary" id="buyGift">Купить или подарить</button>
 <div class="empty-hint">Создайте свой первый подарок</div>
 </div>
+<div class="gift-list" id="giftList"></div>
 </div>
 </section>
 <section class="screen" id="shop">
 <div class="page-title"><div class="eyebrow">ВЫБИРАЙТЕ С УДОВОЛЬСТВИЕМ</div><h1>Магазин подарков</h1><p>Найдите подарок, который захочется открыть.</p></div>
 <div class="shop-banner"><span class="shop-banner-icon">🎁</span><div><b>Подарки с настроением</b><small>Выбирайте понравившийся вариант — его можно будет купить себе или отправить близкому человеку.</small></div></div>
-<div class="section-head"><strong>Каталог подарков</strong><text>Скоро появятся</text></div>
-<div class="shop-empty"><div class="empty-illustration"><span class="gift-icon">🎀</span></div><h2>Готовим витрину</h2><p>Здесь появятся карточки подарков с изображениями, которые будут добавлены в проект. После подключения каталога их можно будет выбирать и покупать.</p></div>
+<div class="section-head"><strong>Выберите концепцию подарка</strong><text>3 варианта</text></div>
+<div class="gift-type-grid">
+ <div class="gift-type-card"><span class="gift-card-icon">✳️</span><div><b>Подарок проекта</b><small>Особенный подарок с фирменным оформлением Подариса.</small></div></div>
+ <div class="gift-type-card"><span class="gift-card-icon">💗</span><div><b>Сердце для родных</b><small>Тёплый подарок для самых близких людей.</small></div></div>
+ <div class="gift-type-card"><span class="gift-card-icon">🎁</span><div><b>Подарок другу</b><small>Небольшой сюрприз, которым приятно поделиться.</small></div></div>
+</div>
+<div class="auth-hint" id="shopAccessHint">Покупка подарков будет доступна всем пользователям. Для бесплатной отправки и пересылки подарков потребуется полная авторизация.</div>
+<button class="primary" id="createGiftFromShop" style="width:100%;margin-top:14px">Создать и отправить подарок</button>
 </section>
 <section class="screen" id="profile">
 <div class="page-title"><div class="eyebrow">ВАШ АККАУНТ</div><h1>Профиль</h1><p>Ваша личная страница в Подарис.</p></div>
-<div class="profile-card"><div class="avatar"><span>♡</span></div><div><b>Мой профиль</b><small>Аватар и данные профиля будут загружаться из MAX после подключения.</small></div></div>
-<div class="profile-stats"><div class="profile-stat"><strong>0</strong><small>Отправлено подарков</small></div><div class="profile-stat"><strong>0</strong><small>Получено подарков</small></div></div>
+<div class="profile-card"><div class="avatar"><span>♡</span></div><div><b id="profileCardName">Мой профиль</b><small id="profileCardStatus">Проверяем уровень авторизации…</small></div></div>
+<div class="gift-profile-tier" id="profileTierInfo">Загрузка данных аккаунта…</div>
+<div class="profile-stats"><div class="profile-stat"><strong id="profileSentCount">0</strong><small>Отправлено подарков</small></div><div class="profile-stat"><strong id="profileReceivedCount">0</strong><small>Получено подарков</small></div></div>
 <div class="profile-menu"><button type="button"><span class="menu-icon">♡</span><span><b>Мои подарки</b><small>Подарки, которые вы получили</small></span><span class="arrow">›</span></button><button type="button"><span class="menu-icon">↗</span><span><b>Отправленные</b><small>Подарки, которыми вы поделились</small></span><span class="arrow">›</span></button><button type="button"><span class="menu-icon">?</span><span><b>Помощь и поддержка</b><small>Ответы на вопросы о сервисе</small></span><span class="arrow">›</span></button></div>
 </section>
 <nav class="bottom-nav" aria-label="Основная навигация"><button class="nav-btn active" data-screen="collection"><span class="nav-icon">⌂</span><span>Главная</span></button><button class="nav-btn" data-screen="shop"><span class="nav-icon">▧</span><span>Магазин подарков</span></button><button class="nav-btn" data-screen="profile"><span class="nav-icon">◉</span><span>Профиль</span></button></nav>
+</div>
+<div class="gift-modal-backdrop" id="giftModalBackdrop">
+ <div class="gift-modal" role="dialog" aria-modal="true" aria-labelledby="giftModalTitle">
+  <h2 id="giftModalTitle">Отправить подарок</h2>
+  <p>Получатель заберёт подарок по ссылке. Если вы назначите время, он сможет открыть его после окончания таймера.</p>
+  <form id="giftCreateForm">
+   <div class="gift-form-field"><label for="giftRecipient">MAX ID получателя</label><input id="giftRecipient" inputmode="numeric" pattern="[0-9]+" required placeholder="Введите MAX ID"></div>
+   <div class="gift-form-field"><label for="giftType">Вид подарка</label><select id="giftType"><option value="project">Подарок проекта</option><option value="family_heart">Сердце для родных</option><option value="friend">Подарок другу</option></select></div>
+   <div class="gift-form-field"><label for="giftMessage">Послание получателю</label><textarea id="giftMessage" maxlength="500" placeholder="Напишите несколько тёплых слов…"></textarea></div>
+   <div class="gift-form-field"><label for="giftDelay">Через сколько времени разрешить открытие</label><select id="giftDelay"><option value="0">Сразу</option><option value="3600">Через 1 час</option><option value="21600">Через 6 часов</option><option value="43200">Через 12 часов</option><option value="86400">Через 1 день</option><option value="259200">Через 3 дня</option><option value="604800">Через 7 дней</option><option value="2592000">Через 30 дней</option></select></div>
+   <div class="gift-modal-footer"><button type="button" class="gift-action secondary" id="giftCancel">Отмена</button><button type="submit" class="gift-action" id="giftSubmit">Отправить</button></div>
+   <div class="consent-error" id="giftFormError" aria-live="polite"></div>
+   <div id="giftCreatedResult"></div>
+  </form>
+ </div>
 </div>
 <script src="./api-config.js"></script>
 <script>
