@@ -231,10 +231,89 @@ function legalButtons() {
   return rows;
 }
 
+async function getSavedContact(userId) {
+  const client = await getRedis();
+  const raw = await client.get("contact:" + userId);
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch { return null; }
+}
+
+function contactRequestButtons() {
+  return [[{ type: "request_contact", text: "Поделиться контактом" }]];
+}
+
+async function sendContactPrompt(userId) {
+  const existing = await getSavedContact(userId);
+  if (existing?.phone) {
+    const buttons = process.env.MAX_MINI_APP_URL
+      ? [[{ type: "open_app", text: "Открыть Подарис", web_app: process.env.MAX_MINI_APP_URL }]]
+      : [];
+    await sendMaxMessage(userId, "Ваш контакт уже сохранён. Спасибо!", buttons);
+    return;
+  }
+  await sendMaxMessage(
+    userId,
+    "Согласие сохранено. Для заполнения профиля вы можете отдельно поделиться контактом MAX. Это необязательно: можно пропустить этот шаг и пользоваться Подарисом без номера телефона.",
+    contactRequestButtons()
+  );
+}
+
+function decodeVcardValue(value) {
+  return String(value || "").replace(/\\n/gi, " ").replace(/\\,/g, ",").replace(/\\;/g, ";").replace(/\\\\/g, "\\").trim();
+}
+
+function parseVcard(vcfInfo) {
+  const normalized = String(vcfInfo || "").replace(/\\r\\n/g, "\r\n").replace(/\\n/g, "\n");
+  const lines = normalized.split(/\r?\n/);
+  const result = {};
+  for (const line of lines) {
+    const colon = line.indexOf(":");
+    if (colon < 1) continue;
+    const key = line.slice(0, colon).split(";")[0].toUpperCase();
+    const value = decodeVcardValue(line.slice(colon + 1));
+    if (!value) continue;
+    if (key === "TEL" && !result.phone) result.phone = value;
+    if (key === "FN" && !result.fullName) result.fullName = value;
+    if (key === "EMAIL" && !result.email) result.email = value;
+    if (key === "URL" && !result.profileUrl) result.profileUrl = value;
+  }
+  return result;
+}
+
+function verifyContactHash(vcfInfo, receivedHash) {
+  if (typeof vcfInfo !== "string" || typeof receivedHash !== "string" ||
+      !process.env.MAX_BOT_TOKEN || !/^[a-f0-9]{64}$/i.test(receivedHash)) return false;
+  const normalized = vcfInfo.replace(/\\r\\n/g, "\r\n").replace(/\\n/g, "\n");
+  const expected = crypto.createHmac("sha256", process.env.MAX_BOT_TOKEN)
+    .update(normalized, "utf8").digest();
+  const actual = Buffer.from(receivedHash, "hex");
+  return actual.length === expected.length && crypto.timingSafeEqual(actual, expected);
+}
+
+async function saveSharedContact(userId, payload) {
+  const vcfInfo = payload?.vcf_info;
+  if (!verifyContactHash(vcfInfo, payload?.hash)) return false;
+  const contact = parseVcard(vcfInfo);
+  if (!contact.phone) return false;
+  const record = {
+    userId: String(userId),
+    phone: contact.phone,
+    fullName: contact.fullName || null,
+    email: contact.email || null,
+    profileUrl: contact.profileUrl || null,
+    verifiedByMax: true,
+    sharedAt: new Date().toISOString(),
+    source: "max_request_contact"
+  };
+  const client = await getRedis();
+  await client.set("contact:" + userId, JSON.stringify(record));
+  return true;
+}
+
 async function sendConsentPrompt(userId) {
   await sendMaxMessage(
     userId,
-    "Добро пожаловать в Подарис! Чтобы пользоваться приложением, сначала ознакомьтесь с документами и подтвердите согласие с обоими. Если вы уже принимали текущие редакции, просто откройте приложение.",
+    "Добро пожаловать в Подарис! Для работы приложения MAX передаёт доступные данные профиля: MAX ID, имя, фамилию, username, язык и фотографию профиля (если они доступны). Номер телефона и другие контактные сведения мы запросим отдельно — только если вы нажмёте «Поделиться контактом». Ознакомьтесь с документами и подтвердите согласие.",
     legalButtons()
   );
 }
@@ -256,12 +335,30 @@ async function handleMaxUpdate(update) {
   });
   const current = await getConsent(id);
 
+  if (type === "message_created") {
+    const attachments = update.message?.body?.attachments || [];
+    const contactAttachment = attachments.find((item) => item?.type === "contact");
+    if (contactAttachment && consentIsCurrent(current)) {
+      const payload = contactAttachment.payload || {};
+      const maxInfoId = payload.max_info?.user_id;
+      if (maxInfoId === undefined || String(maxInfoId) === id) {
+        const saved = await saveSharedContact(id, payload);
+        if (saved) {
+          await sendMaxMessage(id, "Контакт MAX подтверждён и сохранён в вашем профиле Подариса. Спасибо!");
+        } else {
+          await sendMaxMessage(id, "Не удалось подтвердить контакт MAX. Нажмите кнопку «Поделиться контактом» в сообщении бота и попробуйте ещё раз.");
+        }
+      }
+    }
+  }
+
   if (type === "bot_started") {
     if (consentIsCurrent(current)) {
       const buttons = process.env.MAX_MINI_APP_URL
         ? [[{ type: "open_app", text: "Открыть Подарис", web_app: process.env.MAX_MINI_APP_URL }]]
         : [];
-      await sendMaxMessage(id, "Вы уже приняли действующие документы. Можно открыть Подарис.", buttons);
+      await sendContactPrompt(id);
+      if (buttons.length) await sendMaxMessage(id, "Вы уже приняли действующие документы. Можно открыть Подарис.", buttons);
     } else {
       await sendConsentPrompt(id);
     }
@@ -275,7 +372,8 @@ async function handleMaxUpdate(update) {
         const buttons = process.env.MAX_MINI_APP_URL
           ? [[{ type: "open_app", text: "Открыть Подарис", web_app: process.env.MAX_MINI_APP_URL }]]
           : [];
-        await sendMaxMessage(id, "Вы уже приняли действующие документы. Можно открыть Подарис.", buttons);
+        await sendContactPrompt(id);
+        if (buttons.length) await sendMaxMessage(id, "Вы уже приняли действующие документы. Можно открыть Подарис.", buttons);
       } else {
         await sendConsentPrompt(id);
       }
@@ -290,10 +388,11 @@ async function handleMaxUpdate(update) {
       return;
     }
     await saveConsent(id, "bot");
+    await sendContactPrompt(id);
     const buttons = process.env.MAX_MINI_APP_URL
       ? [[{ type: "open_app", text: "Открыть Подарис", web_app: process.env.MAX_MINI_APP_URL }]]
       : [];
-    await sendMaxMessage(id, "Согласие сохранено. Теперь вам доступно приложение Подарис.", buttons);
+    if (buttons.length) await sendMaxMessage(id, "Теперь вам доступно приложение Подарис.", buttons);
   }
 }
 
@@ -377,7 +476,9 @@ module.exports.handler = async function (event = {}) {
         return response(409, { error: "legal_documents_updated" });
       }
       const consent = await saveConsent(user.id, "mini_app");
-      return response(200, { ok: true, accepted: true, consent });
+      try { await sendContactPrompt(user.id); }
+      catch (messageError) { console.error("[contact prompt]", messageError.message); }
+      return response(200, { ok: true, accepted: true, consent, contactRequestSent: true });
     } catch (error) {
       console.error("[consent]", error.message);
       return response(503, { error: "storage_unavailable" });
