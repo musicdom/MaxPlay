@@ -1,28 +1,48 @@
 const crypto = require("node:crypto");
-const { createClient } = require("redis");
+// Upstash Redis REST adapter. Credentials are supplied only through Yandex
+// Cloud Function environment variables; no Redis secrets belong in the repository.
+function createUpstashClient() {
+  const endpoint = String(process.env.UPSTASH_REDIS_REST_URL || "").replace(/\\/+$/, "");
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!endpoint || !token) throw new Error("UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are required");
+
+  async function command(parts) {
+    const result = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + token,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(parts)
+    });
+    if (!result.ok) throw new Error("Upstash Redis request failed (" + result.status + ")");
+    const payload = await result.json();
+    if (payload.error) throw new Error("Upstash Redis command failed: " + String(payload.error).slice(0, 200));
+    return payload.result;
+  }
+
+  return {
+    get: async (key) => command(["GET", key]),
+    set: async (key, value) => command(["SET", key, value]),
+    del: async (key) => command(["DEL", key]),
+    decr: async (key) => Number(await command(["DECR", key])),
+    incr: async (key) => Number(await command(["INCR", key])),
+    lRange: async (key, start, stop) => (await command(["LRANGE", key, start, stop])) || [],
+    lRem: async (key, count, value) => Number(await command(["LREM", key, count, value])),
+    rPush: async (key, value) => Number(await command(["RPUSH", key, value])),
+    pExpireAt: async (key, timestamp) => Number(await command(["PEXPIREAT", key, timestamp])),
+    ping: async () => command(["PING"])
+  };
+}
 
 let redisClient;
-let redisConnectPromise;
 
 const AGREEMENT_VERSION = process.env.USER_AGREEMENT_VERSION || "1.0.0";
 const PRIVACY_VERSION = process.env.PRIVACY_POLICY_VERSION || "1.0.0";
 const LEGAL_BASE_URL = process.env.LEGAL_BASE_URL || "https://musicdom.github.io/MaxPlay/legal";
 
 async function getRedis() {
-  if (!process.env.REDIS_URL) throw new Error("REDIS_URL is not configured");
-  if (!redisClient) {
-    redisClient = createClient({
-      url: process.env.REDIS_URL,
-      socket: { reconnectStrategy: (retries) => Math.min(retries * 250, 5000) }
-    });
-    redisClient.on("error", (error) => console.error("[redis]", error.message));
-  }
-  if (!redisClient.isOpen) {
-    if (!redisConnectPromise) {
-      redisConnectPromise = redisClient.connect().finally(() => { redisConnectPromise = null; });
-    }
-    await redisConnectPromise;
-  }
+  if (!redisClient) redisClient = createUpstashClient();
   return redisClient;
 }
 
@@ -685,7 +705,7 @@ module.exports.handler = async function (event = {}) {
       console.error("[health check]", error.message);
       return response(503, {
         ok: false, service: "podaris-api",
-        redis: process.env.REDIS_URL ? "unavailable" : "not_configured",
+        redis: process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN ? "unavailable" : "not_configured",
         maxBotConfigured: Boolean(process.env.MAX_BOT_TOKEN)
       });
     }
