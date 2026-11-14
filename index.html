@@ -40,7 +40,7 @@
 .back{border:0;background:transparent;padding:9px 0;color:var(--red);font-size:9px;font-weight:800}
 .status{display:none;margin-top:12px;padding:11px;border-radius:9px;background:#f7eee8;color:#704b43;font-size:8px;line-height:1.6}
 @media(min-width:650px){body{padding:20px 0}.app{min-height:calc(100vh - 40px);border-radius:22px;box-shadow:0 15px 50px #47352614}}
-</style>
+.bottom-nav{position:fixed;z-index:20;left:50%;bottom:0;transform:translateX(-50%);width:min(520px,100%);height:calc(68px + env(safe-area-inset-bottom));padding:5px 22px calc(5px + env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(3,1fr);background:#fffefaed;backdrop-filter:blur(16px);border-top:1px solid var(--line)}.nav-btn{border:0;background:transparent;color:#a59b91;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:8px;font-weight:800}.nav-icon{width:27px;height:25px;display:grid;place-items:center;font-size:18px}.nav-btn.active{color:var(--red)}.nav-btn.active .nav-icon{background:#f7eae4;border-radius:9px}.app{padding-bottom:calc(88px + env(safe-area-inset-bottom))}.shop-banner{display:flex;align-items:center;gap:12px;padding:16px;border-radius:15px;background:linear-gradient(120deg,#ead4ca,#f2e4dc);margin-bottom:17px}.shop-banner-icon{width:46px;height:46px;border-radius:13px;background:#ffffff8c;display:grid;place-items:center;font-size:23px;flex:none}.shop-banner b{display:block;font:500 18px var(--serif)}.shop-banner small{display:block;margin-top:4px;color:#765f55;font-size:8px;line-height:1.5}.shop-empty{min-height:250px;background:#fff;border:1px solid var(--line);border-radius:15px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:22px}.shop-empty .empty-illustration{margin-bottom:13px}.shop-empty h2{font:500 21px var(--serif);margin:0 0 7px}.shop-empty p{max-width:250px;color:var(--muted);font-size:8px;line-height:1.7;margin:0}.profile-card{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:15px;padding:15px}.profile-card .avatar{width:52px;height:52px;font-size:21px}.profile-card b{display:block;font-size:10px}.profile-card small{display:block;margin-top:4px;color:var(--muted);font-size:8px;line-height:1.5}.profile-stats{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}.profile-stat{background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px}.profile-stat strong{display:block;font:500 23px var(--serif);color:var(--red)}.profile-stat small{display:block;color:var(--muted);font-size:8px;margin-top:3px}.profile-menu{margin-top:15px;background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}.profile-menu button{width:100%;display:flex;align-items:center;gap:10px;padding:14px 12px;border:0;border-bottom:1px solid #f1ece7;background:#fff;text-align:left;color:var(--ink)}.profile-menu button:last-child{border-bottom:0}.profile-menu b{font-size:9px}.profile-menu small{display:block;color:var(--muted);font-size:8px;margin-top:3px}.profile-menu .menu-icon{width:29px;height:29px;border-radius:9px;background:var(--soft);display:grid;place-items:center;color:var(--red)}.profile-menu .arrow{margin-left:auto;color:#b6aaa0}@media(min-width:650px){.bottom-nav{bottom:20px;border-radius:0 0 22px 22px}}</style>
 </head>
 <body>
 <div class="app">
@@ -66,44 +66,29 @@
 </div>
 </div>
 </section>
-<section class="screen" id="create">
-<button class="back" data-back>← Назад к подаркам</button>
-<div class="page-title"><div class="eyebrow">НОВЫЙ ПОДАРОК</div><h1>Что хотите сделать?</h1><p>Выберите, для кого будет предназначен подарок.</p></div>
-<button class="choice-card" id="giftSomeone"><span class="choice-icon">💌</span><span><b>Подарить человеку</b><small>Создать сюрприз, добавить послание и отправить ссылку получателю.</small></span><span class="choice-arrow">›</span></button>
-<button class="choice-card" id="buyForMe"><span class="choice-icon">🎁</span><span><b>Купить себе</b><small>Выбрать подарок для своей коллекции.</small></span><span class="choice-arrow">›</span></button>
-<div class="note">Покупка и отправка пока не подключены. Этот экран показывает будущий сценарий оформления.</div>
+<section class="screen" id="shop">
+<div class="page-title"><div class="eyebrow">ВЫБИРАЙТЕ С УДОВОЛЬСТВИЕМ</div><h1>Магазин подарков</h1><p>Найдите подарок, который захочется открыть.</p></div>
+<div class="shop-banner"><span class="shop-banner-icon">🎁</span><div><b>Подарки с настроением</b><small>Выбирайте понравившийся вариант — его можно будет купить себе или отправить близкому человеку.</small></div></div>
+<div class="section-head"><strong>Каталог подарков</strong><text>Скоро появятся</text></div>
+<div class="shop-empty"><div class="empty-illustration"><span class="gift-icon">🎀</span></div><h2>Готовим витрину</h2><p>Здесь появятся карточки подарков с изображениями, которые будут добавлены в проект. После подключения каталога их можно будет выбирать и покупать.</p></div>
 </section>
-<section class="screen" id="giftFormScreen">
-<button class="back" data-back>← Назад</button>
-<div class="page-title"><div class="eyebrow">ПОДАРОК ДЛЯ БЛИЗКОГО</div><h1>Создать подарок</h1><p>Заполните детали будущего сюрприза.</p></div>
-<form class="form-card" id="giftForm" novalidate>
-<label class="field">ИМЯ ПОЛУЧАТЕЛЯ<input id="recipient" placeholder="Например, Аня" maxlength="80" required></label>
-<div class="field">ПОВОД<div class="choices" id="occasionChoices"><button type="button" class="choice active">День рождения</button><button type="button" class="choice">Новый год</button><button type="button" class="choice">Просто так</button><button type="button" class="choice">Особенный день</button></div></div>
-<label class="field">ПОСЛАНИЕ<textarea id="message" placeholder="Напишите несколько тёплых слов..." maxlength="1500"></textarea></label>
-<label class="field">ДАТА И ВРЕМЯ ОТКРЫТИЯ<input id="openAt" type="datetime-local" required></label>
-<div class="note">После назначенного времени получатель сможет забрать подарок в течение 12 часов. Если он не откроет его вовремя, подарок сгорит.</div>
-<button class="primary" type="submit">Продолжить</button><div class="status" id="status" role="status"></div>
-</form>
+<section class="screen" id="profile">
+<div class="page-title"><div class="eyebrow">ВАШ АККАУНТ</div><h1>Профиль</h1><p>Ваша личная страница в сервисе подарков.</p></div>
+<div class="profile-card"><div class="avatar"><span>♡</span></div><div><b>Мой профиль</b><small>Аватар и данные профиля будут загружаться из MAX после подключения.</small></div></div>
+<div class="profile-stats"><div class="profile-stat"><strong>0</strong><small>Отправлено подарков</small></div><div class="profile-stat"><strong>0</strong><small>Получено подарков</small></div></div>
+<div class="profile-menu"><button type="button"><span class="menu-icon">♡</span><span><b>Мои подарки</b><small>Подарки, которые вы получили</small></span><span class="arrow">›</span></button><button type="button"><span class="menu-icon">↗</span><span><b>Отправленные</b><small>Подарки, которыми вы поделились</small></span><span class="arrow">›</span></button><button type="button"><span class="menu-icon">?</span><span><b>Помощь и поддержка</b><small>Ответы на вопросы о сервисе</small></span><span class="arrow">›</span></button></div>
 </section>
+<nav class="bottom-nav" aria-label="Основная навигация"><button class="nav-btn active" data-screen="collection"><span class="nav-icon">⌂</span><span>Главная</span></button><button class="nav-btn" data-screen="shop"><span class="nav-icon">▧</span><span>Магазин подарков</span></button><button class="nav-btn" data-screen="profile"><span class="nav-icon">◉</span><span>Профиль</span></button></nav>
 </div>
 <script>
-const screens={collection:document.getElementById('collection'),create:document.getElementById('create'),giftFormScreen:document.getElementById('giftFormScreen')};
-function showScreen(id){Object.values(screens).forEach(s=>s.classList.remove('active'));(screens[id]||screens.collection).classList.add('active');window.scrollTo({top:0,behavior:'smooth'});}
-let filter='sent';
-const content={
-sent:{title:'Отправленные подарки',count:'0 подарков',icon:'🎁',heading:'Пока здесь пусто',text:'Здесь будут отображаться подарки, которые вы отправили другим людям.'},
-mine:{title:'Мои подарки',count:'0 подарков',icon:'💝',heading:'У вас пока нет подарков',text:'Здесь появятся подарки, которые вам отправили или которые вы приобрели для себя.'}
-};
-function setFilter(value){filter=value;document.querySelectorAll('[data-filter]').forEach(b=>b.classList.toggle('active',b.dataset.filter===value));const c=content[value];document.getElementById('windowTitle').textContent=c.title;document.getElementById('giftCount').textContent=c.count;document.getElementById('emptyIcon').textContent=c.icon;document.getElementById('emptyTitle').textContent=c.heading;document.getElementById('emptyText').textContent=c.text;document.getElementById('buyGift').textContent=value==='sent'?'Купить или подарить':'Купить или подарить';}
-document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>setFilter(b.dataset.filter)));
-document.getElementById('buyGift').addEventListener('click',()=>showScreen('create'));
-document.querySelectorAll('[data-back]').forEach(b=>b.addEventListener('click',()=>showScreen('collection')));
-document.getElementById('giftSomeone').addEventListener('click',()=>showScreen('giftFormScreen'));
-document.getElementById('buyForMe').addEventListener('click',()=>{const s=document.getElementById('status');showScreen('giftFormScreen');s.style.display='block';s.textContent='Сценарий покупки для себя будет подключён отдельно.';});
-document.querySelectorAll('#occasionChoices .choice').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('#occasionChoices .choice').forEach(x=>x.classList.toggle('active',x===b));}));
-const date=document.getElementById('openAt');const minDate=new Date(Date.now()+3600000);minDate.setMinutes(minDate.getMinutes()-minDate.getTimezoneOffset());date.min=minDate.toISOString().slice(0,16);
-document.getElementById('giftForm').addEventListener('submit',e=>{e.preventDefault();const name=document.getElementById('recipient').value.trim(),when=new Date(date.value),status=document.getElementById('status');status.style.display='block';if(!name){status.textContent='Укажите имя получателя.';return}if(!date.value||when<=new Date()){status.textContent='Выберите дату и время в будущем.';return}status.textContent='Форма готова. Для реального создания подарка, оплаты и отправки ссылки нужно подключить серверную часть.';});
-/* MAX profile avatar can be populated by the native MAX bridge once its user payload is connected. */
+const screens={collection:document.getElementById('collection'),shop:document.getElementById('shop'),profile:document.getElementById('profile')};
+function navigate(name){Object.values(screens).forEach(x=>x.classList.remove('active'));(screens[name]||screens.collection).classList.add('active');document.querySelectorAll('[data-screen]').forEach(b=>b.classList.toggle('active',b.dataset.screen===name));window.scrollTo({top:0,behavior:'smooth'});}
+document.querySelectorAll('[data-screen]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.screen)));
+document.getElementById('buyGift').addEventListener('click',()=>navigate('shop'));
+const states={sent:{title:'Отправленные подарки',count:'0 подарков',icon:'🎁',heading:'Пока здесь пусто',text:'Здесь будут отображаться подарки, которые вы отправили другим людям.'},mine:{title:'Мои подарки',count:'0 подарков',icon:'💝',heading:'У вас пока нет подарков',text:'Здесь появятся подарки, которые вам отправили или которые вы приобрели для себя.'}};
+document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-filter]').forEach(x=>x.classList.toggle('active',x===b));const x=states[b.dataset.filter];document.getElementById('windowTitle').textContent=x.title;document.getElementById('giftCount').textContent=x.count;document.getElementById('emptyIcon').textContent=x.icon;document.getElementById('emptyTitle').textContent=x.heading;document.getElementById('emptyText').textContent=x.text;}));
+/* В будущем: карточки каталога загружаются из картинок и данных, добавленных в репозиторий. Покупка, выдача и отправка реализуются через MAX-бота и сервер. Отправка полученного подарка будет доступна после его открытия и завершения срока действия. */
+/* Аватар и профиль пользователя будут подключены через MAX Mini App bridge. */
 </script>
 </body>
 </html>
