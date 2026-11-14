@@ -567,6 +567,9 @@ async function handleGiftRequest(path, body, user) {
 
     if (path === "/api/gifts/claim") {
       if (gift.recipientId !== userId) return giftError(403, "not_gift_recipient");
+      if (gift.status === "claimed" || gift.status === "opened") {
+        return { statusCode: 200, body: { ok: true, gift, alreadyClaimed: true } };
+      }
       if (gift.status !== "sent") return giftError(409, "gift_not_claimable");
       gift.status = "claimed";
       gift.claimedAt = now;
