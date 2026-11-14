@@ -453,16 +453,21 @@ async function listUserGifts(userId) {
     Promise.all(sentIds.map(readGift))
   ]);
   const now = Date.now();
-  const normalize = (gift) => {
+  async function normalize(gift) {
     if (!gift) return null;
     if (gift.status === "claimed" && gift.expiresAt && now >= gift.expiresAt) {
-      return { ...gift, status: "expired" };
+      await client.del("gift:" + gift.id);
+      await Promise.all([
+        client.lRem("gifts:received:" + gift.recipientId, 0, gift.id),
+        client.lRem("gifts:sent:" + gift.senderId, 0, gift.id)
+      ]);
+      return null;
     }
     return gift;
-  };
+  }
   return {
-    received: received.map(normalize).filter(Boolean),
-    sent: sent.map(normalize).filter(Boolean)
+    received: (await Promise.all(received.map(normalize))).filter(Boolean),
+    sent: (await Promise.all(sent.map(normalize))).filter(Boolean)
   };
 }
 
@@ -547,8 +552,11 @@ async function handleGiftRequest(path, body, user) {
     if (path === "/api/gifts/open") {
       if (gift.recipientId !== userId) return giftError(403, "not_gift_recipient");
       if (gift.status === "claimed" && gift.expiresAt && now >= gift.expiresAt) {
-        gift.status = "expired";
-        await saveGift(gift);
+        await client.del("gift:" + gift.id);
+        await Promise.all([
+          client.lRem("gifts:received:" + gift.recipientId, 0, gift.id),
+          client.lRem("gifts:sent:" + gift.senderId, 0, gift.id)
+        ]);
         return giftError(410, "gift_expired");
       }
       if (gift.status !== "claimed") return giftError(409, "gift_not_ready");
