@@ -477,6 +477,8 @@ function giftError(statusCode, error, extra = {}) {
 
 async function handleGiftRequest(path, body, user) {
   const userId = user.id;
+  const consent = await getConsent(userId);
+  if (!consentIsCurrent(consent)) return giftError(403, "consent_required");
   const client = await getRedis();
   const fullyAuthorized = await isFullyAuthorized(userId);
   const balance = await getGiftBalance(userId);
@@ -622,7 +624,20 @@ async function handleGiftRequest(path, body, user) {
     await client.set("gift:" + forwarded.id, JSON.stringify(forwarded));
     await client.rPush("gifts:sent:" + userId, forwarded.id);
     await client.rPush("gifts:received:" + newRecipientId, forwarded.id);
-    return { statusCode: 201, body: { ok: true, gift: forwarded } };
+    let notificationSent = false;
+    if (forwarded.shareUrl) {
+      try {
+        await sendMaxMessage(
+          newRecipientId,
+          "Вам переслали открытый подарок в Подарис! Заберите его по кнопке ниже.",
+          [[{ type: "open_app", text: "Получить подарок", web_app: forwarded.shareUrl }]]
+        );
+        notificationSent = true;
+      } catch (error) {
+        console.warn("[forward notification]", error.message);
+      }
+    }
+    return { statusCode: 201, body: { ok: true, gift: forwarded, notificationSent } };
   }
 
   return giftError(404, "gift_route_not_found");
