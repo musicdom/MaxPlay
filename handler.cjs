@@ -215,11 +215,15 @@ async function sendMaxMessage(userId, text, buttons = []) {
   }
 }
 
+function consentCallbackPayload() {
+  return "podaris:consent:accept:" + AGREEMENT_VERSION + ":" + PRIVACY_VERSION;
+}
+
 function legalButtons() {
   const rows = [
     [{ type: "link", text: "Пользовательское соглашение", url: LEGAL_BASE_URL + "/user-agreement.html" }],
     [{ type: "link", text: "Политика конфиденциальности", url: LEGAL_BASE_URL + "/privacy-policy.html" }],
-    [{ type: "callback", text: "Принимаю оба документа", payload: "podaris:consent:accept:v1" }]
+    [{ type: "callback", text: "Принимаю оба документа", payload: consentCallbackPayload() }]
   ];
   if (process.env.MAX_MINI_APP_URL) {
     rows.push([{ type: "open_app", text: "Открыть Подарис и принять", web_app: process.env.MAX_MINI_APP_URL }]);
@@ -242,6 +246,14 @@ async function handleMaxUpdate(update) {
   if (userId === undefined || userId === null) return;
 
   const id = String(userId);
+  await saveUser({
+    id,
+    firstName: typeof user.first_name === "string" ? user.first_name : "",
+    lastName: typeof user.last_name === "string" ? user.last_name : "",
+    username: typeof user.username === "string" ? user.username : null,
+    languageCode: typeof update.user_locale === "string" ? update.user_locale : null,
+    photoUrl: null
+  });
   const current = await getConsent(id);
 
   if (type === "bot_started") {
@@ -271,7 +283,12 @@ async function handleMaxUpdate(update) {
     return;
   }
 
-  if (type === "message_callback" && update.callback?.payload === "podaris:consent:accept:v1") {
+  if (type === "message_callback" && typeof update.callback?.payload === "string" &&
+      update.callback.payload.startsWith("podaris:consent:accept:")) {
+    if (update.callback.payload !== consentCallbackPayload()) {
+      await sendConsentPrompt(id);
+      return;
+    }
     await saveConsent(id, "bot");
     const buttons = process.env.MAX_MINI_APP_URL
       ? [[{ type: "open_app", text: "Открыть Подарис", web_app: process.env.MAX_MINI_APP_URL }]]
@@ -355,6 +372,9 @@ module.exports.handler = async function (event = {}) {
 
       if (body?.agreementAccepted !== true || body?.privacyAccepted !== true) {
         return response(400, { error: "both_documents_must_be_accepted" });
+      }
+      if (body?.agreementVersion !== AGREEMENT_VERSION || body?.privacyVersion !== PRIVACY_VERSION) {
+        return response(409, { error: "legal_documents_updated" });
       }
       const consent = await saveConsent(user.id, "mini_app");
       return response(200, { ok: true, accepted: true, consent });
