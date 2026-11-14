@@ -73,6 +73,22 @@ html,body{background:#edf1ff;color:#17172b;font-family:var(--sans)}
 .nav-btn{color:#8b8eaa;font-size:9px}.nav-icon{border-radius:9px}.nav-btn.active{color:#5634f5}.nav-btn.active .nav-icon{background:linear-gradient(145deg,#e5f8ff,#eee9ff);color:#5634f5}
 @media(hover:hover){.primary:hover{filter:brightness(1.07)}.switch:not(.active):hover{background:#f6f5ff;border-color:#d8d4ff}.nav-btn:hover{color:#5634f5}}
 
+/* Authorization and gift collection */
+.access-status{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:14px 0;padding:13px 15px;border:1px solid #e8eaff;border-radius:16px;background:#fff}
+.access-status b{display:block;font-size:12px;color:#24233f}.access-status small{display:block;margin-top:4px;color:#8588a1;font-size:10px;line-height:1.4}
+.access-pill{flex:none;padding:7px 10px;border-radius:999px;background:#fff2dc;color:#95610b;font-size:10px;font-weight:800}
+.access-pill.full{background:#e5f8ef;color:#18774a}
+.gift-list{display:grid;gap:10px;padding:10px 0}
+.gift-card{padding:14px;border:1px solid #e8eaff;border-radius:17px;background:#fff}
+.gift-card-top{display:flex;align-items:center;gap:11px}
+.gift-card-icon{width:42px;height:42px;display:grid;place-items:center;border-radius:13px;background:linear-gradient(145deg,#e3f7ff,#eee8ff);font-size:21px}
+.gift-card-title{font-size:13px;font-weight:800;color:#24233f}.gift-card-meta{margin-top:4px;font-size:10px;color:#8588a1}
+.gift-card-timer{margin-top:11px;padding:9px 11px;border-radius:10px;background:#f5f4ff;color:#5634f5;font-size:11px;font-weight:700}
+.gift-card-actions{display:flex;gap:8px;margin-top:10px}
+.gift-card-actions button{flex:1;min-height:38px;border:0;border-radius:10px;background:#5634f5;color:#fff;font-size:11px;font-weight:800}
+.gift-card-actions button.secondary{background:#f0efff;color:#5634f5}
+.gift-card-actions button:disabled{opacity:.45}
+.gift-access-note{padding:13px;border-radius:13px;background:#f5f4ff;color:#666987;font-size:11px;line-height:1.5}
 /* Mandatory consent gate */
 .consent-backdrop{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(18,20,48,.58);backdrop-filter:blur(10px)}
 .consent-panel{width:min(100%,430px);max-height:min(88vh,760px);overflow:auto;background:#fff;border:1px solid #e6e9fb;border-radius:24px;padding:24px 20px;box-shadow:0 24px 80px #17172b35}
@@ -99,11 +115,13 @@ html,body{background:#edf1ff;color:#17172b;font-family:var(--sans)}
 <div class="profile-name" id="profileName">Мой профиль</div>
 <div class="profile-sub">Ваши подарки в одном месте</div>
 </div>
+<div class="access-status" id="accessStatus"><div><b>Проверяем уровень доступа</b><small>Статус профиля и доступные подарки загрузятся после авторизации.</small></div><span class="access-pill">Проверка</span></div>
 <div class="switcher">
-<button class="switch active" data-filter="sent">Отправленные</button>
-<button class="switch" data-filter="mine">Мои</button>
+<button class="switch" data-filter="sent">Отправленные</button>
+<button class="switch active" data-filter="mine">Мои подарки</button>
 </div>
 <div class="gift-window">
+<div class="gift-list" id="giftList" hidden></div>
 <div class="window-head"><strong id="windowTitle">Отправленные подарки</strong><span class="window-count" id="giftCount">0 подарков</span></div>
 <div class="empty" id="emptyState">
 <div class="empty-illustration"><span class="gift-icon" id="emptyIcon">🎁</span></div>
@@ -134,8 +152,61 @@ const screens={collection:document.getElementById('collection'),shop:document.ge
 function navigate(name){Object.values(screens).forEach(x=>x.classList.remove('active'));(screens[name]||screens.collection).classList.add('active');document.querySelectorAll('[data-screen]').forEach(b=>b.classList.toggle('active',b.dataset.screen===name));window.scrollTo({top:0,behavior:'smooth'});}
 document.querySelectorAll('[data-screen]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.screen)));
 document.getElementById('buyGift').addEventListener('click',()=>navigate('shop'));
-const states={sent:{title:'Отправленные подарки',count:'0 подарков',icon:'🎁',heading:'Пока здесь пусто',text:'Здесь будут отображаться подарки, которые вы отправили другим людям.'},mine:{title:'Мои подарки',count:'0 подарков',icon:'💝',heading:'У вас пока нет подарков',text:'Здесь появятся подарки, которые вам отправили или которые вы приобрели для себя.'}};
-document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-filter]').forEach(x=>x.classList.toggle('active',x===b));const x=states[b.dataset.filter];document.getElementById('windowTitle').textContent=x.title;document.getElementById('giftCount').textContent=x.count;document.getElementById('emptyIcon').textContent=x.icon;document.getElementById('emptyTitle').textContent=x.heading;document.getElementById('emptyText').textContent=x.text;}));
+const states={sent:{title:'Отправленные подарки',count:'0 подарков',icon:'🎁',heading:'Пока здесь пусто',text:'Здесь будут отображаться подарки, которые вы отправили другим людям.'},mine:{title:'Мои подарки',count:'0 подарков',icon:'💝',heading:'Пока нет подарков',text:'Здесь появятся подарки, которые вам отправили или которые вы приобрели для себя.'}};
+let activeGiftFilter='mine';
+let currentGiftData={received:[],sent:[]};
+function formatRemaining(ms){if(ms<=0)return '00:00:00';const total=Math.floor(ms/1000),days=Math.floor(total/86400),hours=Math.floor(total%86400/3600),minutes=Math.floor(total%3600/60),seconds=total%60;return (days?days+' д ':'')+[hours,minutes,seconds].map(v=>String(v).padStart(2,'0')).join(':');}
+function renderGiftCards(){
+ const list=document.getElementById('giftList'),empty=document.getElementById('emptyState');
+ const items=activeGiftFilter==='mine'?currentGiftData.received:currentGiftData.sent;
+ document.getElementById('windowTitle').textContent=states[activeGiftFilter].title;
+ document.getElementById('giftCount').textContent=items.length+' подарков';
+ list.replaceChildren();
+ items.forEach(gift=>{
+  const card=document.createElement('article');card.className='gift-card';
+  const top=document.createElement('div');top.className='gift-card-top';
+  const icon=document.createElement('div');icon.className='gift-card-icon';icon.textContent='🎁';
+  const details=document.createElement('div');
+  const title=document.createElement('div');title.className='gift-card-title';title.textContent='Подарок «'+gift.giftType+'»';
+  const meta=document.createElement('div');meta.className='gift-card-meta';meta.textContent=activeGiftFilter==='mine'?'Отправлен вам':'Получатель MAX ID: '+gift.recipientId;
+  details.append(title,meta);top.append(icon,details);card.append(top);
+  if(gift.message){const message=document.createElement('div');message.className='gift-card-meta';message.style.marginTop='10px';message.textContent=gift.message;card.append(message);}
+  const timer=document.createElement('div');timer.className='gift-card-timer';card.append(timer);
+  const actions=document.createElement('div');actions.className='gift-card-actions';card.append(actions);
+  if(activeGiftFilter==='mine'&&gift.status==='sent'){
+    timer.textContent='Заберите подарок, чтобы запустить таймер ожидания.';
+    const claim=document.createElement('button');claim.textContent='Забрать подарок';claim.addEventListener('click',()=>giftAction('/api/gifts/claim',gift.id));actions.append(claim);
+  }else if(activeGiftFilter==='mine'&&gift.status==='claimed'){
+    const remaining=gift.opensAt-Date.now();
+    if(remaining>0){timer.dataset.target=String(gift.opensAt);timer.textContent='Открыть можно через '+formatRemaining(remaining);}
+    else {timer.dataset.target=String(gift.expiresAt);timer.textContent='Подарок готов! На открытие осталось '+formatRemaining(gift.expiresAt-Date.now());const open=document.createElement('button');open.textContent='Открыть подарок';open.addEventListener('click',()=>giftAction('/api/gifts/open',gift.id));actions.append(open);}
+  }else if(activeGiftFilter==='mine'&&gift.status==='opened'){
+    timer.textContent='Подарок открыт — теперь его можно переслать.';
+    const forward=document.createElement('button');forward.textContent='Переслать';forward.addEventListener('click',()=>{const id=window.prompt('Введите MAX ID получателя');if(id)giftAction('/api/gifts/forward',gift.id,{recipientId:id});});actions.append(forward);
+  }else if(gift.status==='sent'){timer.textContent='Ожидает, когда получатель заберёт подарок.';}
+  else {timer.textContent='Статус: '+gift.status;}
+  list.append(card);
+ });
+ list.hidden=items.length===0;empty.style.display=items.length===0?'block':'none';
+}
+async function giftAction(path,giftId,extra={}){
+ try{const response=await fetch(String(window.PODARIS_API_BASE||'').replace(/\/+$/,'')+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData:window.podarisInitData,giftId,...extra})});const data=await response.json();if(!response.ok)throw new Error(data.error||'Не удалось выполнить действие');await loadGiftData();}
+ catch(error){window.alert(error.message);}
+}
+async function loadGiftData(){
+ if(!window.podarisInitData||!window.PODARIS_API_BASE)return;
+ const base=String(window.PODARIS_API_BASE).replace(/\/+$/,'');
+ const response=await fetch(base+'/api/gifts/list',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData:window.podarisInitData})});
+ const data=await response.json();if(!response.ok||!data.ok)return;
+ currentGiftData=data.gifts||{received:[],sent:[]};
+ const status=document.getElementById('accessStatus');
+ status.querySelector('b').textContent=data.fullyAuthorized?'Полная авторизация':'Базовый доступ';
+ status.querySelector('small').textContent=data.fullyAuthorized?'Доступны отправка и пересылка. Бесплатных подарков: '+data.giftCredits:'Можно смотреть полученные подарки и покупать новые. Для отправки подтвердите номер телефона через MAX.';
+ status.querySelector('.access-pill').textContent=data.fullyAuthorized?'Полный доступ':'Ограниченный доступ';
+ status.querySelector('.access-pill').classList.toggle('full',data.fullyAuthorized);
+ renderGiftCards();
+}
+document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-filter]').forEach(x=>x.classList.toggle('active',x===b));activeGiftFilter=b.dataset.filter;renderGiftCards();}));
 /* В будущем: карточки каталога загружаются из картинок и данных, добавленных в репозиторий. Покупка, выдача и отправка реализуются через MAX-бота и сервер. Отправка полученного подарка будет доступна после его открытия и завершения срока действия. */
 /* Аватар и профиль пользователя будут подключены через MAX Mini App bridge. */
 
@@ -145,6 +216,7 @@ document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click'
   const initData = window.WebApp && typeof window.WebApp.initData === "string"
     ? window.WebApp.initData
     : "";
+  window.podarisInitData = initData;
 
   const overlay = document.createElement("div");
   overlay.className = "consent-backdrop";
@@ -180,6 +252,7 @@ document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click'
 
     if (result.accepted) {
       overlay.remove();
+      await loadGiftData();
       const user = result.user || {};
       const displayName = [user.firstName,user.lastName].filter(Boolean).join(" ").trim();
       if (displayName) document.getElementById("profileName").textContent = displayName;
@@ -234,6 +307,7 @@ document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click'
         }
         if (!accepted.ok || !data.accepted) throw new Error(data.error || "Не удалось сохранить согласие.");
         overlay.remove();
+        await loadGiftData();
       } catch (error) {
         document.getElementById("consentError").textContent = error.message;
         acceptButton.textContent = "Повторить";
