@@ -246,7 +246,7 @@ module.exports.handler = async function (event = {}) {
       return response(503, { error: "max_bot_not_configured" });
     }
 
-    const auth = validateMaxInitData(body.initData, process.env.MAX_BOT_TOKEN);
+    const auth = validateMaxInitData(body?.initData, process.env.MAX_BOT_TOKEN);
     if (!auth.ok) {
       return response(401, { error: "unauthorized", reason: auth.reason });
     }
