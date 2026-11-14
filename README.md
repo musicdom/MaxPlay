@@ -71,7 +71,7 @@ npm run dev
 - [x] Существующий интерфейс Mini App сохранён.
 - [x] Локальный Node.js/Express backend для разработки.
 - [x] Cloud Functions handler (Node.js 22).
-- [x] HTTP endpoints health/config/webhook placeholder.
+- [x] HTTP endpoints health/config и MAX webhook с проверкой секрета.
 - [x] Подключение Redis через `REDIS_URL` в обоих режимах.
 - [ ] Создать Managed Redis в Yandex Cloud и подключить его к функции.
 - [ ] Создать Cloud Function и HTTP trigger.
