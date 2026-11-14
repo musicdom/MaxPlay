@@ -155,7 +155,7 @@ document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click'
     document.getElementById("consentTitle").textContent = "Не удалось открыть Подарис";
     document.getElementById("consentIntro").textContent = message;
     document.getElementById("consentBody").innerHTML = '<button class="consent-accept" id="consentRetry">Повторить проверку</button>';
-    document.getElementById("consentRetry").addEventListener("click", initializePodarisAccess);
+    document.getElementById("consentRetry").addEventListener("click", () => window.location.reload());
   }
 
   if (!apiBase || apiBase.includes("YOUR-YANDEX-CLOUD-FUNCTION-URL")) {
