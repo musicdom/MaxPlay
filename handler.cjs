@@ -145,7 +145,21 @@ async function saveUser(user) {
       if (typeof existing.createdAt === "string") createdAt = existing.createdAt;
     } catch {}
   }
-  const record = { ...user, createdAt, updatedAt: new Date().toISOString() };
+  let existing = {};
+  if (existingRaw) {
+    try { existing = JSON.parse(existingRaw) || {}; } catch {}
+  }
+  const record = {
+    ...existing,
+    ...user,
+    firstName: user.firstName || existing.firstName || "",
+    lastName: user.lastName || existing.lastName || "",
+    username: user.username || existing.username || null,
+    languageCode: user.languageCode || existing.languageCode || null,
+    photoUrl: user.photoUrl || existing.photoUrl || null,
+    createdAt,
+    updatedAt: new Date().toISOString()
+  };
   await client.set(key, JSON.stringify(record));
   return record;
 }
