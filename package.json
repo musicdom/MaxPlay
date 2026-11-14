@@ -6,7 +6,8 @@
   "engines": { "node": ">=20.19.0" },
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js"
+    "dev": "node --watch server.js",
+    "register:webhook": "node scripts/register-max-webhook.mjs"
   },
   "dependencies": {
     "dotenv": "^16.4.7",
