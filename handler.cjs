@@ -2,7 +2,7 @@ const crypto = require("node:crypto");
 // Upstash Redis REST adapter. Credentials are supplied only through Yandex
 // Cloud Function environment variables; no Redis secrets belong in the repository.
 function createUpstashClient() {
-  const endpoint = String(process.env.UPSTASH_REDIS_REST_URL || "").replace(/\\/+$/, "");
+  const endpoint = String(process.env.UPSTASH_REDIS_REST_URL || "").replace(/\/+$/, "");
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
   if (!endpoint || !token) throw new Error("UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are required");
 
