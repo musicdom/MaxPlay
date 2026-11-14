@@ -321,6 +321,8 @@ async function saveSharedContact(userId, payload) {
   };
   const client = await getRedis();
   await client.set("contact:" + userId, JSON.stringify(record));
+  await saveUser({ id: String(userId), phone: record.phone, fullAuthorizationAt: record.sharedAt });
+  await ensureStarterGiftCredits(String(userId));
   return true;
 }
 
@@ -410,6 +412,183 @@ async function handleMaxUpdate(update) {
   }
 }
 
+async function isFullyAuthorized(userId) {
+  const [consent, contact] = await Promise.all([getConsent(userId), getSavedContact(userId)]);
+  return consentIsCurrent(consent) && Boolean(contact?.phone);
+}
+
+async function ensureStarterGiftCredits(userId) {
+  const client = await getRedis();
+  const key = "gift-credits:" + userId;
+  await client.set(key, "3", { NX: true });
+  return Number(await client.get(key) || 0);
+}
+
+async function getGiftBalance(userId) {
+  const client = await getRedis();
+  return Number(await client.get("gift-credits:" + userId) || 0);
+}
+
+async function readGift(giftId) {
+  const client = await getRedis();
+  const raw = await client.get("gift:" + giftId);
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch { return null; }
+}
+
+async function saveGift(gift) {
+  const client = await getRedis();
+  await client.set("gift:" + gift.id, JSON.stringify(gift));
+  return gift;
+}
+
+async function listUserGifts(userId) {
+  const client = await getRedis();
+  const [receivedIds, sentIds] = await Promise.all([
+    client.lRange("gifts:received:" + userId, 0, -1),
+    client.lRange("gifts:sent:" + userId, 0, -1)
+  ]);
+  const [received, sent] = await Promise.all([
+    Promise.all(receivedIds.map(readGift)),
+    Promise.all(sentIds.map(readGift))
+  ]);
+  const now = Date.now();
+  const normalize = (gift) => {
+    if (!gift) return null;
+    if (gift.status === "claimed" && gift.expiresAt && now >= gift.expiresAt) {
+      return { ...gift, status: "expired" };
+    }
+    return gift;
+  };
+  return {
+    received: received.map(normalize).filter(Boolean),
+    sent: sent.map(normalize).filter(Boolean)
+  };
+}
+
+function giftError(statusCode, error, extra = {}) {
+  return { statusCode, body: { ok: false, error, ...extra } };
+}
+
+async function handleGiftRequest(path, body, user) {
+  const userId = user.id;
+  const client = await getRedis();
+  const fullyAuthorized = await isFullyAuthorized(userId);
+  const balance = await getGiftBalance(userId);
+
+  if (path === "/api/gifts/list") {
+    const gifts = await listUserGifts(userId);
+    return { statusCode: 200, body: {
+      ok: true, fullyAuthorized, canSend: fullyAuthorized && balance > 0,
+      giftCredits: balance, gifts
+    }};
+  }
+
+  if (path === "/api/gifts/send") {
+    if (!fullyAuthorized) return giftError(403, "full_authorization_required");
+    const recipientId = String(body?.recipientId || "");
+    const giftType = String(body?.giftType || "");
+    const revealDelaySeconds = Number(body?.revealDelaySeconds ?? 0);
+    if (!/^\\d+$/.test(recipientId) || recipientId === userId) return giftError(400, "invalid_recipient");
+    if (!/^[a-z0-9_-]{1,64}$/i.test(giftType)) return giftError(400, "invalid_gift_type");
+    if (!Number.isInteger(revealDelaySeconds) || revealDelaySeconds < 0 || revealDelaySeconds > 30 * 24 * 60 * 60) {
+      return giftError(400, "invalid_reveal_delay");
+    }
+    const remaining = await client.decr("gift-credits:" + userId);
+    if (remaining < 0) {
+      await client.incr("gift-credits:" + userId);
+      return giftError(409, "no_free_gifts_remaining");
+    }
+    const now = Date.now();
+    const gift = {
+      id: crypto.randomUUID(),
+      giftType,
+      senderId: userId,
+      recipientId,
+      status: "sent",
+      message: typeof body.message === "string" ? body.message.slice(0, 500) : "",
+      revealDelaySeconds,
+      createdAt: now,
+      claimedAt: null,
+      opensAt: null,
+      expiresAt: null,
+      openedAt: null,
+      forwardedFrom: null
+    };
+    try {
+      await client.set("gift:" + gift.id, JSON.stringify(gift));
+      await client.rPush("gifts:sent:" + userId, gift.id);
+      await client.rPush("gifts:received:" + recipientId, gift.id);
+    } catch (error) {
+      await client.incr("gift-credits:" + userId);
+      throw error;
+    }
+    return { statusCode: 201, body: { ok: true, gift, giftCredits: remaining } };
+  }
+
+  if (path === "/api/gifts/claim" || path === "/api/gifts/open" || path === "/api/gifts/forward") {
+    const giftId = String(body?.giftId || "");
+    if (!/^[0-9a-f-]{36}$/i.test(giftId)) return giftError(400, "invalid_gift_id");
+    const gift = await readGift(giftId);
+    if (!gift) return giftError(404, "gift_not_found");
+    const now = Date.now();
+
+    if (path === "/api/gifts/claim") {
+      if (gift.recipientId !== userId) return giftError(403, "not_gift_recipient");
+      if (gift.status !== "sent") return giftError(409, "gift_not_claimable");
+      gift.status = "claimed";
+      gift.claimedAt = now;
+      gift.opensAt = now + gift.revealDelaySeconds * 1000;
+      gift.expiresAt = gift.opensAt + 12 * 60 * 60 * 1000;
+      await saveGift(gift);
+      return { statusCode: 200, body: { ok: true, gift } };
+    }
+
+    if (path === "/api/gifts/open") {
+      if (gift.recipientId !== userId) return giftError(403, "not_gift_recipient");
+      if (gift.status === "claimed" && gift.expiresAt && now >= gift.expiresAt) {
+        gift.status = "expired";
+        await saveGift(gift);
+        return giftError(410, "gift_expired");
+      }
+      if (gift.status !== "claimed") return giftError(409, "gift_not_ready");
+      if (now < gift.opensAt) return giftError(409, "gift_not_ready", { opensAt: gift.opensAt });
+      gift.status = "opened";
+      gift.openedAt = now;
+      await saveGift(gift);
+      return { statusCode: 200, body: { ok: true, gift } };
+    }
+
+    if (!fullyAuthorized) return giftError(403, "full_authorization_required");
+    if (gift.recipientId !== userId) return giftError(403, "not_gift_recipient");
+    if (gift.status !== "opened") return giftError(409, "gift_not_forwardable");
+    const newRecipientId = String(body?.recipientId || "");
+    if (!/^\\d+$/.test(newRecipientId) || newRecipientId === userId) return giftError(400, "invalid_recipient");
+    const forwarded = {
+      ...gift,
+      id: crypto.randomUUID(),
+      senderId: userId,
+      recipientId: newRecipientId,
+      status: "sent",
+      createdAt: now,
+      claimedAt: null,
+      opensAt: null,
+      expiresAt: null,
+      openedAt: null,
+      forwardedFrom: gift.id
+    };
+    gift.status = "forwarded";
+    gift.forwardedAt = now;
+    await saveGift(gift);
+    await client.set("gift:" + forwarded.id, JSON.stringify(forwarded));
+    await client.rPush("gifts:sent:" + userId, forwarded.id);
+    await client.rPush("gifts:received:" + newRecipientId, forwarded.id);
+    return { statusCode: 201, body: { ok: true, gift: forwarded } };
+  }
+
+  return giftError(404, "gift_route_not_found");
+}
+
 // Yandex Cloud Functions Node.js 22 HTTP handler. Entry point: handler.handler
 module.exports.handler = async function (event = {}) {
   const method = String(event.httpMethod || event.requestContext?.httpMethod || event.method || "GET").toUpperCase();
@@ -455,7 +634,7 @@ module.exports.handler = async function (event = {}) {
     }
   }
 
-  if (method === "POST" && ["/api/auth", "/api/consent/status", "/api/consent/accept"].includes(path)) {
+  if (method === "POST" && ["/api/auth", "/api/consent/status", "/api/consent/accept", "/api/gifts/list", "/api/gifts/send", "/api/gifts/claim", "/api/gifts/open", "/api/gifts/forward"].includes(path)) {
     if (!process.env.MAX_BOT_TOKEN) return response(503, { error: "max_bot_not_configured" });
     const auth = validateMaxInitData(body?.initData, process.env.MAX_BOT_TOKEN);
     if (!auth.ok) return response(401, { error: "unauthorized", reason: auth.reason });
@@ -464,7 +643,17 @@ module.exports.handler = async function (event = {}) {
       const user = await saveUser(auth.user);
       if (path === "/api/auth") {
         const consent = await getConsent(user.id);
-        return response(200, { ok: true, user, consentRequired: !consentIsCurrent(consent) });
+        const contact = await getSavedContact(user.id);
+        const fullyAuthorized = consentIsCurrent(consent) && Boolean(contact?.phone);
+        const giftCredits = fullyAuthorized ? await ensureStarterGiftCredits(user.id) : await getGiftBalance(user.id);
+        return response(200, {
+          ok: true, user, consentRequired: !consentIsCurrent(consent),
+          fullyAuthorized, contactRequired: !contact?.phone, giftCredits
+        });
+      }
+      if (path.startsWith("/api/gifts/")) {
+        const result = await handleGiftRequest(path, body, user);
+        return response(result.statusCode, result.body);
       }
 
       if (path === "/api/consent/status") {
