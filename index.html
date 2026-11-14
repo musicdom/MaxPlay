@@ -311,6 +311,16 @@ document.getElementById('giftCreateForm')?.addEventListener('submit',async event
 /* В будущем: карточки каталога загружаются из картинок и данных, добавленных в репозиторий. Покупка, выдача и отправка реализуются через MAX-бота и сервер. Отправка полученного подарка будет доступна после его открытия и завершения срока действия. */
 /* Аватар и профиль пользователя будут подключены через MAX Mini App bridge. */
 
+async function claimGiftFromLaunchLink(apiBase,initData){
+ const giftId=new URLSearchParams(window.location.search).get('gift');
+ if(!giftId)return;
+ const response=await fetch(apiBase+'/api/gifts/claim',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData,giftId})});
+ const data=await response.json().catch(()=>({}));
+ if(!response.ok)throw new Error(data.error||'Не удалось получить подарок');
+ await loadGiftData();
+ document.querySelector('[data-filter="mine"]')?.click();
+ navigate('collection');
+}
 /* Server-verified MAX identity and mandatory, versioned legal consent. */
 (async function initializePodarisAccess(){
   const apiBase = String(window.PODARIS_API_BASE || "").replace(/\/+$/, "");
@@ -354,6 +364,7 @@ document.getElementById('giftCreateForm')?.addEventListener('submit',async event
     if (result.accepted) {
       overlay.remove();
       await loadGiftData();
+      try { await claimGiftFromLaunchLink(apiBase, initData); } catch (error) { window.alert(error.message); }
       const user = result.user || {};
       const displayName = [user.firstName,user.lastName].filter(Boolean).join(" ").trim();
       if (displayName) document.getElementById("profileName").textContent = displayName;
