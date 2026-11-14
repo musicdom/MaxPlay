@@ -195,7 +195,7 @@ document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click'
     const agreementUrl = result.legal?.agreementUrl || "https://musicdom.github.io/MaxPlay/legal/user-agreement.html";
     const privacyUrl = result.legal?.privacyUrl || "https://musicdom.github.io/MaxPlay/legal/privacy-policy.html";
     document.getElementById("consentTitle").textContent = "Перед началом";
-    document.getElementById("consentIntro").textContent = "Для использования Подариса необходимо ознакомиться и принять оба документа. Ваш выбор сохранится в аккаунте MAX.";
+    document.getElementById("consentIntro").textContent = "Для использования Подариса необходимо принять оба документа. MAX передаёт доступные данные профиля: MAX ID, имя, фамилию, username, язык и фото профиля. Телефон и дополнительные контактные сведения запрашиваются отдельно и только по вашему желанию.";
     document.getElementById("consentBody").className = "";
     document.getElementById("consentBody").innerHTML =
       '<a class="consent-doc" href="' + agreementUrl + '" target="_blank" rel="noopener">Пользовательское соглашение <span>Открыть ↗</span></a>' +
