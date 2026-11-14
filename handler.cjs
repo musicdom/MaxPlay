@@ -344,6 +344,11 @@ module.exports.handler = async function (event = {}) {
           accepted: consentIsCurrent(consent),
           required: !consentIsCurrent(consent),
           versions: currentConsentVersions(),
+          legal: {
+            agreementUrl: LEGAL_BASE_URL + "/user-agreement.html",
+            privacyUrl: LEGAL_BASE_URL + "/privacy-policy.html"
+          },
+          user,
           consent: consentIsCurrent(consent) ? consent : null
         });
       }
