@@ -485,6 +485,7 @@ async function handleGiftRequest(path, body, user) {
     const gifts = await listUserGifts(userId);
     return { statusCode: 200, body: {
       ok: true, fullyAuthorized, canSend: fullyAuthorized && balance > 0,
+      canBuy: true, canViewReceived: true, canForward: fullyAuthorized,
       giftCredits: balance, gifts
     }};
   }
@@ -495,7 +496,7 @@ async function handleGiftRequest(path, body, user) {
     const giftType = String(body?.giftType || "");
     const revealDelaySeconds = Number(body?.revealDelaySeconds ?? 0);
     if (!/^\\d+$/.test(recipientId) || recipientId === userId) return giftError(400, "invalid_recipient");
-    if (!/^[a-z0-9_-]{1,64}$/i.test(giftType)) return giftError(400, "invalid_gift_type");
+    if (!["project", "family_heart", "friend"].includes(giftType)) return giftError(400, "invalid_gift_type");
     if (!Number.isInteger(revealDelaySeconds) || revealDelaySeconds < 0 || revealDelaySeconds > 30 * 24 * 60 * 60) {
       return giftError(400, "invalid_reveal_delay");
     }
@@ -518,8 +519,12 @@ async function handleGiftRequest(path, body, user) {
       opensAt: null,
       expiresAt: null,
       openedAt: null,
-      forwardedFrom: null
+      forwardedFrom: null,
+      shareUrl: process.env.MAX_MINI_APP_URL
+        ? process.env.MAX_MINI_APP_URL + (process.env.MAX_MINI_APP_URL.includes("?") ? "&" : "?") + "gift=" + crypto.randomUUID()
+        : null
     };
+    if (gift.shareUrl) gift.shareUrl = gift.shareUrl.slice(0, gift.shareUrl.lastIndexOf("=") + 1) + gift.id;
     try {
       await client.set("gift:" + gift.id, JSON.stringify(gift));
       await client.rPush("gifts:sent:" + userId, gift.id);
