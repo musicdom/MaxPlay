@@ -481,6 +481,7 @@ async function handleGiftRequest(path, body, user) {
   if (!consentIsCurrent(consent)) return giftError(403, "consent_required");
   const client = await getRedis();
   const fullyAuthorized = await isFullyAuthorized(userId);
+  if (fullyAuthorized) await ensureStarterGiftCredits(userId);
   const balance = await getGiftBalance(userId);
 
   if (path === "/api/gifts/list") {
