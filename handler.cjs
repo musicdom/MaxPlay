@@ -495,7 +495,7 @@ async function handleGiftRequest(path, body, user) {
     const recipientId = String(body?.recipientId || "");
     const giftType = String(body?.giftType || "");
     const revealDelaySeconds = Number(body?.revealDelaySeconds ?? 0);
-    if (!/^\\d+$/.test(recipientId) || recipientId === userId) return giftError(400, "invalid_recipient");
+    if (!/^\d+$/.test(recipientId) || recipientId === userId) return giftError(400, "invalid_recipient");
     if (!["project", "family_heart", "friend"].includes(giftType)) return giftError(400, "invalid_gift_type");
     if (!Number.isInteger(revealDelaySeconds) || revealDelaySeconds < 0 || revealDelaySeconds > 30 * 24 * 60 * 60) {
       return giftError(400, "invalid_reveal_delay");
@@ -584,7 +584,7 @@ async function handleGiftRequest(path, body, user) {
     if (gift.recipientId !== userId) return giftError(403, "not_gift_recipient");
     if (gift.status !== "opened") return giftError(409, "gift_not_forwardable");
     const newRecipientId = String(body?.recipientId || "");
-    if (!/^\\d+$/.test(newRecipientId) || newRecipientId === userId) return giftError(400, "invalid_recipient");
+    if (!/^\d+$/.test(newRecipientId) || newRecipientId === userId) return giftError(400, "invalid_recipient");
     const forwarded = {
       ...gift,
       id: crypto.randomUUID(),
