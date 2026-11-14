@@ -35,8 +35,8 @@ npm run dev
   - `POST /api/auth` — проверка `WebAppData` (MAX Mini App init data) и создание/обновление профиля пользователя в Redis.
   - `POST /api/consent/status` — проверка согласия с текущими редакциями документов.
   - `POST /api/consent/accept` — сохранение согласия с двумя документами в Redis.
-  - `POST /api/max/webhook` — обработка `bot_started`, `/start` и callback-кнопки согласия; проверяет `X-Max-Bot-Api-Secret`.
-  - `POST /api/max/webhook` — временная заглушка; не регистрировать её в MAX до реализации проверки подлинности webhook.
+  - `POST /api/max/webhook` — проверяет `X-Max-Bot-Api-Secret`, обрабатывает `bot_started`, `/start`, callback согласия и сообщения с контактом MAX.
+  - После принятия документов бот предлагает необязательную кнопку `request_contact`; номер сохраняется только после явного нажатия пользователем и проверки MAX-подписи контакта.
 
 При создании версии функции добавьте зависимости из `package.json`, переменные окружения и сетевое подключение к VPC, в которой находится Managed Redis. Cloud Functions поддерживает доступ к ресурсам пользовательской сети через VPC. См. документацию Yandex Cloud: https://yandex.cloud/ru/docs/functions/concepts/networking
 
@@ -81,6 +81,7 @@ npm run dev
 - [ ] Регистрация webhook-подписки MAX.
 - [x] Базовая обработка `/start` и `bot_started` с запросом согласия.
 - [x] Приём согласия через callback-кнопку бота и через Mini App.
+- [x] Необязательный запрос контакта MAX после согласия; проверка HMAC-подписи контакта и сохранение подтверждённых контактных полей в Redis по ключу `contact:<MAX user id>`.
 - [x] Проверка текущих версий документов и хранение даты/источника согласия в Redis.
 - [ ] Заполнить и проверить юридические документы, затем опубликовать их окончательные редакции.
 - [ ] Подключить фактический URL Yandex Cloud Function в `api-config.js` и настроить MAX webhook subscription.
@@ -95,7 +96,7 @@ npm run dev
 
 Webhook проверяет заголовок `X-Max-Bot-Api-Secret`. Для регистрации добавлен скрипт `npm run register:webhook`: он использует `MAX_WEBHOOK_URL`, `MAX_BOT_TOKEN` и `MAX_WEBHOOK_SECRET` из `.env`, отправляя подписку на `bot_started`, `message_created`, `message_callback`. MAX требует HTTPS и успешный ответ HTTP 200; см. официальную документацию: https://dev.max.ru/docs-api/methods/POST/subscriptions.
 
-Webhook пока остаётся заглушкой и не должен регистрироваться в MAX. Он намеренно не выдаёт подарки и не подтверждает платежи. Эти действия будут добавлены после реализации отдельной проверки подлинности webhook и платёжных уведомлений.
+Webhook проверяет секрет MAX и обрабатывает согласие и контактные данные. Выдача подарков и подтверждение платежей не реализованы: эти действия будут добавлены отдельно после проектирования соответствующих сценариев и проверок платёжных уведомлений.
 
 ## Документация
 
@@ -103,3 +104,6 @@ Webhook пока остаётся заглушкой и не должен рег
 - MAX Mini Apps: https://dev.max.ru/help/miniapps
 - Yandex Cloud Functions: https://yandex.cloud/ru/docs/functions/
 - Yandex Managed Redis / Valkey: https://yandex.cloud/ru/docs/managed-valkey/
+
+
+Контактные данные запрашиваются отдельно и необязательно. Для кнопки `request_contact` MAX присылает вложение `contact` с VCF-данными и хешем. Backend проверяет HMAC-SHA256 по токену бота и исходной строке VCF, затем сохраняет подтверждённый номер телефона и присутствующие в карточке имя/email/ссылку. Обычная пересылка контакта без корректного хеша не принимается как подтверждённый номер. Контактные данные используются только для взаимодействия с ботом «Подарис» согласно ограничениям MAX: https://dev.max.ru/docs-api/use-cases/sending-messages/keyboard/.
