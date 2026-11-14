@@ -258,11 +258,24 @@ async function loadGiftData(){
  const response=await fetch(base+'/api/gifts/list',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData:window.podarisInitData})});
  const data=await response.json();if(!response.ok||!data.ok)return;
  currentGiftData=data.gifts||{received:[],sent:[]};
+ currentFullyAuthorized=Boolean(data.fullyAuthorized);
+ currentGiftCredits=Number(data.giftCredits||0);
  const status=document.getElementById('accessStatus');
  status.querySelector('b').textContent=data.fullyAuthorized?'Полная авторизация':'Базовый доступ';
  status.querySelector('small').textContent=data.fullyAuthorized?'Доступны отправка и пересылка. Бесплатных подарков: '+data.giftCredits:'Можно смотреть полученные подарки и покупать новые. Для отправки подтвердите номер телефона через MAX.';
  status.querySelector('.access-pill').textContent=data.fullyAuthorized?'Полный доступ':'Ограниченный доступ';
  status.querySelector('.access-pill').classList.toggle('full',data.fullyAuthorized);
+ const hint=document.getElementById('shopAccessHint');
+ if(hint)hint.textContent=data.fullyAuthorized?'Полная авторизация активна. Бесплатных отправок осталось: '+currentGiftCredits+' из 3. Магазин доступен всем.':'Вы можете смотреть полученные подарки и пользоваться магазином. Для отправки и пересылки поделитесь контактом MAX.';
+ const tier=document.getElementById('profileTierInfo');
+ if(tier)tier.textContent=data.fullyAuthorized?'Полная авторизация MAX. Бесплатных отправок осталось: '+currentGiftCredits+' из 3.':'Базовый доступ MAX. Просмотр полученных подарков и магазин доступны; отправка и пересылка — после подтверждения контакта.';
+ const profileStatus=document.getElementById('profileCardStatus');
+ if(profileStatus)profileStatus.textContent=data.fullyAuthorized?'Полная авторизация MAX':'Базовый доступ MAX';
+ const sentCount=document.getElementById('profileSentCount'),receivedCount=document.getElementById('profileReceivedCount');
+ if(sentCount)sentCount.textContent=String(currentGiftData.sent.length);
+ if(receivedCount)receivedCount.textContent=String(currentGiftData.received.length);
+ const createButton=document.getElementById('createGiftFromShop');
+ if(createButton)createButton.textContent=data.fullyAuthorized?'Создать и отправить · '+currentGiftCredits+' из 3':'Отправка после полной авторизации';
  renderGiftCards();
 }
 document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-filter]').forEach(x=>x.classList.toggle('active',x===b));activeGiftFilter=b.dataset.filter;renderGiftCards();}));
