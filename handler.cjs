@@ -541,7 +541,20 @@ async function handleGiftRequest(path, body, user) {
     } catch (notifyError) {
       console.error("[gift notification]", notifyError.message);
     }
-    return { statusCode: 201, body: { ok: true, gift, giftCredits: remaining } };
+    let notificationSent = false;
+    if (gift.shareUrl) {
+      try {
+        await sendMaxMessage(
+          recipientId,
+          "Вам отправили подарок в Подарис! Нажмите кнопку, чтобы забрать его. После получения начнётся таймер, а когда он закончится, у вас будет 12 часов, чтобы открыть подарок.",
+          [[{ type: "open_app", text: "Получить подарок", web_app: gift.shareUrl }]]
+        );
+        notificationSent = true;
+      } catch (error) {
+        console.warn("[gift notification]", error.message);
+      }
+    }
+    return { statusCode: 201, body: { ok: true, gift, giftCredits: remaining, notificationSent } };
   }
 
   if (path === "/api/gifts/claim" || path === "/api/gifts/open" || path === "/api/gifts/forward") {
