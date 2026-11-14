@@ -211,6 +211,9 @@ function renderGiftCards(){
  const items=activeGiftFilter==='mine'?currentGiftData.received:currentGiftData.sent;
  document.getElementById('windowTitle').textContent=states[activeGiftFilter].title;
  document.getElementById('giftCount').textContent=items.length+' подарков';
+ document.getElementById('emptyTitle').textContent=activeGiftFilter==='mine'?'Пока нет подарков':'Пока здесь пусто';
+ document.getElementById('emptyText').textContent=activeGiftFilter==='mine'?'Здесь появятся подарки, которые вам отправили.':'Здесь будут отображаться подарки, которые вы отправили другим людям.';
+ document.getElementById('emptyIcon').textContent=activeGiftFilter==='mine'?'💝':'🎁';
  list.replaceChildren();
  items.forEach(gift=>{
   const card=document.createElement('article');card.className='gift-card';
