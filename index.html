@@ -222,10 +222,16 @@ document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click'
           body: JSON.stringify({
             initData,
             agreementAccepted: agreementCheck.checked,
-            privacyAccepted: privacyCheck.checked
+            privacyAccepted: privacyCheck.checked,
+            agreementVersion: result.versions.agreement,
+            privacyVersion: result.versions.privacy
           })
         });
         const data = await accepted.json().catch(() => ({}));
+        if (accepted.status === 409 && data.error === "legal_documents_updated") {
+          window.location.reload();
+          return;
+        }
         if (!accepted.ok || !data.accepted) throw new Error(data.error || "Не удалось сохранить согласие.");
         overlay.remove();
       } catch (error) {
