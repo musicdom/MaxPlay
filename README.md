@@ -91,7 +91,7 @@ npm run dev
 
 Согласие хранится в Redis по ключу `consent:<MAX user id>`. В записи сохраняются версии пользовательского соглашения и политики конфиденциальности, время принятия и канал принятия (`bot` или `mini_app`). Доступ разрешается только при совпадении обеих версий с текущими версиями из переменных окружения. При обновлении версии пользователь принимает документы повторно.
 
-Webhook проверяет заголовок `X-Max-Bot-Api-Secret`. При создании подписки MAX необходимо передать тот же секрет в поле `secret` и подписать события `bot_started`, `message_created`, `message_callback`. MAX требует HTTPS и успешный ответ HTTP 200; см. официальную документацию: https://dev.max.ru/docs-api/methods/POST/subscriptions.
+Webhook проверяет заголовок `X-Max-Bot-Api-Secret`. Для регистрации добавлен скрипт `npm run register:webhook`: он использует `MAX_WEBHOOK_URL`, `MAX_BOT_TOKEN` и `MAX_WEBHOOK_SECRET` из `.env`, отправляя подписку на `bot_started`, `message_created`, `message_callback`. MAX требует HTTPS и успешный ответ HTTP 200; см. официальную документацию: https://dev.max.ru/docs-api/methods/POST/subscriptions.
 
 Webhook пока остаётся заглушкой и не должен регистрироваться в MAX. Он намеренно не выдаёт подарки и не подтверждает платежи. Эти действия будут добавлены после реализации отдельной проверки подлинности webhook и платёжных уведомлений.
 
