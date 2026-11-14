@@ -282,7 +282,7 @@ document.getElementById('giftCreateForm')?.addEventListener('submit',async event
  const submit=document.getElementById('giftSubmit'),error=document.getElementById('giftFormError');
  submit.disabled=true;error.textContent='';
  try{
-  const response=await fetch(String(window.PODARIS_API_BASE||'').replace(/\\/+$/,'')+'/api/gifts/send',{
+  const response=await fetch(String(window.PODARIS_API_BASE||'').replace(/\/+$/,'')+'/api/gifts/send',{
    method:'POST',headers:{'Content-Type':'application/json'},
    body:JSON.stringify({initData:window.podarisInitData,recipientId:document.getElementById('giftRecipient').value.trim(),giftType:document.getElementById('giftType').value,message:document.getElementById('giftMessage').value,revealDelaySeconds:Number(document.getElementById('giftDelay').value)})
   });
