@@ -172,7 +172,7 @@ html,body{background:#edf1ff;color:#17172b;font-family:var(--sans)}
 </section>
 <section class="screen" id="profile">
 <div class="page-title"><div class="eyebrow">ВАШ АККАУНТ</div><h1>Профиль</h1><p>Ваша личная страница в Подарис.</p></div>
-<div class="profile-card"><div class="avatar"><span>♡</span></div><div><b id="profileCardName">Мой профиль</b><small id="profileCardStatus">Проверяем уровень авторизации…</small></div></div>
+<div class="profile-card"><div class="avatar"><span>♡</span><img id="profileCardAvatar" alt="Аватар профиля" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:50%"></div><div><b id="profileCardName">Мой профиль</b><small id="profileCardStatus">Проверяем уровень авторизации…</small></div></div>
 <div class="gift-profile-tier" id="profileTierInfo">Загрузка данных аккаунта…</div>
 <div class="profile-stats"><div class="profile-stat"><strong id="profileSentCount">0</strong><small>Отправлено подарков</small></div><div class="profile-stat"><strong id="profileReceivedCount">0</strong><small>Получено подарков</small></div></div>
 <div class="profile-menu"><button type="button"><span class="menu-icon">♡</span><span><b>Мои подарки</b><small>Подарки, которые вы получили</small></span><span class="arrow">›</span></button><button type="button"><span class="menu-icon">↗</span><span><b>Отправленные</b><small>Подарки, которыми вы поделились</small></span><span class="arrow">›</span></button><button type="button"><span class="menu-icon">?</span><span><b>Помощь и поддержка</b><small>Ответы на вопросы о сервисе</small></span><span class="arrow">›</span></button></div>
@@ -200,6 +200,10 @@ const screens={collection:document.getElementById('collection'),shop:document.ge
 function navigate(name){Object.values(screens).forEach(x=>x.classList.remove('active'));(screens[name]||screens.collection).classList.add('active');document.querySelectorAll('[data-screen]').forEach(b=>b.classList.toggle('active',b.dataset.screen===name));window.scrollTo({top:0,behavior:'smooth'});}
 document.querySelectorAll('[data-screen]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.screen)));
 document.getElementById('buyGift').addEventListener('click',()=>navigate('shop'));
+const profileActions=document.querySelectorAll('.profile-menu button');
+profileActions[0]?.addEventListener('click',()=>{navigate('collection');document.querySelector('[data-filter="mine"]')?.click();});
+profileActions[1]?.addEventListener('click',()=>{navigate('collection');document.querySelector('[data-filter="sent"]')?.click();});
+profileActions[2]?.addEventListener('click',()=>{window.alert('Если нужна помощь, напишите боту Подарис в MAX.');});
 const states={sent:{title:'Отправленные подарки',count:'0 подарков',icon:'🎁',heading:'Пока здесь пусто',text:'Здесь будут отображаться подарки, которые вы отправили другим людям.'},mine:{title:'Мои подарки',count:'0 подарков',icon:'💝',heading:'Пока нет подарков',text:'Здесь появятся подарки, которые вам отправили или которые вы приобрели для себя.'}};
 let activeGiftFilter='mine';
 let currentGiftData={received:[],sent:[]};
@@ -384,6 +388,8 @@ async function claimGiftFromLaunchLink(apiBase,initData){
         avatar.src = user.photoUrl;
         avatar.style.display = "block";
         document.getElementById("avatarFallback").style.display = "none";
+        const profileAvatar = document.getElementById("profileCardAvatar");
+        if (profileAvatar) { profileAvatar.src = user.photoUrl; profileAvatar.style.display = "block"; }
       }
       return;
     }
