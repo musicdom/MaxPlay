@@ -601,6 +601,7 @@ async function handleGiftRequest(path, body, user) {
     gift.status = "forwarded";
     gift.forwardedAt = now;
     await saveGift(gift);
+    await client.lRem("gifts:received:" + userId, 0, gift.id);
     await client.set("gift:" + forwarded.id, JSON.stringify(forwarded));
     await client.rPush("gifts:sent:" + userId, forwarded.id);
     await client.rPush("gifts:received:" + newRecipientId, forwarded.id);
