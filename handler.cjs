@@ -486,7 +486,7 @@ async function handleGiftRequest(path, body, user) {
     return { statusCode: 200, body: {
       ok: true, fullyAuthorized, canSend: fullyAuthorized && balance > 0,
       canBuy: true, canViewReceived: true, canForward: fullyAuthorized,
-      giftCredits: balance, gifts
+      giftCredits: balance, gifts: { received: gifts.received, sent: fullyAuthorized ? gifts.sent : [] }
     }};
   }
 
@@ -532,6 +532,14 @@ async function handleGiftRequest(path, body, user) {
     } catch (error) {
       await client.incr("gift-credits:" + userId);
       throw error;
+    }
+    try {
+      const buttons = process.env.MAX_MINI_APP_URL
+        ? [[{ type: "open_app", text: "Открыть Подарис", web_app: process.env.MAX_MINI_APP_URL }]]
+        : [];
+      await sendMaxMessage(recipientId, "Вам отправили подарок в Подарис! Откройте приложение, чтобы забрать его.", buttons);
+    } catch (notifyError) {
+      console.error("[gift notification]", notifyError.message);
     }
     return { statusCode: 201, body: { ok: true, gift, giftCredits: remaining } };
   }
@@ -665,6 +673,8 @@ module.exports.handler = async function (event = {}) {
         });
       }
       if (path.startsWith("/api/gifts/")) {
+        const consent = await getConsent(user.id);
+        if (!consentIsCurrent(consent)) return response(403, { error: "consent_required" });
         const result = await handleGiftRequest(path, body, user);
         return response(result.statusCode, result.body);
       }
