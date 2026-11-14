@@ -609,8 +609,12 @@ async function handleGiftRequest(path, body, user) {
       opensAt: null,
       expiresAt: null,
       openedAt: null,
-      forwardedFrom: gift.id
+      forwardedFrom: gift.id,
+      shareUrl: process.env.MAX_MINI_APP_URL
+        ? process.env.MAX_MINI_APP_URL + (process.env.MAX_MINI_APP_URL.includes("?") ? "&" : "?") + "gift=" + crypto.randomUUID()
+        : null
     };
+    if (forwarded.shareUrl) forwarded.shareUrl = forwarded.shareUrl.slice(0, forwarded.shareUrl.lastIndexOf("=") + 1) + forwarded.id;
     gift.status = "forwarded";
     gift.forwardedAt = now;
     await saveGift(gift);
