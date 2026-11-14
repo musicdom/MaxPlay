@@ -453,8 +453,14 @@ async function listUserGifts(userId) {
     Promise.all(sentIds.map(readGift))
   ]);
   const now = Date.now();
-  async function normalize(gift) {
-    if (!gift) return null;
+  async function normalize(gift, giftId) {
+    if (!gift) {
+      await Promise.all([
+        client.lRem("gifts:received:" + userId, 0, giftId),
+        client.lRem("gifts:sent:" + userId, 0, giftId)
+      ]);
+      return null;
+    }
     if (gift.status === "claimed" && gift.expiresAt && now >= gift.expiresAt) {
       await client.del("gift:" + gift.id);
       await Promise.all([
@@ -466,8 +472,8 @@ async function listUserGifts(userId) {
     return gift;
   }
   return {
-    received: (await Promise.all(received.map(normalize))).filter(Boolean),
-    sent: (await Promise.all(sent.map(normalize))).filter(Boolean)
+    received: (await Promise.all(received.map((gift, index) => normalize(gift, receivedIds[index])))).filter(Boolean),
+    sent: (await Promise.all(sent.map((gift, index) => normalize(gift, sentIds[index])))).filter(Boolean)
   };
 }
 
@@ -536,14 +542,6 @@ async function handleGiftRequest(path, body, user) {
       await client.incr("gift-credits:" + userId);
       throw error;
     }
-    try {
-      const buttons = process.env.MAX_MINI_APP_URL
-        ? [[{ type: "open_app", text: "Открыть Подарис", web_app: process.env.MAX_MINI_APP_URL }]]
-        : [];
-      await sendMaxMessage(recipientId, "Вам отправили подарок в Подарис! Откройте приложение, чтобы забрать его.", buttons);
-    } catch (notifyError) {
-      console.error("[gift notification]", notifyError.message);
-    }
     let notificationSent = false;
     if (gift.shareUrl) {
       try {
@@ -575,6 +573,7 @@ async function handleGiftRequest(path, body, user) {
       gift.opensAt = now + gift.revealDelaySeconds * 1000;
       gift.expiresAt = gift.opensAt + 12 * 60 * 60 * 1000;
       await saveGift(gift);
+      await client.pExpireAt("gift:" + gift.id, gift.expiresAt);
       return { statusCode: 200, body: { ok: true, gift } };
     }
 
