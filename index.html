@@ -72,6 +72,22 @@ html,body{background:#edf1ff;color:#17172b;font-family:var(--sans)}
 .bottom-nav{background:rgba(255,255,255,.94);border-top:1px solid #e5e8fa;box-shadow:0 -5px 22px #303b7809;backdrop-filter:blur(20px)}
 .nav-btn{color:#8b8eaa;font-size:9px}.nav-icon{border-radius:9px}.nav-btn.active{color:#5634f5}.nav-btn.active .nav-icon{background:linear-gradient(145deg,#e5f8ff,#eee9ff);color:#5634f5}
 @media(hover:hover){.primary:hover{filter:brightness(1.07)}.switch:not(.active):hover{background:#f6f5ff;border-color:#d8d4ff}.nav-btn:hover{color:#5634f5}}
+
+/* Mandatory consent gate */
+.consent-backdrop{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(18,20,48,.58);backdrop-filter:blur(10px)}
+.consent-panel{width:min(100%,430px);max-height:min(88vh,760px);overflow:auto;background:#fff;border:1px solid #e6e9fb;border-radius:24px;padding:24px 20px;box-shadow:0 24px 80px #17172b35}
+.consent-mark{width:48px;height:48px;display:grid;place-items:center;border-radius:16px;background:linear-gradient(135deg,#dff7ff,#eee7ff);color:#5634f5;font-size:24px;margin-bottom:17px}
+.consent-panel h2{margin:0 0 9px;color:#22213d;font-size:22px;letter-spacing:-.6px}
+.consent-panel p{margin:0 0 16px;color:#777b96;font-size:13px;line-height:1.6}
+.consent-doc{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 0;border-top:1px solid #eff0fa;color:#282744;font-size:13px;font-weight:700;text-decoration:none}
+.consent-doc span{color:#5634f5;font-size:12px;white-space:nowrap}
+.consent-check{display:flex;align-items:flex-start;gap:10px;margin:14px 0;color:#555975;font-size:12px;line-height:1.5}
+.consent-check input{width:18px;height:18px;flex:none;accent-color:#5634f5;margin:0}
+.consent-accept{width:100%;height:48px;margin-top:10px;border:0;border-radius:13px;background:linear-gradient(105deg,#471aff,#9500ff);color:white;font-size:13px;font-weight:800}
+.consent-accept:disabled{opacity:.4;cursor:not-allowed}
+.consent-error{min-height:18px;margin-top:10px;color:#c03958;font-size:11px;line-height:1.5}
+.consent-loading{font-size:13px;color:#777b96;text-align:center;padding:30px 10px}
+
 </style>
 </head>
 <body>
@@ -112,6 +128,7 @@ html,body{background:#edf1ff;color:#17172b;font-family:var(--sans)}
 </section>
 <nav class="bottom-nav" aria-label="Основная навигация"><button class="nav-btn active" data-screen="collection"><span class="nav-icon">⌂</span><span>Главная</span></button><button class="nav-btn" data-screen="shop"><span class="nav-icon">▧</span><span>Магазин подарков</span></button><button class="nav-btn" data-screen="profile"><span class="nav-icon">◉</span><span>Профиль</span></button></nav>
 </div>
+<script src="./api-config.js"></script>
 <script>
 const screens={collection:document.getElementById('collection'),shop:document.getElementById('shop'),profile:document.getElementById('profile')};
 function navigate(name){Object.values(screens).forEach(x=>x.classList.remove('active'));(screens[name]||screens.collection).classList.add('active');document.querySelectorAll('[data-screen]').forEach(b=>b.classList.toggle('active',b.dataset.screen===name));window.scrollTo({top:0,behavior:'smooth'});}
@@ -121,6 +138,107 @@ const states={sent:{title:'Отправленные подарки',count:'0 п�
 document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-filter]').forEach(x=>x.classList.toggle('active',x===b));const x=states[b.dataset.filter];document.getElementById('windowTitle').textContent=x.title;document.getElementById('giftCount').textContent=x.count;document.getElementById('emptyIcon').textContent=x.icon;document.getElementById('emptyTitle').textContent=x.heading;document.getElementById('emptyText').textContent=x.text;}));
 /* В будущем: карточки каталога загружаются из картинок и данных, добавленных в репозиторий. Покупка, выдача и отправка реализуются через MAX-бота и сервер. Отправка полученного подарка будет доступна после его открытия и завершения срока действия. */
 /* Аватар и профиль пользователя будут подключены через MAX Mini App bridge. */
+
+/* Server-verified MAX identity and mandatory, versioned legal consent. */
+(async function initializePodarisAccess(){
+  const apiBase = String(window.PODARIS_API_BASE || "").replace(/\/+$/, "");
+  const initData = window.WebApp && typeof window.WebApp.initData === "string"
+    ? window.WebApp.initData
+    : "";
+
+  const overlay = document.createElement("div");
+  overlay.className = "consent-backdrop";
+  overlay.innerHTML = '<div class="consent-panel" role="dialog" aria-modal="true" aria-labelledby="consentTitle"><div class="consent-mark">✳</div><h2 id="consentTitle">Проверяем доступ</h2><p id="consentIntro">Подключаемся к Подарис и проверяем статус вашего согласия.</p><div id="consentBody" class="consent-loading">Пожалуйста, подождите…</div></div>';
+  document.body.appendChild(overlay);
+
+  function showError(message){
+    document.getElementById("consentTitle").textContent = "Не удалось открыть Подарис";
+    document.getElementById("consentIntro").textContent = message;
+    document.getElementById("consentBody").innerHTML = '<button class="consent-accept" id="consentRetry">Повторить проверку</button>';
+    document.getElementById("consentRetry").addEventListener("click", initializePodarisAccess);
+  }
+
+  if (!apiBase || apiBase.includes("YOUR-YANDEX-CLOUD-FUNCTION-URL")) {
+    showError("Сервер приложения ещё не подключён. После настройки адреса Yandex Cloud Functions доступ появится здесь.");
+    return;
+  }
+  if (!initData) {
+    showError("Откройте Подарис из MAX. Не удалось получить подписанные данные запуска MAX.");
+    return;
+  }
+
+  try {
+    const response = await fetch(apiBase + "/api/consent/status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ initData })
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || !result.ok) {
+      throw new Error(result.reason || result.error || "Не удалось подтвердить ваш аккаунт MAX.");
+    }
+
+    if (result.accepted) {
+      overlay.remove();
+      const user = result.user || {};
+      const displayName = [user.firstName,user.lastName].filter(Boolean).join(" ").trim();
+      if (displayName) document.getElementById("profileName").textContent = displayName;
+      if (user.photoUrl) {
+        const avatar = document.getElementById("avatarImage");
+        avatar.src = user.photoUrl;
+        avatar.style.display = "block";
+        document.getElementById("avatarFallback").style.display = "none";
+      }
+      return;
+    }
+
+    const agreementUrl = result.legal?.agreementUrl || "https://musicdom.github.io/MaxPlay/legal/user-agreement.html";
+    const privacyUrl = result.legal?.privacyUrl || "https://musicdom.github.io/MaxPlay/legal/privacy-policy.html";
+    document.getElementById("consentTitle").textContent = "Перед началом";
+    document.getElementById("consentIntro").textContent = "Для использования Подариса необходимо ознакомиться и принять оба документа. Ваш выбор сохранится в аккаунте MAX.";
+    document.getElementById("consentBody").className = "";
+    document.getElementById("consentBody").innerHTML =
+      '<a class="consent-doc" href="' + agreementUrl + '" target="_blank" rel="noopener">Пользовательское соглашение <span>Открыть ↗</span></a>' +
+      '<a class="consent-doc" href="' + privacyUrl + '" target="_blank" rel="noopener">Политика конфиденциальности <span>Открыть ↗</span></a>' +
+      '<label class="consent-check"><input type="checkbox" id="agreementCheck"><span>Я прочитал(а) и принимаю Пользовательское соглашение.</span></label>' +
+      '<label class="consent-check"><input type="checkbox" id="privacyCheck"><span>Я прочитал(а) и принимаю Политику конфиденциальности.</span></label>' +
+      '<button class="consent-accept" id="consentAccept" disabled>Принимаю и продолжить</button>' +
+      '<div class="consent-error" id="consentError" aria-live="polite"></div>';
+
+    const agreementCheck = document.getElementById("agreementCheck");
+    const privacyCheck = document.getElementById("privacyCheck");
+    const acceptButton = document.getElementById("consentAccept");
+    const syncButton = () => { acceptButton.disabled = !(agreementCheck.checked && privacyCheck.checked); };
+    agreementCheck.addEventListener("change", syncButton);
+    privacyCheck.addEventListener("change", syncButton);
+    acceptButton.addEventListener("click", async () => {
+      acceptButton.disabled = true;
+      acceptButton.textContent = "Сохраняем согласие…";
+      document.getElementById("consentError").textContent = "";
+      try {
+        const accepted = await fetch(apiBase + "/api/consent/accept", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            initData,
+            agreementAccepted: agreementCheck.checked,
+            privacyAccepted: privacyCheck.checked
+          })
+        });
+        const data = await accepted.json().catch(() => ({}));
+        if (!accepted.ok || !data.accepted) throw new Error(data.error || "Не удалось сохранить согласие.");
+        overlay.remove();
+      } catch (error) {
+        document.getElementById("consentError").textContent = error.message;
+        acceptButton.textContent = "Повторить";
+        syncButton();
+      }
+    });
+  } catch (error) {
+    showError(error.message || "Ошибка проверки доступа.");
+  }
+})();
+
 </script>
 </body>
 </html>
