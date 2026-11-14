@@ -382,7 +382,11 @@ async function claimGiftFromLaunchLink(apiBase,initData){
       try { await claimGiftFromLaunchLink(apiBase, initData); } catch (error) { window.alert(error.message); }
       const user = result.user || {};
       const displayName = [user.firstName,user.lastName].filter(Boolean).join(" ").trim();
-      if (displayName) document.getElementById("profileName").textContent = displayName;
+      if (displayName) {
+        document.getElementById("profileName").textContent = displayName;
+        const profileCardName = document.getElementById("profileCardName");
+        if (profileCardName) profileCardName.textContent = displayName;
+      }
       if (user.photoUrl) {
         const avatar = document.getElementById("avatarImage");
         avatar.src = user.photoUrl;
@@ -437,6 +441,20 @@ async function claimGiftFromLaunchLink(apiBase,initData){
         if (!accepted.ok || !data.accepted) throw new Error(data.error || "Не удалось сохранить согласие.");
         overlay.remove();
         await loadGiftData();
+        const acceptedUser = result.user || {};
+        const acceptedName = [acceptedUser.firstName, acceptedUser.lastName].filter(Boolean).join(" ").trim();
+        if (acceptedName) {
+          document.getElementById("profileName").textContent = acceptedName;
+          const profileCardName = document.getElementById("profileCardName");
+          if (profileCardName) profileCardName.textContent = acceptedName;
+        }
+        if (acceptedUser.photoUrl) {
+          const avatar = document.getElementById("avatarImage");
+          avatar.src = acceptedUser.photoUrl; avatar.style.display = "block";
+          document.getElementById("avatarFallback").style.display = "none";
+          const profileAvatar = document.getElementById("profileCardAvatar");
+          if (profileAvatar) { profileAvatar.src = acceptedUser.photoUrl; profileAvatar.style.display = "block"; }
+        }
         const giftId=new URLSearchParams(window.location.search).get('gift');
         if(giftId){
           try{const claimResponse=await fetch(apiBase+'/api/gifts/claim',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData,giftId})});const claimData=await claimResponse.json();if(!claimResponse.ok)throw new Error(claimData.error||'Подарок не найден');await loadGiftData();document.querySelector('[data-filter="mine"]')?.click();navigate('collection');}
