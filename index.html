@@ -187,7 +187,7 @@ html,body{background:#edf1ff;color:#17172b;font-family:var(--sans)}
    <div class="gift-form-field"><label for="giftRecipient">MAX ID получателя</label><input id="giftRecipient" inputmode="numeric" pattern="[0-9]+" required placeholder="Введите MAX ID"></div>
    <div class="gift-form-field"><label for="giftType">Вид подарка</label><select id="giftType"><option value="project">Подарок проекта</option><option value="family_heart">Сердце для родных</option><option value="friend">Подарок другу</option></select></div>
    <div class="gift-form-field"><label for="giftMessage">Послание получателю</label><textarea id="giftMessage" maxlength="500" placeholder="Напишите несколько тёплых слов…"></textarea></div>
-   <div class="gift-form-field"><label for="giftDelay">Через сколько времени разрешить открытие</label><select id="giftDelay"><option value="0">Сразу</option><option value="3600">Через 1 час</option><option value="21600">Через 6 часов</option><option value="43200">Через 12 часов</option><option value="86400">Через 1 день</option><option value="259200">Через 3 дня</option><option value="604800">Через 7 дней</option><option value="2592000">Через 30 дней</option></select></div>
+   <div class="gift-form-field"><label for="giftDelay">Таймер до открытия (часов)</label><input id="giftDelay" type="number" min="0" max="720" step="1" value="0" required><small>От 0 до 720 часов. После окончания таймера подарок можно открыть в течение 12 часов.</small></div>
    <div class="gift-modal-footer"><button type="button" class="gift-action secondary" id="giftCancel">Отмена</button><button type="submit" class="gift-action" id="giftSubmit">Отправить</button></div>
    <div class="consent-error" id="giftFormError" aria-live="polite"></div>
    <div id="giftCreatedResult"></div>
@@ -297,7 +297,7 @@ document.getElementById('giftCreateForm')?.addEventListener('submit',async event
  try{
   const response=await fetch(String(window.PODARIS_API_BASE||'').replace(/\/+$/,'')+'/api/gifts/send',{
    method:'POST',headers:{'Content-Type':'application/json'},
-   body:JSON.stringify({initData:window.podarisInitData,recipientId:document.getElementById('giftRecipient').value.trim(),giftType:document.getElementById('giftType').value,message:document.getElementById('giftMessage').value,revealDelaySeconds:Number(document.getElementById('giftDelay').value)})
+   body:JSON.stringify({initData:window.podarisInitData,recipientId:document.getElementById('giftRecipient').value.trim(),giftType:document.getElementById('giftType').value,message:document.getElementById('giftMessage').value,revealDelaySeconds:Number(document.getElementById('giftDelay').value)*3600})
   });
   const data=await response.json();if(!response.ok||!data.ok)throw new Error(data.error||'Не удалось создать подарок');
   const link=data.gift.shareUrl||new URL('?gift='+data.gift.id,window.location.href).toString();
