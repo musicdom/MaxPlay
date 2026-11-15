@@ -1132,6 +1132,10 @@ async function handleAdminUsers() {
       client.lRange("gifts:received:" + id, 0, -1),
       client.lRange("user:visits:" + id, -1, -1)
     ]);
+    const currentGiftRecords = await Promise.all([...new Set(giftIds)].map(giftId => client.get("gift:" + giftId)));
+    const ownedGiftCount = currentGiftRecords.map(rawGift => {
+      try { return rawGift ? JSON.parse(rawGift) : null; } catch { return null; }
+    }).filter(gift => gift && ["owned","claimed","opened","kept"].includes(gift.status) && String(gift.recipientId || "") === String(id)).length;
     let consentData = null;
     let contactData = null;
     let lastVisit = null;
@@ -1149,7 +1153,7 @@ async function handleAdminUsers() {
       consentAccepted: consentData ? consentData.agreementVersion === AGREEMENT_VERSION && consentData.privacyVersion === PRIVACY_VERSION : false,
       contactProvided: Boolean(contactData?.phone),
       fullyAuthorized: Boolean(consentData && consentData.agreementVersion === AGREEMENT_VERSION && consentData.privacyVersion === PRIVACY_VERSION && contactData?.phone),
-      giftsCount: new Set(giftIds).size
+      giftsCount: ownedGiftCount
     });
   }
   users.sort((a,b) => String(b.lastVisitAt || b.updatedAt || "").localeCompare(String(a.lastVisitAt || a.updatedAt || "")));
@@ -1191,6 +1195,10 @@ async function handleAdminUserDetail(userId) {
       gifts.push({ id: gift.id, giftType: gift.giftType, status: gift.status, sender, senderId: gift.senderId || null, recipientId: gift.recipientId || null, createdAt: gift.createdAt || null, source: gift.source || null });
     } catch {}
   }
+  const currentGiftRecords = await Promise.all([...new Set(receivedIds)].map(giftId => client.get("gift:" + giftId)));
+  const ownedGiftCount = currentGiftRecords.map(rawGift => {
+    try { return rawGift ? JSON.parse(rawGift) : null; } catch { return null; }
+  }).filter(gift => gift && ["owned","claimed","opened","kept"].includes(gift.status) && String(gift.recipientId || "") === String(userId)).length;
   const visits = visitsRaw.map(item => { try { return JSON.parse(item); } catch { return null; } }).filter(Boolean);
   return {
     statusCode: 200,
@@ -1199,7 +1207,7 @@ async function handleAdminUserDetail(userId) {
       user: { id: String(userId), name: [user.firstName,user.lastName].filter(Boolean).join(" ") || user.username || "Пользователь MAX", username: user.username || null, photoUrl: user.photoUrl || null, createdAt: user.createdAt || null, updatedAt: user.updatedAt || null },
       authorization: { consentAccepted: Boolean(consent && consent.agreementVersion === AGREEMENT_VERSION && consent.privacyVersion === PRIVACY_VERSION), contactProvided: Boolean(contact?.phone), fullyAuthorized, authorizedAt: contact?.sharedAt || null },
       gifts,
-      giftsCount: gifts.filter(g => ["owned","opened","kept","claimed"].includes(g.status)).length,
+      giftsCount: ownedGiftCount,
       visits
     }
   };
