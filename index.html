@@ -547,15 +547,35 @@ async function loadAdminUserDetail(userId){
   const data=await adminPost('/api/admin/user',{userId}),u=data.user,a=data.authorization,gifts=data.gifts||[],visits=data.visits||[];
   box.innerHTML='<div class="admin-user-detail-head"><b>'+adminEscape(u.name)+'</b><small>MAX ID: '+adminEscape(u.id)+(u.username?' · @'+adminEscape(u.username):'')+'</small><button type="button" class="admin-action secondary" id="adminUserDetailBack">Назад к списку</button></div>'+
    '<div class="admin-user-detail-grid"><div><small>Регистрация</small><b>'+adminEscape(adminDate(u.createdAt))+'</b></div><div><small>Последнее обновление профиля</small><b>'+adminEscape(adminDate(u.updatedAt))+'</b></div><div><small>Документы</small><b>'+(a.consentAccepted?'Приняты':'Не приняты')+'</b></div><div><small>Телефон</small><b>'+(a.contactProvided?'Подтверждён':'Не предоставлен')+'</b></div><div><small>Авторизация</small><b class="'+(a.fullyAuthorized?'admin-auth-ok':'admin-auth-no')+'">'+(a.fullyAuthorized?'Полная':'Не завершена')+'</b></div><div><small>Подарков в учёте</small><b>'+Number(data.giftsCount||0)+'</b></div></div>'+
-   '<button type="button" class="admin-action" id="adminUserReset" style="background:#a83242">Обнулить аккаунт</button><p class="admin-help">Сбросит авторизацию, историю заходов и личную коллекцию. Подарки, уже отправленные другим людям, и платёжные записи сохранятся.</p>'+
+   '<button type="button" class="admin-action" id="adminUserGrantGift">🎁 Выдать подарок</button><div id="adminGrantGiftPanel" hidden style="margin:10px 0;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--surface)"><label class="admin-help" for="adminGrantGiftType">Выберите подарок</label><select id="adminGrantGiftType" style="width:100%;padding:11px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--ink)"><option value="joystick_1">Геймпад «Неон»</option><option value="joystick_2">Геймпад «Пульс»</option><option value="joystick_3">Геймпад «Аркада»</option><option value="joystick_4">Геймпад «Турбо»</option><option value="joystick_5">Геймпад «Кибер»</option><option value="joystick_6">Геймпад «Легенда»</option></select><div style="display:flex;gap:8px;margin-top:9px"><button type="button" class="admin-action" id="adminGrantGiftConfirm">Выдать выбранный подарок</button><button type="button" class="admin-action secondary" id="adminGrantGiftCancel">Отмена</button></div><p class="admin-help" id="adminGrantGiftResult"></p></div>' +
+   '<button type="button" class="admin-action" id="adminUserReset" style="background:#a83242">Обнулить аккаунт</button><p class="admin-help">Сбросит авторизацию, историю заходов и личную коллекцию. Подарки, уже отправленные другим людям, и платёжные записи сохранятся.</p>' +
    '<h4>Подарки и отправители ('+gifts.length+')</h4>'+(gifts.length?'<div class="admin-user-gifts">'+gifts.map(g=>'<div class="admin-user-gift"><b>'+adminEscape(g.giftType)+'</b><small>От: '+adminEscape(g.sender)+' · Статус: '+adminEscape(g.status)+'</small><small>'+adminEscape(adminDate(g.createdAt))+' · ID: '+adminEscape(g.id)+'</small></div>').join('')+'</div>':'<p class="admin-help">Подарков не найдено.</p>')+
    '<h4>История заходов ('+visits.length+')</h4>'+(visits.length?'<div class="admin-user-visits">'+visits.slice().reverse().map(v=>'<div class="admin-user-gift"><b>'+adminEscape(adminDate(v.at))+'</b><small>Документы: '+(v.consentAccepted?'приняты':'нет')+' · Телефон: '+(v.contactProvided?'есть':'нет')+'</small><small>Авторизация на момент входа: '+(v.fullyAuthorized?'да':'нет')+'</small></div>').join('')+'</div>':'<p class="admin-help">История начнёт собираться после публикации обновления.</p>');
   document.getElementById('adminUserDetailBack')?.addEventListener('click',()=>{box.hidden=true;box.innerHTML='';});
   document.getElementById('adminUserReset')?.addEventListener('click',()=>resetAdminUser(u.id));
+  document.getElementById('adminUserGrantGift')?.addEventListener('click',()=>{const panel=document.getElementById('adminGrantGiftPanel');panel.hidden=!panel.hidden;});
+  document.getElementById('adminGrantGiftCancel')?.addEventListener('click',()=>{document.getElementById('adminGrantGiftPanel').hidden=true;});
+  document.getElementById('adminGrantGiftConfirm')?.addEventListener('click',()=>grantAdminGift(u.id));
   box.scrollIntoView({behavior:'smooth',block:'start'});
  }catch(error){box.innerHTML='<p class="admin-help">Ошибка загрузки карточки: '+adminEscape(error.message)+'</p>';}
 }
 
+async function grantAdminGift(userId){
+ const select=document.getElementById('adminGrantGiftType');
+ const button=document.getElementById('adminGrantGiftConfirm');
+ const result=document.getElementById('adminGrantGiftResult');
+ if(!select||!button||!result)return;
+ button.disabled=true;button.textContent='Выдаём…';result.textContent='Создаём отдельный экземпляр подарка…';
+ try{
+  const data=await adminPost('/api/admin/user/gift',{userId:String(userId),giftType:select.value});
+  result.textContent='Подарок выдан. ID: '+data.gift.id;
+  await loadAdminUsers();
+  await loadAdminUserDetail(String(userId));
+ }catch(error){
+  result.textContent='Не удалось выдать подарок: '+error.message;
+  button.disabled=false;button.textContent='Выдать выбранный подарок';
+ }
+}
 async function findAdminUserById(){
  const input=document.getElementById('adminUserIdSearch');
  const id=String(input?.value||'').trim();
