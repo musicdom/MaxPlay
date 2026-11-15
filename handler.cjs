@@ -740,6 +740,88 @@ async function handleAdminDiagnostics() {
   }
 }
 
+async function handleAdminRegisterWebhook() {
+  const webhookUrl = "https://functions.yandexcloud.net/d4eu88tanqd001ko5llp?route=webhook";
+  const token = process.env.MAX_BOT_TOKEN;
+  const secret = process.env.MAX_WEBHOOK_SECRET;
+  if (!token || !secret) {
+    return { statusCode: 503, body: { ok: false, error: "max_bot_or_webhook_secret_not_configured" } };
+  }
+
+  try {
+    const headers = { Authorization: token, "Content-Type": "application/json" };
+    const listResponse = await fetch("https://platform-api2.max.ru/subscriptions", {
+      method: "GET",
+      headers: { Authorization: token }
+    });
+    const listPayload = await listResponse.json().catch(() => ({}));
+    if (!listResponse.ok) {
+      await recordAdminLog("error", "max-subscriptions", "Не удалось прочитать подписки MAX перед регистрацией", { status: listResponse.status });
+      return { statusCode: 502, body: { ok: false, error: "max_api_list_failed", status: listResponse.status } };
+    }
+
+    const subscriptions = Array.isArray(listPayload.subscriptions) ? listPayload.subscriptions : Array.isArray(listPayload) ? listPayload : [];
+    const existing = subscriptions.find(item => String(item.url || "") === webhookUrl);
+    if (existing) {
+      return {
+        statusCode: 200,
+        body: {
+          ok: true, alreadyRegistered: true, webhookConfigured: true,
+          subscriptionCount: subscriptions.length,
+          updateTypes: Array.isArray(existing.update_types) ? existing.update_types : [],
+          webhookUrl
+        }
+      };
+    }
+
+    const registerResponse = await fetch("https://platform-api2.max.ru/subscriptions", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        url: webhookUrl,
+        update_types: ["bot_started", "message_created", "message_callback"],
+        secret
+      })
+    });
+    const registerPayload = await registerResponse.json().catch(() => ({}));
+    if (!registerResponse.ok) {
+      await recordAdminLog("error", "max-subscriptions", "MAX отклонил регистрацию webhook", { status: registerResponse.status });
+      return {
+        statusCode: 502,
+        body: { ok: false, error: "max_api_register_failed", status: registerResponse.status, details: registerPayload }
+      };
+    }
+
+    const verifyResponse = await fetch("https://platform-api2.max.ru/subscriptions", {
+      method: "GET",
+      headers: { Authorization: token }
+    });
+    const verifyPayload = await verifyResponse.json().catch(() => ({}));
+    const verifiedSubscriptions = Array.isArray(verifyPayload.subscriptions) ? verifyPayload.subscriptions : Array.isArray(verifyPayload) ? verifyPayload : [];
+    const matching = verifiedSubscriptions.find(item => String(item.url || "") === webhookUrl);
+    if (!verifyResponse.ok || !matching) {
+      await recordAdminLog("warning", "max-subscriptions", "MAX принял запрос, но подписка не найдена при повторной проверке", { status: verifyResponse.status });
+      return { statusCode: 502, body: { ok: false, error: "webhook_registration_not_verified", subscriptionCount: verifiedSubscriptions.length } };
+    }
+
+    await recordAdminLog("info", "max-subscriptions", "Webhook Подариса успешно зарегистрирован в MAX", {
+      updateTypes: Array.isArray(matching.update_types) ? matching.update_types : []
+    });
+    return {
+      statusCode: 200,
+      body: {
+        ok: true, registered: true, webhookConfigured: true,
+        subscriptionCount: verifiedSubscriptions.length,
+        updateTypes: Array.isArray(matching.update_types) ? matching.update_types : [],
+        webhookUrl
+      }
+    };
+  } catch (error) {
+    await recordAdminLog("error", "max-subscriptions", "Ошибка регистрации webhook MAX", { message: error.message });
+    return { statusCode: 502, body: { ok: false, error: "max_api_register_unavailable" } };
+  }
+}
+
 async function handleAdminLogs() {
   try {
     const client = await getRedis();
@@ -794,7 +876,7 @@ module.exports.handler = async function (event = {}) {
     }
   }
 
-  if (method === "POST" && ["/api/auth", "/api/consent/status", "/api/consent/accept", "/api/gifts/list", "/api/gifts/send", "/api/gifts/claim", "/api/gifts/open", "/api/gifts/forward", "/api/admin/status", "/api/admin/diagnostics", "/api/admin/logs"].includes(path)) {
+  if (method === "POST" && ["/api/auth", "/api/consent/status", "/api/consent/accept", "/api/gifts/list", "/api/gifts/send", "/api/gifts/claim", "/api/gifts/open", "/api/gifts/forward", "/api/admin/status", "/api/admin/diagnostics", "/api/admin/register-webhook", "/api/admin/logs"].includes(path)) {
     if (!process.env.MAX_BOT_TOKEN) return response(503, { error: "max_bot_not_configured" });
     const auth = validateMaxInitData(body?.initData, process.env.MAX_BOT_TOKEN);
     if (!auth.ok) return response(401, { error: "unauthorized", reason: auth.reason });
@@ -808,6 +890,10 @@ module.exports.handler = async function (event = {}) {
         if (path === "/api/admin/diagnostics") {
           const diagnostic = await handleAdminDiagnostics();
           return response(diagnostic.statusCode, diagnostic.body);
+        }
+        if (path === "/api/admin/register-webhook") {
+          const registration = await handleAdminRegisterWebhook();
+          return response(registration.statusCode, registration.body);
         }
         if (path === "/api/admin/logs") {
           const logs = await handleAdminLogs();
