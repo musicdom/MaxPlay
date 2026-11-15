@@ -481,20 +481,20 @@ async function isFullyAuthorized(userId) {
 
 async function ensureStarterGiftCredits(userId) {
   const client = await getRedis();
-  // One-time starter inventory grant: exactly three copies of Joystick 1.
-  // Redis SET NX makes the grant idempotent across repeated auth and webhook calls.
-  const grant = await client.set("starter-gifts:" + userId, "granted", { nx: true });
-  if (grant === "OK") {
+  // Deterministic gift IDs make the one-time grant safe to retry after a partial Redis failure.
+  if (!(await client.get("starter-gifts:" + userId))) {
     for (let index = 0; index < 3; index += 1) {
-      const now = Date.now();
+      const hash = crypto.createHash("sha256").update("podaris-starter:" + userId + ":" + index).digest("hex");
+      const giftId = [hash.slice(0, 8), hash.slice(8, 12), hash.slice(12, 16), hash.slice(16, 20), hash.slice(20, 32)].join("-");
       const gift = {
-        id: crypto.randomUUID(),
+        id: giftId,
         giftType: "joystick_1",
         senderId: "podaris",
         recipientId: String(userId),
         status: "owned",
         message: "",
-        createdAt: now,
+        revealDelaySeconds: 0,
+        createdAt: Date.now(),
         claimedAt: null,
         opensAt: null,
         expiresAt: null,
@@ -503,13 +503,14 @@ async function ensureStarterGiftCredits(userId) {
         shareUrl: null,
         source: "starter_registration"
       };
-      await client.set("gift:" + gift.id, JSON.stringify(gift));
-      await client.rPush("gifts:received:" + userId, gift.id);
+      const created = await client.set("gift:" + gift.id, JSON.stringify(gift), { nx: true });
+      if (created === "OK") await client.rPush("gifts:received:" + userId, gift.id);
     }
-    // Starter gifts are inventory items, not spendable send credits.
-    await client.set("gift-credits:" + userId, "0");
+    await client.set("starter-gifts:" + userId, "granted");
   }
-  return Number(await client.get("gift-credits:" + userId) || 0);
+  // Starter gifts are inventory items, not spendable send credits.
+  await client.set("gift-credits:" + userId, "0");
+  return 0;
 }
 
 async function getGiftBalance(userId) {
@@ -859,13 +860,16 @@ async function handleYooMoneyNotification(body) {
       }
       for (let index = 0; index < quantity; index += 1) {
         const now = Date.now();
+        const giftHash = crypto.createHash("sha256").update("yoomoney:" + label + ":" + item.giftType + ":" + index).digest("hex");
+        const giftId = [giftHash.slice(0, 8), giftHash.slice(8, 12), giftHash.slice(12, 16), giftHash.slice(16, 20), giftHash.slice(20, 32)].join("-");
         const gift = {
-          id: crypto.randomUUID(),
+          id: giftId,
           giftType: item.giftType,
           senderId: "purchase",
           recipientId: String(latest.userId),
           status: "owned",
           message: "",
+          revealDelaySeconds: 0,
           createdAt: now,
           claimedAt: null,
           opensAt: null,
@@ -876,8 +880,8 @@ async function handleYooMoneyNotification(body) {
           source: "yoomoney_purchase",
           orderLabel: label
         };
-        await client.set("gift:" + gift.id, JSON.stringify(gift));
-        await client.rPush("gifts:received:" + latest.userId, gift.id);
+        const created = await client.set("gift:" + gift.id, JSON.stringify(gift), { nx: true });
+        if (created === "OK") await client.rPush("gifts:received:" + latest.userId, gift.id);
       }
     }
     latest.status = "paid";
