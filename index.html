@@ -580,8 +580,9 @@ function showAdminResetConfirmation(userId){
  const input=document.createElement('input');
  input.id='adminResetConfirmInput';
  input.inputMode='numeric';
+ input.type='tel';
  input.autocomplete='off';
- input.placeholder='Введите RESET:'+id;
+ input.placeholder='Повторно введите MAX ID: '+id;
  input.setAttribute('aria-label','Подтверждение обнуления аккаунта');
  input.style.cssText='width:100%;box-sizing:border-box;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text);margin:8px 0';
  const actions=document.createElement('div');
@@ -597,7 +598,7 @@ function showAdminResetConfirmation(userId){
  cancel.type='button';
  cancel.className='admin-action secondary';
  cancel.textContent='Отмена';
- input.addEventListener('input',()=>{confirm.disabled=input.value.trim()!=='RESET:'+id;});
+ input.addEventListener('input',()=>{input.value=input.value.replace(/\\D/g,'');confirm.disabled=input.value.trim()!==id;});
  input.addEventListener('keydown',event=>{if(event.key==='Enter'&&!confirm.disabled)confirm.click();});
  cancel.addEventListener('click',()=>panel.remove());
  confirm.addEventListener('click',()=>performAdminUserReset(id,confirm));
