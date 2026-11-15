@@ -426,7 +426,7 @@ async function loadGiftData(){
  const profileStatus=document.getElementById('profileCardStatus');
  if(profileStatus)profileStatus.textContent=data.fullyAuthorized?'Полная авторизация MAX':'Ожидается подтверждение номера телефона';
  const sentCount=document.getElementById('profileSentCount'),receivedCount=document.getElementById('profileReceivedCount');
- if(sentCount)sentCount.textContent=String(currentGiftData.sent.length);
+ if(sentCount)sentCount.textContent=String(currentGiftData.sent.length+(currentGiftData.history||[]).length);
  if(receivedCount)receivedCount.textContent=String(currentGiftData.received.length);
  const createButton=document.getElementById('createGiftFromShop');
  if(createButton)createButton.textContent=data.fullyAuthorized?'Создать и отправить · '+currentGiftCredits+' из 3':'Сначала авторизуйтесь';
