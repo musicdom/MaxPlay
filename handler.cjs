@@ -718,7 +718,7 @@ async function handleAdminDiagnostics() {
     }
     const subscriptions = Array.isArray(payload.subscriptions) ? payload.subscriptions : Array.isArray(payload) ? payload : [];
     const matching = subscriptions.find(item => String(item.url || "") === webhookUrl);
-    return { statusCode: 200, body: { ok: true, checkedAt: new Date().toISOString(), apiReachable: true, webhookConfigured: Boolean(matching), webhookUrl, subscriptionCount: subscriptions.length, updateTypes: matching && Array.isArray(matching.update_types) ? matching.update_types : [], secretConfigured: Boolean(matching && matching.secret) } };
+    return { statusCode: 200, body: { ok: true, checkedAt: new Date().toISOString(), apiReachable: true, webhookConfigured: Boolean(matching), webhookUrl, subscriptionCount: subscriptions.length, updateTypes: matching && Array.isArray(matching.update_types) ? matching.update_types : [], secretConfigured: Boolean(process.env.MAX_WEBHOOK_SECRET) } };
   } catch (error) {
     await recordAdminLog("error", "max-subscriptions", "Не удалось проверить подписку MAX", { message: error.message });
     return { statusCode: 200, body: { ok: true, apiReachable: false, webhookConfigured: false, error: "max_api_unavailable" } };
