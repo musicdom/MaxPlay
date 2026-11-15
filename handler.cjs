@@ -668,14 +668,33 @@ async function handleGiftRequest(path, body, user) {
     const now = Date.now();
 
     if (path === "/api/gifts/claim") {
-      if (gift.recipientId !== userId) return giftError(403, "not_gift_recipient");
       if (gift.status === "claimed" || gift.status === "opened") {
-        return { statusCode: 200, body: { ok: true, gift, alreadyClaimed: true } };
+        if (gift.recipientId === userId) return { statusCode: 200, body: { ok: true, gift, alreadyClaimed: true } };
+        return giftError(409, "gift_already_claimed");
       }
       if (gift.status !== "sent") return giftError(409, "gift_not_claimable");
+      if (gift.recipientId && gift.recipientId !== userId) return giftError(403, "not_gift_recipient");
+
+      // A gift shared by link has no recipient until the first authenticated user claims it.
+      if (!gift.recipientId) {
+        const claimLock = "gift-claim-lock:" + gift.id;
+        const locked = await client.set(claimLock, userId, { nx: true, px: 30000 });
+        if (locked !== "OK") return giftError(409, "gift_already_claimed");
+        try {
+          const latest = await readGift(gift.id);
+          if (!latest || latest.status !== "sent" || latest.recipientId) return giftError(409, "gift_already_claimed");
+          latest.recipientId = userId;
+          latest.claimedByLink = true;
+          gift = latest;
+          await client.rPush("gifts:received:" + userId, gift.id);
+        } finally {
+          await client.del(claimLock);
+        }
+      }
+
       gift.status = "claimed";
       gift.claimedAt = now;
-      gift.opensAt = now + gift.revealDelaySeconds * 1000;
+      gift.opensAt = now + Number(gift.revealDelaySeconds || 0) * 1000;
       gift.expiresAt = gift.opensAt + 12 * 60 * 60 * 1000;
       await saveGift(gift);
       await client.pExpireAt("gift:" + gift.id, gift.expiresAt);
@@ -703,13 +722,15 @@ async function handleGiftRequest(path, body, user) {
     if (!fullyAuthorized) return giftError(403, "full_authorization_required");
     if (gift.recipientId !== userId) return giftError(403, "not_gift_recipient");
     if (!["opened", "owned", "kept"].includes(gift.status)) return giftError(409, "gift_not_forwardable");
-    const newRecipientId = String(body?.recipientId || "");
-    if (!/^\d+$/.test(newRecipientId) || newRecipientId === userId) return giftError(400, "invalid_recipient");
+    const shareByLink = body?.shareLink === true;
+    const newRecipientId = shareByLink ? "" : String(body?.recipientId || "");
+    if (!shareByLink && (!/^\d+$/.test(newRecipientId) || newRecipientId === userId)) return giftError(400, "invalid_recipient");
+    const forwardedId = crypto.randomUUID();
     const forwarded = {
       ...gift,
-      id: crypto.randomUUID(),
+      id: forwardedId,
       senderId: userId,
-      recipientId: newRecipientId,
+      recipientId: shareByLink ? null : newRecipientId,
       status: "sent",
       createdAt: now,
       claimedAt: null,
@@ -717,32 +738,36 @@ async function handleGiftRequest(path, body, user) {
       expiresAt: null,
       openedAt: null,
       forwardedFrom: gift.id,
-      shareUrl: process.env.MAX_MINI_APP_URL
-        ? process.env.MAX_MINI_APP_URL + (process.env.MAX_MINI_APP_URL.includes("?") ? "&" : "?") + "gift=" + crypto.randomUUID()
-        : null
+      claimedByLink: false,
+      shareUrl: shareByLink
+        ? "https://max.ru/se14711525_1_bot?startapp=gift_" + forwardedId
+        : (process.env.MAX_MINI_APP_URL
+          ? process.env.MAX_MINI_APP_URL + (process.env.MAX_MINI_APP_URL.includes("?") ? "&" : "?") + "gift=" + forwardedId
+          : null)
     };
-    if (forwarded.shareUrl) forwarded.shareUrl = forwarded.shareUrl.slice(0, forwarded.shareUrl.lastIndexOf("=") + 1) + forwarded.id;
     gift.status = "forwarded";
     gift.forwardedAt = now;
     await saveGift(gift);
     await client.lRem("gifts:received:" + userId, 0, gift.id);
     await client.set("gift:" + forwarded.id, JSON.stringify(forwarded));
     await client.rPush("gifts:sent:" + userId, forwarded.id);
-    await client.rPush("gifts:received:" + newRecipientId, forwarded.id);
     let notificationSent = false;
-    if (forwarded.shareUrl) {
-      try {
-        await sendMaxMessage(
-          newRecipientId,
-          "Вам переслали открытый подарок в Подарис! Заберите его по кнопке ниже.",
-          [[{ type: "open_app", text: "Получить подарок", web_app: forwarded.shareUrl }]]
-        );
-        notificationSent = true;
-      } catch (error) {
-        console.warn("[forward notification]", error.message);
+    if (!shareByLink) {
+      await client.rPush("gifts:received:" + newRecipientId, forwarded.id);
+      if (forwarded.shareUrl) {
+        try {
+          await sendMaxMessage(
+            newRecipientId,
+            "Вам переслали подарок в Подарис! Заберите его по кнопке ниже.",
+            [[{ type: "open_app", text: "Получить подарок", web_app: forwarded.shareUrl }]]
+          );
+          notificationSent = true;
+        } catch (error) {
+          console.warn("[forward notification]", error.message);
+        }
       }
     }
-    return { statusCode: 201, body: { ok: true, gift: forwarded, notificationSent } };
+    return { statusCode: 201, body: { ok: true, gift: forwarded, notificationSent, shareByLink } };
   }
 
   return giftError(404, "gift_route_not_found");
