@@ -806,25 +806,35 @@ async function handleShopOrder(body, user) {
 async function handleYooMoneyNotification(body) {
   const secret = String(process.env.YOOMONEY_NOTIFICATION_SECRET || "");
   if (!secret) return { statusCode: 503, body: { ok: false, error: "yoomoney_not_configured" } };
-  const notificationType = String(body?.notification_type || "");
+  const fields = fields?.fields && typeof body.fields === "object" ? body.fields : body;
+  const notificationType = String(fields?.notification_type || "");
   if (!["p2p-incoming", "card-incoming"].includes(notificationType)) {
     return { statusCode: 400, body: { ok: false, error: "unsupported_notification_type" } };
   }
-  const label = String(body?.label || "");
-  const amount = Number(body?.amount);
+  const label = String(fields?.label || "");
+  const amount = Number(fields?.withdraw_amount ?? fields?.amount);
+  const hmacSignature = String(fields?.sign || "").toLowerCase();
+  const hmacPayload = Object.entries(fields || {})
+    .filter(([key]) => key !== "sign")
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, value]) => key + "=" + encodeURIComponent(String(value)))
+    .join("&");
+  const expectedHmac = crypto.createHmac("sha256", secret).update(hmacPayload).digest("hex");
+  const hmacValid = /^[a-f0-9]{64}$/.test(hmacSignature) && safeEqual(expectedHmac, hmacSignature);
   const signatureParts = [
     notificationType,
-    String(body?.operation_id || ""),
-    String(body?.amount || ""),
-    String(body?.currency || ""),
-    String(body?.datetime || ""),
-    String(body?.sender || ""),
-    String(body?.codepro || ""),
+    String(fields?.operation_id || ""),
+    String(fields?.amount || ""),
+    String(fields?.currency || ""),
+    String(fields?.datetime || ""),
+    String(fields?.sender || ""),
+    String(fields?.codepro || ""),
     secret,
     label
   ];
-  const expected = crypto.createHash("sha1").update(signatureParts.join("&"), "utf8").digest("hex");
-  if (!safeEqual(expected.toLowerCase(), String(body?.sha1_hash || "").toLowerCase())) {
+  const expectedSha1 = crypto.createHash("sha1").update(signatureParts.join("&"), "utf8").digest("hex");
+  const sha1Valid = safeEqual(expectedSha1.toLowerCase(), String(fields?.sha1_hash || "").toLowerCase());
+  if (!hmacValid && !sha1Valid) {
     await recordAdminLog("warning", "yoomoney", "Отклонено уведомление с неверной подписью", { label: label.slice(0, 80) });
     return { statusCode: 401, body: { ok: false, error: "invalid_notification_signature" } };
   }
@@ -886,7 +896,7 @@ async function handleYooMoneyNotification(body) {
     }
     latest.status = "paid";
     latest.paidAt = new Date().toISOString();
-    latest.operationId = String(body?.operation_id || "");
+    latest.operationId = String(fields?.operation_id || "");
     await client.set(orderKey, JSON.stringify(latest));
     await recordAdminLog("info", "yoomoney", "Оплата подтверждена, подарки начислены", { label, amount, userId: latest.userId });
     return { statusCode: 200, body: { ok: true, paid: true } };
