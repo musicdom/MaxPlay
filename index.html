@@ -564,7 +564,7 @@ async function findAdminUserById(){
 }
 function showAdminResetConfirmation(userId){
  const id=String(userId||'');
- if(!/^\\d+$/.test(id))return;
+ if(!/^\d+$/.test(id))return;
  const box=document.getElementById('adminUserDetail');
  if(!box)return;
  box.querySelector('#adminResetConfirmPanel')?.remove();
@@ -609,7 +609,7 @@ function showAdminResetConfirmation(userId){
 }
 async function performAdminUserReset(userId,button){
  const id=String(userId||'');
- if(!/^\\d+$/.test(id))return;
+ if(!/^\d+$/.test(id))return;
  const panel=document.getElementById('adminResetConfirmPanel');
  button.disabled=true;
  button.textContent='Обнуляем…';
