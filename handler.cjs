@@ -1,4 +1,56 @@
 const crypto = require("node:crypto");
+const https = require("node:https");
+const fs = require("node:fs");
+const path = require("node:path");
+
+let maxCertificates;
+function getMaxCertificates() {
+  if (maxCertificates) return maxCertificates;
+  const certDir = path.join(__dirname, "certs");
+  const rootPath = path.join(certDir, "russian_trusted_root_ca.pem");
+  const gostPath = path.join(certDir, "russian_trusted_root_ca_gost_2025.pem");
+  if (!fs.existsSync(rootPath) || !fs.existsSync(gostPath)) {
+    throw new Error("Ministry of Digital Development CA certificates are missing from certs/");
+  }
+  maxCertificates = [fs.readFileSync(rootPath), fs.readFileSync(gostPath)];
+  return maxCertificates;
+}
+
+// MAX API requests use the two Ministry of Digital Development root CAs,
+// matching the working Norka integration. Other HTTPS requests keep native fetch.
+function maxApiFetch(url, options = {}) {
+  return new Promise((resolve, reject) => {
+    const target = new URL(url);
+    const body = options.body == null ? null : String(options.body);
+    const request = https.request({
+      protocol: target.protocol,
+      hostname: target.hostname,
+      port: target.port || 443,
+      path: target.pathname + target.search,
+      method: options.method || "GET",
+      headers: options.headers || {},
+      ca: getMaxCertificates(),
+      rejectUnauthorized: true,
+      timeout: 15000
+    }, (incoming) => {
+      let raw = "";
+      incoming.setEncoding("utf8");
+      incoming.on("data", chunk => { raw += chunk; });
+      incoming.on("end", () => {
+        resolve({
+          ok: (incoming.statusCode || 0) >= 200 && (incoming.statusCode || 0) < 300,
+          status: incoming.statusCode || 0,
+          text: async () => raw,
+          json: async () => { try { return raw ? JSON.parse(raw) : {}; } catch { return {}; } }
+        });
+      });
+    });
+    request.on("error", reject);
+    request.on("timeout", () => request.destroy(new Error("MAX API request timed out")));
+    if (body) request.write(body);
+    request.end();
+  });
+}
 // Upstash Redis REST adapter. Credentials are supplied only through Yandex
 // Cloud Function environment variables; no Redis secrets belong in the repository.
 function createUpstashClient() {
@@ -959,7 +1011,7 @@ async function handleAdminDiagnostics() {
   const webhookUrl = "https://functions.yandexcloud.net/d4eu88tanqd001ko5llp?route=webhook";
   if (!process.env.MAX_BOT_TOKEN) return { statusCode: 200, body: { ok: true, apiReachable: false, webhookConfigured: false, error: "max_bot_not_configured" } };
   try {
-    const result = await fetch("https://platform-api2.max.ru/subscriptions", { method: "GET", headers: { Authorization: process.env.MAX_BOT_TOKEN } });
+    const result = await maxApiFetch("https://platform-api2.max.ru/subscriptions", { method: "GET", headers: { Authorization: process.env.MAX_BOT_TOKEN } });
     const payload = await result.json().catch(() => ({}));
     if (!result.ok) {
       await recordAdminLog("error", "max-subscriptions", "MAX API вернул ошибку", { status: result.status });
@@ -984,7 +1036,7 @@ async function handleAdminRegisterWebhook() {
 
   try {
     const headers = { Authorization: token, "Content-Type": "application/json" };
-    const listResponse = await fetch("https://platform-api2.max.ru/subscriptions", {
+    const listResponse = await maxApiFetch("https://platform-api2.max.ru/subscriptions", {
       method: "GET",
       headers: { Authorization: token }
     });
@@ -1008,7 +1060,7 @@ async function handleAdminRegisterWebhook() {
       };
     }
 
-    const registerResponse = await fetch("https://platform-api2.max.ru/subscriptions", {
+    const registerResponse = await maxApiFetch("https://platform-api2.max.ru/subscriptions", {
       method: "POST",
       headers,
       body: JSON.stringify({
@@ -1026,7 +1078,7 @@ async function handleAdminRegisterWebhook() {
       };
     }
 
-    const verifyResponse = await fetch("https://platform-api2.max.ru/subscriptions", {
+    const verifyResponse = await maxApiFetch("https://platform-api2.max.ru/subscriptions", {
       method: "GET",
       headers: { Authorization: token }
     });
