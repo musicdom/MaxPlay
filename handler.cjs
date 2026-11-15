@@ -560,8 +560,12 @@ async function ensureStarterGiftCredits(userId) {
         shareUrl: null,
         source: "starter_registration"
       };
-      const created = await client.set("gift:" + gift.id, JSON.stringify(gift), { nx: true });
-      if (created === "OK") await client.rPush("gifts:received:" + userId, gift.id);
+      gift.ownerId = String(userId);
+      await client.eval(
+        "if redis.call('EXISTS',KEYS[1])==0 then redis.call('SET',KEYS[1],ARGV[1]); end; if not redis.call('LPOS',KEYS[2],ARGV[2]) then redis.call('RPUSH',KEYS[2],ARGV[2]); end; return 1",
+        ["gift:" + gift.id, "gifts:received:" + userId],
+        [JSON.stringify(gift), gift.id]
+      );
     }
     await client.set("starter-gifts:" + userId, "granted");
   }
@@ -718,10 +722,13 @@ async function handleGiftRequest(path, body, user) {
     if (!/^[0-9a-f-]{36}$/i.test(giftId)) return giftError(400, "invalid_gift_id");
     const now = Date.now();
     const eventId = crypto.randomUUID();
+    const currentGift = await readGift(giftId);
+    if (!currentGift) return giftError(404, "gift_not_found");
+    const senderId = String(currentGift.senderId || "");
     const recipientName = [user.firstName,user.lastName].filter(Boolean).join(" ").trim() || "Пользователь MAX";
     const result = await client.eval(
-      "local raw=redis.call('GET',KEYS[1]); if not raw then return 'missing' end; local g=cjson.decode(raw); if g.status=='claimed' or g.status=='opened' or g.status=='kept' or g.status=='owned' then if tostring(g.recipientId or '')==ARGV[1] then return 'already:'..cjson.encode(g) end; return 'claimed' end; if g.status~='sent' then return 'not_claimable' end; if g.recipientId and tostring(g.recipientId)~='' and tostring(g.recipientId)~=ARGV[1] then return 'wrong_recipient' end; local sender=tostring(g.senderId or ''); g.recipientId=ARGV[1]; g.recipientName=ARGV[2]; g.ownerId=ARGV[1]; g.status='claimed'; g.claimedAt=tonumber(ARGV[3]); g.opensAt=tonumber(ARGV[3])+tonumber(g.revealDelaySeconds or 0)*1000; g.expiresAt=cjson.null; redis.call('SET',KEYS[1],cjson.encode(g)); redis.call('RPUSH',KEYS[3],ARGV[4]); if sender~='' and sender~='purchase' and sender~='podaris' and sender~=ARGV[1] then redis.call('LREM',KEYS[2],0,ARGV[4]); local ev={id=ARGV[5],gift=g,senderId=sender,recipientId=ARGV[1],sentAt=tonumber(g.lastSentAt or g.createdAt or ARGV[3]),claimedAt=tonumber(ARGV[3]),eventType='claimed'}; redis.call('SET',KEYS[5],cjson.encode(ev)); redis.call('RPUSH',KEYS[4],ARGV[5]); end; return 'ok:'..cjson.encode(g)",
-      ["gift:" + giftId, "gifts:sent:" + (await readGift(giftId))?.senderId, "gifts:received:" + userId, "gifts:history:" + ((await readGift(giftId))?.senderId || "none"), "gift-event:" + eventId],
+      "local raw=redis.call('GET',KEYS[1]); if not raw then return 'missing' end; local g=cjson.decode(raw); if g.status=='claimed' or g.status=='opened' or g.status=='kept' or g.status=='owned' then if tostring(g.recipientId or '')==ARGV[1] then return 'already:'..cjson.encode(g) end; return 'claimed' end; if g.status~='sent' then return 'not_claimable' end; if g.recipientId and g.recipientId~=cjson.null and tostring(g.recipientId)~='' and tostring(g.recipientId)~=ARGV[1] then return 'wrong_recipient' end; local sender=tostring(g.senderId or ''); g.recipientId=ARGV[1]; g.recipientName=ARGV[2]; g.ownerId=ARGV[1]; g.status='claimed'; g.claimedAt=tonumber(ARGV[3]); g.opensAt=tonumber(ARGV[3])+tonumber(g.revealDelaySeconds or 0)*1000; g.expiresAt=cjson.null; redis.call('SET',KEYS[1],cjson.encode(g)); redis.call('RPUSH',KEYS[3],ARGV[4]); if sender~='' and sender~='purchase' and sender~='podaris' and sender~=ARGV[1] then redis.call('LREM',KEYS[2],0,ARGV[4]); local ev={id=ARGV[5],gift=g,senderId=sender,recipientId=ARGV[1],sentAt=tonumber(g.lastSentAt or g.createdAt or ARGV[3]),claimedAt=tonumber(ARGV[3]),eventType='claimed'}; redis.call('SET',KEYS[5],cjson.encode(ev)); redis.call('RPUSH',KEYS[4],ARGV[5]); end; return 'ok:'..cjson.encode(g)",
+      ["gift:" + giftId, "gifts:sent:" + senderId, "gifts:received:" + userId, "gifts:history:" + senderId, "gift-event:" + eventId],
       [userId, recipientName, now, giftId, eventId]
     );
     if (result === "missing") return giftError(404, "gift_not_found");
@@ -932,8 +939,12 @@ async function handleYooMoneyNotification(body) {
           source: "yoomoney_purchase",
           orderLabel: label
         };
-        const created = await client.set("gift:" + gift.id, JSON.stringify(gift), { nx: true });
-        if (created === "OK") await client.rPush("gifts:received:" + latest.userId, gift.id);
+        gift.ownerId = String(latest.userId);
+        await client.eval(
+          "if redis.call('EXISTS',KEYS[1])==0 then redis.call('SET',KEYS[1],ARGV[1]); end; if not redis.call('LPOS',KEYS[2],ARGV[2]) then redis.call('RPUSH',KEYS[2],ARGV[2]); end; return 1",
+          ["gift:" + gift.id, "gifts:received:" + latest.userId],
+          [JSON.stringify(gift), gift.id]
+        );
       }
     }
     latest.status = "paid";
