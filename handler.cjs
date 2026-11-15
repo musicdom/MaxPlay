@@ -533,36 +533,27 @@ async function saveGift(gift) {
 
 async function listUserGifts(userId) {
   const client = await getRedis();
-  const [receivedIds, sentIds] = await Promise.all([
+  const [receivedIds, sentIds, historyIds] = await Promise.all([
     client.lRange("gifts:received:" + userId, 0, -1),
-    client.lRange("gifts:sent:" + userId, 0, -1)
+    client.lRange("gifts:sent:" + userId, 0, -1),
+    client.lRange("gifts:history:" + userId, 0, -1)
   ]);
-  const [received, sent] = await Promise.all([
+  const [received, sent, history] = await Promise.all([
     Promise.all(receivedIds.map(readGift)),
-    Promise.all(sentIds.map(readGift))
+    Promise.all(sentIds.map(readGift)),
+    Promise.all(historyIds.map(readGift))
   ]);
-  const now = Date.now();
-  async function normalize(gift, giftId) {
+  async function normalize(gift, giftId, listKey) {
     if (!gift) {
-      await Promise.all([
-        client.lRem("gifts:received:" + userId, 0, giftId),
-        client.lRem("gifts:sent:" + userId, 0, giftId)
-      ]);
-      return null;
-    }
-    if (gift.status === "claimed" && gift.expiresAt && now >= gift.expiresAt) {
-      await client.del("gift:" + gift.id);
-      await Promise.all([
-        client.lRem("gifts:received:" + gift.recipientId, 0, gift.id),
-        client.lRem("gifts:sent:" + gift.senderId, 0, gift.id)
-      ]);
+      await client.lRem(listKey, 0, giftId);
       return null;
     }
     return gift;
   }
   return {
-    received: (await Promise.all(received.map((gift, index) => normalize(gift, receivedIds[index])))).filter(Boolean),
-    sent: (await Promise.all(sent.map((gift, index) => normalize(gift, sentIds[index])))).filter(Boolean)
+    received: (await Promise.all(received.map((gift,index)=>normalize(gift,receivedIds[index],"gifts:received:"+userId)))).filter(Boolean),
+    sent: (await Promise.all(sent.map((gift,index)=>normalize(gift,sentIds[index],"gifts:sent:"+userId)))).filter(g=>g&&g.status==="sent"),
+    history: (await Promise.all(history.map((gift,index)=>normalize(gift,historyIds[index],"gifts:history:"+userId)))).filter(Boolean)
   };
 }
 
@@ -584,7 +575,7 @@ async function handleGiftRequest(path, body, user) {
     return { statusCode: 200, body: {
       ok: true, fullyAuthorized, canSend: fullyAuthorized && balance > 0,
       canBuy: true, canViewReceived: true, canForward: fullyAuthorized,
-      giftCredits: balance, gifts: { received: gifts.received, sent: fullyAuthorized ? gifts.sent : [] }
+      giftCredits: balance, gifts: { received: gifts.received, sent: fullyAuthorized ? gifts.sent : [], history: fullyAuthorized ? gifts.history : [] }
     }};
   }
 
@@ -688,10 +679,10 @@ async function handleGiftRequest(path, body, user) {
           latest.status = "claimed";
           latest.claimedAt = now;
           latest.opensAt = now + Number(latest.revealDelaySeconds || 0) * 1000;
-          latest.expiresAt = latest.opensAt + 12 * 60 * 60 * 1000;
+          latest.expiresAt = null;
           await saveGift(latest);
           await client.rPush("gifts:received:" + userId, latest.id);
-          await client.pExpireAt("gift:" + latest.id, latest.expiresAt);
+          
           return { statusCode: 200, body: { ok: true, gift: latest } };
         } finally {
           await client.del(claimLock);
@@ -701,7 +692,7 @@ async function handleGiftRequest(path, body, user) {
       gift.status = "claimed";
       gift.claimedAt = now;
       gift.opensAt = now + Number(gift.revealDelaySeconds || 0) * 1000;
-      gift.expiresAt = gift.opensAt + 12 * 60 * 60 * 1000;
+      gift.expiresAt = null;
       await saveGift(gift);
       await client.pExpireAt("gift:" + gift.id, gift.expiresAt);
       return { statusCode: 200, body: { ok: true, gift } };
@@ -709,14 +700,6 @@ async function handleGiftRequest(path, body, user) {
 
     if (path === "/api/gifts/open") {
       if (gift.recipientId !== userId) return giftError(403, "not_gift_recipient");
-      if (gift.status === "claimed" && gift.expiresAt && now >= gift.expiresAt) {
-        await client.del("gift:" + gift.id);
-        await Promise.all([
-          client.lRem("gifts:received:" + gift.recipientId, 0, gift.id),
-          client.lRem("gifts:sent:" + gift.senderId, 0, gift.id)
-        ]);
-        return giftError(410, "gift_expired");
-      }
       if (gift.status !== "claimed") return giftError(409, "gift_not_ready");
       if (now < gift.opensAt) return giftError(409, "gift_not_ready", { opensAt: gift.opensAt });
       gift.status = "opened";
