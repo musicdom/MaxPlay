@@ -265,13 +265,13 @@ setInterval(()=>{
  if(refresh)loadGiftData().catch(()=>{});
 },1000);
 async function giftAction(path,giftId,extra={}){
- try{const response=await fetch(String(window.PODARIS_API_BASE||'').replace(/\/+$/,'')+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData:window.podarisInitData,giftId,...extra})});const data=await response.json();if(!response.ok)throw new Error(data.error||'Не удалось выполнить действие');await loadGiftData();}
+ try{const response=await fetch(window.PODARIS_API_URL(path),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData:window.podarisInitData,giftId,...extra})});const data=await response.json();if(!response.ok)throw new Error(data.error||'Не удалось выполнить действие');await loadGiftData();}
  catch(error){window.alert(error.message);}
 }
 async function loadGiftData(){
  if(!window.podarisInitData||!window.PODARIS_API_BASE)return;
  const base=String(window.PODARIS_API_BASE).replace(/\/+$/,'');
- const response=await fetch(base+'/api/gifts/list',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData:window.podarisInitData})});
+ const response=await fetch(window.PODARIS_API_URL('/api/gifts/list'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData:window.podarisInitData})});
  const data=await response.json();if(!response.ok||!data.ok)return;
  currentGiftData=data.gifts||{received:[],sent:[]};
  currentFullyAuthorized=Boolean(data.fullyAuthorized);
@@ -311,7 +311,7 @@ document.getElementById('giftCreateForm')?.addEventListener('submit',async event
  const submit=document.getElementById('giftSubmit'),error=document.getElementById('giftFormError');
  submit.disabled=true;error.textContent='';
  try{
-  const response=await fetch(String(window.PODARIS_API_BASE||'').replace(/\/+$/,'')+'/api/gifts/send',{
+  const response=await fetch(window.PODARIS_API_URL('/api/gifts/send'),{
    method:'POST',headers:{'Content-Type':'application/json'},
    body:JSON.stringify({initData:window.podarisInitData,recipientId:document.getElementById('giftRecipient').value.trim(),giftType:document.getElementById('giftType').value,message:document.getElementById('giftMessage').value,revealDelaySeconds:Number(document.getElementById('giftDelay').value)*3600})
   });
@@ -330,7 +330,7 @@ document.getElementById('giftCreateForm')?.addEventListener('submit',async event
 async function claimGiftFromLaunchLink(apiBase,initData){
  const giftId=new URLSearchParams(window.location.search).get('gift');
  if(!giftId)return;
- const response=await fetch(apiBase+'/api/gifts/claim',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData,giftId})});
+ const response=await fetch(window.PODARIS_API_URL('/api/gifts/claim'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData,giftId})});
  const data=await response.json().catch(()=>({}));
  if(!response.ok)throw new Error(data.error||'Не удалось получить подарок');
  await loadGiftData();
@@ -367,7 +367,7 @@ async function claimGiftFromLaunchLink(apiBase,initData){
   }
 
   try {
-    const response = await fetch(apiBase + "/api/consent/status", {
+    const response = await fetch(window.PODARIS_API_URL("/api/consent/status"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ initData })
@@ -423,7 +423,7 @@ async function claimGiftFromLaunchLink(apiBase,initData){
       acceptButton.textContent = "Сохраняем согласие…";
       document.getElementById("consentError").textContent = "";
       try {
-        const accepted = await fetch(apiBase + "/api/consent/accept", {
+        const accepted = await fetch(window.PODARIS_API_URL("/api/consent/accept"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -458,7 +458,7 @@ async function claimGiftFromLaunchLink(apiBase,initData){
         }
         const giftId=new URLSearchParams(window.location.search).get('gift');
         if(giftId){
-          try{const claimResponse=await fetch(apiBase+'/api/gifts/claim',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData,giftId})});const claimData=await claimResponse.json();if(!claimResponse.ok)throw new Error(claimData.error||'Подарок не найден');await loadGiftData();document.querySelector('[data-filter="mine"]')?.click();navigate('collection');}
+          try{const claimResponse=await fetch(window.PODARIS_API_URL('/api/gifts/claim'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData,giftId})});const claimData=await claimResponse.json();if(!claimResponse.ok)throw new Error(claimData.error||'Подарок не найден');await loadGiftData();document.querySelector('[data-filter="mine"]')?.click();navigate('collection');}
           catch(error){window.alert(error.message);}
         }
       } catch (error) {
