@@ -180,9 +180,11 @@ html,body{background:#edf1ff;color:#17172b;font-family:var(--sans)}
 <div class="profile-sub">Ваши подарки в одном месте</div>
 </div>
 <div class="access-status" id="accessStatus"><div><b>Проверяем уровень доступа</b><small>Статус профиля и доступные подарки загрузятся после авторизации.</small></div><span class="access-pill">Проверка</span><a class="auth-link" id="authorizeButton" href="https://max.ru/se14711525_1_bot" target="_blank" rel="noopener">Авторизоваться</a></div>
-<div class="switcher">
+<div class="gift-switcher">
+<button class="switch" data-filter="give">🎁 Подарить</button>
+<button class="switch active" data-filter="mine">Мои</button>
+<button class="switch" data-filter="incoming">Мне прислали</button>
 <button class="switch" data-filter="sent">Отправленные</button>
-<button class="switch active" data-filter="mine">Мои подарки</button>
 </div>
 <div class="gift-window">
 <div class="window-head"><strong id="windowTitle">Отправленные подарки</strong><span class="window-count" id="giftCount">0 подарков</span></div>
@@ -377,7 +379,7 @@ setInterval(()=>{
  if(refresh)loadGiftData().catch(()=>{});
 },1000);
 async function giftAction(path,giftId,extra={}){
- try{const response=await fetch(window.PODARIS_API_URL(path),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData:window.podarisInitData,giftId,...extra})});const data=await response.json();if(!response.ok)throw new Error(data.error||'Не удалось выполнить действие');await loadGiftData();return data;}
+ try{const response=await fetch(window.PODARIS_API_URL(path),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData:window.podarisInitData,giftId,...extra})});const data=await response.json();if(!response.ok)throw new Error(data.error||'Не удалось выполнить действие');await loadGiftData();if(path==='/api/gifts/claim'){activeGiftFilter='mine';document.querySelectorAll('[data-filter]').forEach(x=>x.classList.toggle('active',x.dataset.filter==='mine'));renderGiftCards();}return data;}
  catch(error){window.alert(error.message);return null;}
 }
 function showGiftShareDialog(link){
