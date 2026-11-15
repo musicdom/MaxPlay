@@ -314,7 +314,7 @@ function renderGiftCards(){
  const list=document.getElementById('giftList'),empty=document.getElementById('emptyState');
  const allReceived=currentGiftData.received||[];
  const items=activeGiftFilter==='mine'
-   ?allReceived.filter(g=>['claimed','opened','owned','kept'].includes(g.status))
+   ?allReceived.filter(g=>['claimed','opened','owned','kept','expired'].includes(g.status))
    :activeGiftFilter==='incoming'
      ?allReceived.filter(g=>g.status==='sent')
      :activeGiftFilter==='sent'
@@ -362,9 +362,11 @@ function renderGiftCards(){
   if(activeGiftFilter==='mine'){
     if(gift.status==='claimed'){
       const remaining=Number(gift.opensAt||0)-Date.now();
-      footer.textContent=remaining>0?'Открыть можно через '+formatRemaining(remaining):'Подарок можно открыть';
-      if(remaining<=0){const open=document.createElement('button');open.className='gift-tile-action';open.textContent='Открыть';open.addEventListener('click',()=>giftAction('/api/gifts/open',gift.id));card.append(open);}
-    }else if(gift.status==='opened')footer.textContent='Открыт · в вашей коллекции';
+      const expired=Number(gift.expiresAt||0)>0&&Date.now()>Number(gift.expiresAt);
+      footer.textContent=remaining>0?'Открыть можно через '+formatRemaining(remaining):expired?'Срок открытия истёк':'Подарок можно открыть';
+      if(remaining<=0&&!expired){const open=document.createElement('button');open.className='gift-tile-action';open.textContent='Открыть';open.addEventListener('click',()=>giftAction('/api/gifts/open',gift.id));card.append(open);}
+    }else if(gift.status==='expired')footer.textContent='Срок открытия истёк';
+    else if(gift.status==='opened')footer.textContent='Открыт · в вашей коллекции';
     else footer.textContent=gift.status==='kept'?'Сохранён в вашей коллекции':'Ваш подарок';
     if(['owned','kept','opened'].includes(gift.status)&&currentFullyAuthorized){
       const share=document.createElement('button');share.className='gift-tile-action secondary';share.textContent='Подарить';share.addEventListener('click',()=>shareGift(gift.id));card.append(share);
@@ -623,7 +625,7 @@ async function claimGiftFromLaunchLink(apiBase,initData){
  if(!giftId)return;
  const response=await fetch(window.PODARIS_API_URL('/api/gifts/claim'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData,giftId,claimByLink:true})});
  const data=await response.json().catch(()=>({}));
- if(!response.ok){const errors={gift_already_claimed:'Этот подарок уже забрал другой человек. Ссылка одноразовая.',gift_not_found:'Подарок не найден или ссылка устарела.',gift_not_claimable:'Этот подарок уже нельзя получить.'};throw new Error(errors[data.error]||data.error||'Не удалось получить подарок');}
+ if(!response.ok){const errors={gift_already_claimed:'Этот подарок уже забрал другой человек. Ссылка одноразовая.',gift_not_found:'Подарок не найден или ссылка устарела.',gift_not_claimable:'Этот подарок уже нельзя получить.',gift_self_claim_not_allowed:'Нельзя забрать собственный подарок. Отправьте ссылку другому человеку.'};throw new Error(errors[data.error]||data.error||'Не удалось получить подарок');}
  await loadGiftData();
  document.querySelector('[data-filter="mine"]')?.click();
  navigate('collection');
