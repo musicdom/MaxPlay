@@ -130,6 +130,11 @@ html,body{background:#edf1ff;color:#17172b;font-family:var(--sans)}
 .gift-modal-footer{display:flex;gap:8px;margin-top:16px}.gift-modal-footer button{flex:1}
 .gift-profile-tier{margin-top:10px;padding:12px;border-radius:12px;background:#fff;border:1px solid #e5e8fb;font-size:9px;color:#6f7593;line-height:1.6}
 .gift-share-link{display:block;margin-top:8px;padding:10px;border-radius:9px;background:#f3f1ff;color:#5634f5;font-size:8px;overflow-wrap:anywhere}
+
+.admin-entry{display:none!important}.admin-entry.visible{display:flex!important}
+.admin-screen{padding-bottom:28px}.admin-panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;margin:12px 0;box-shadow:0 5px 20px #25204b08}
+.admin-panel h3{font-size:15px;margin:0 0 12px}.admin-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid var(--line);font-size:13px}.admin-row:first-of-type{border-top:0}.admin-status{font-weight:700}.admin-status.ok{color:#16834a}.admin-status.bad{color:#c04444}.admin-help{font-size:12px;line-height:1.5;color:var(--muted)}.admin-action{width:100%;border:0;border-radius:13px;padding:13px;background:var(--red);color:#fff;font-weight:750;margin-top:8px}.admin-action.secondary{background:var(--soft);color:var(--red)}.admin-result{white-space:pre-wrap;font-size:12px;line-height:1.5;color:var(--muted);margin-top:10px;overflow-wrap:anywhere}
+
 </style>
 </head>
 <body>
@@ -175,7 +180,20 @@ html,body{background:#edf1ff;color:#17172b;font-family:var(--sans)}
 <div class="profile-card"><div class="avatar"><span>♡</span><img id="profileCardAvatar" alt="Аватар профиля" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:50%"></div><div><b id="profileCardName">Мой профиль</b><small id="profileCardStatus">Проверяем уровень авторизации…</small></div></div>
 <div class="gift-profile-tier" id="profileTierInfo">Загрузка данных аккаунта…</div>
 <div class="profile-stats"><div class="profile-stat"><strong id="profileSentCount">0</strong><small>Отправлено подарков</small></div><div class="profile-stat"><strong id="profileReceivedCount">0</strong><small>Получено подарков</small></div></div>
-<div class="profile-menu"><button type="button"><span class="menu-icon">♡</span><span><b>Мои подарки</b><small>Подарки, которые вы получили</small></span><span class="arrow">›</span></button><button type="button"><span class="menu-icon">↗</span><span><b>Отправленные</b><small>Подарки, которыми вы поделились</small></span><span class="arrow">›</span></button><button type="button"><span class="menu-icon">?</span><span><b>Помощь и поддержка</b><small>Ответы на вопросы о сервисе</small></span><span class="arrow">›</span></button></div>
+<div class="profile-menu"><button type="button"><span class="menu-icon">♡</span><span><b>Мои подарки</b><small>Подарки, которые вы получили</small></span><span class="arrow">›</span></button><button type="button"><span class="menu-icon">↗</span><span><b>Отправленные</b><small>Подарки, которыми вы поделились</small></span><span class="arrow">›</span></button><button type="button"><span class="menu-icon">?</span><span><b>Помощь и поддержка</b><small>Ответы на вопросы о сервисе</small></span><span class="arrow">›</span></button><button type="button" class="admin-entry" id="adminEntry"><span class="menu-icon">⚙</span><span><b>Админ-панель</b><small>Управление и диагностика Подариса</small></span><span class="arrow">›</span></button></div>
+</section>
+<section class="screen admin-screen" id="admin">
+ <div class="page-title"><div class="eyebrow">УПРАВЛЕНИЕ ПРОЕКТОМ</div><h1>Админ-панель</h1><p>Состояние сервисов и инструменты диагностики.</p></div>
+ <div class="admin-panel"><h3>Состояние системы</h3>
+  <div class="admin-row"><span>Yandex Cloud Function</span><b class="admin-status" id="adminFunction">Проверка…</b></div>
+  <div class="admin-row"><span>Redis (Upstash)</span><b class="admin-status" id="adminRedis">Проверка…</b></div>
+  <div class="admin-row"><span>MAX Bot token</span><b class="admin-status" id="adminBot">Проверка…</b></div>
+  <div class="admin-row"><span>Webhook secret</span><b class="admin-status" id="adminWebhookSecret">Проверка…</b></div>
+  <button class="admin-action" id="adminRefresh">Проверить всё</button><div class="admin-result" id="adminResult"></div>
+ </div>
+ <div class="admin-panel"><h3>Данные администратора</h3><div class="admin-row"><span>Ваш MAX ID</span><b id="adminMaxId">—</b></div><p class="admin-help">Доступ выдаётся сервером по списку ADMIN_MAX_IDS в переменных Yandex Cloud Functions. Секретные значения здесь никогда не отображаются.</p></div>
+ <div class="admin-panel"><h3>Настройки и дальнейшие инструменты</h3><p class="admin-help">Здесь будем постепенно добавлять управление пользователями, подарками, документами, рассылками и служебными операциями. Каждое действие будет проверяться сервером.</p></div>
+ <button class="admin-action secondary" id="adminBack">Вернуться в профиль</button>
 </section>
 <nav class="bottom-nav" aria-label="Основная навигация"><button class="nav-btn active" data-screen="collection"><span class="nav-icon">⌂</span><span>Главная</span></button><button class="nav-btn" data-screen="shop"><span class="nav-icon">▧</span><span>Магазин подарков</span></button><button class="nav-btn" data-screen="profile"><span class="nav-icon">◉</span><span>Профиль</span></button></nav>
 </div>
@@ -197,10 +215,13 @@ html,body{background:#edf1ff;color:#17172b;font-family:var(--sans)}
 <script src="https://st.max.ru/js/max-web-app.js"></script>
 <script src="./api-config.js"></script>
 <script>
-const screens={collection:document.getElementById('collection'),shop:document.getElementById('shop'),profile:document.getElementById('profile')};
+const screens={collection:document.getElementById('collection'),shop:document.getElementById('shop'),profile:document.getElementById('profile'),admin:document.getElementById('admin')};
 function navigate(name){Object.values(screens).forEach(x=>x.classList.remove('active'));(screens[name]||screens.collection).classList.add('active');document.querySelectorAll('[data-screen]').forEach(b=>b.classList.toggle('active',b.dataset.screen===name));window.scrollTo({top:0,behavior:'smooth'});}
 document.querySelectorAll('[data-screen]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.screen)));
 document.getElementById('buyGift').addEventListener('click',()=>navigate('shop'));
+document.getElementById('adminEntry')?.addEventListener('click',()=>{navigate('admin');loadAdminStatus();});
+document.getElementById('adminBack')?.addEventListener('click',()=>navigate('profile'));
+document.getElementById('adminRefresh')?.addEventListener('click',loadAdminStatus);
 const profileActions=document.querySelectorAll('.profile-menu button');
 profileActions[0]?.addEventListener('click',()=>{navigate('collection');document.querySelector('[data-filter="mine"]')?.click();});
 profileActions[1]?.addEventListener('click',()=>{navigate('collection');document.querySelector('[data-filter="sent"]')?.click();});
@@ -327,6 +348,34 @@ document.getElementById('giftCreateForm')?.addEventListener('submit',async event
 /* В будущем: карточки каталога загружаются из картинок и данных, добавленных в репозиторий. Покупка, выдача и отправка реализуются через MAX-бота и сервер. Отправка полученного подарка будет доступна после его открытия и завершения срока действия. */
 /* Аватар и профиль пользователя будут подключены через MAX Mini App bridge. */
 
+
+async function loadAdminStatus(){
+ const result=document.getElementById('adminResult');
+ const set=(id,value,ok)=>{const el=document.getElementById(id);el.textContent=value;el.className='admin-status '+(ok?'ok':'bad');};
+ result.textContent='Выполняем проверку…';
+ try{
+  const response=await fetch(window.PODARIS_API_URL('/api/admin/status'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData:window.podarisInitData})});
+  const data=await response.json().catch(()=>({}));
+  if(response.status===403||!response.ok||!data.ok)throw new Error(data.error||'Не удалось получить статус');
+  document.getElementById('adminMaxId').textContent=data.userId||'—';
+  set('adminFunction','Работает',true);
+  set('adminRedis',data.redis==='ok'?'Подключён':'Ошибка',data.redis==='ok');
+  set('adminBot',data.maxBotConfigured?'Настроен':'Не настроен',data.maxBotConfigured);
+  set('adminWebhookSecret',data.webhookSecretConfigured?'Настроен':'Не настроен',data.webhookSecretConfigured);
+  result.textContent='Проверка завершена: '+new Date(data.checkedAt).toLocaleString('ru-RU');
+ }catch(error){result.textContent='Ошибка: '+error.message;}
+}
+async function checkAdminAccess(){
+ try{
+  const response=await fetch(window.PODARIS_API_URL('/api/admin/status'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData:window.podarisInitData})});
+  const data=await response.json().catch(()=>({}));
+  if(response.ok&&data.ok&&data.isAdmin){
+   document.getElementById('adminEntry')?.classList.add('visible');
+   document.getElementById('adminMaxId').textContent=data.userId||'—';
+  }
+ }catch(error){console.warn('[admin access]',error.message);}
+}
+
 async function claimGiftFromLaunchLink(apiBase,initData){
  const giftId=new URLSearchParams(window.location.search).get('gift');
  if(!giftId)return;
@@ -380,6 +429,7 @@ async function claimGiftFromLaunchLink(apiBase,initData){
     if (result.accepted) {
       overlay.remove();
       await loadGiftData();
+      await checkAdminAccess();
       try { await claimGiftFromLaunchLink(apiBase, initData); } catch (error) { window.alert(error.message); }
       const user = result.user || {};
       const displayName = [user.firstName,user.lastName].filter(Boolean).join(" ").trim();
@@ -442,6 +492,7 @@ async function claimGiftFromLaunchLink(apiBase,initData){
         if (!accepted.ok || !data.accepted) throw new Error(data.error || "Не удалось сохранить согласие.");
         overlay.remove();
         await loadGiftData();
+        await checkAdminAccess();
         const acceptedUser = result.user || {};
         const acceptedName = [acceptedUser.firstName, acceptedUser.lastName].filter(Boolean).join(" ").trim();
         if (acceptedName) {
