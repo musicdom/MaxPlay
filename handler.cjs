@@ -304,13 +304,17 @@ async function sendContactPrompt(userId) {
     const buttons = process.env.MAX_MINI_APP_URL
       ? [[{ type: "open_app", text: "Открыть Подарис", web_app: process.env.MAX_MINI_APP_URL }]]
       : [];
-    await sendMaxMessage(userId, "Ваш контакт уже сохранён. Спасибо!", buttons);
+    await sendMaxMessage(userId, "Ваш номер телефона подтверждён. Полная авторизация завершена.", buttons);
     return;
+  }
+  const buttons = contactRequestButtons();
+  if (process.env.MAX_MINI_APP_URL) {
+    buttons.push([{ type: "open_app", text: "Открыть Подарис", web_app: process.env.MAX_MINI_APP_URL }]);
   }
   await sendMaxMessage(
     userId,
-    "Согласие сохранено. Для заполнения профиля вы можете отдельно поделиться контактом MAX. Это необязательно: можно пропустить этот шаг и пользоваться Подарисом без номера телефона.",
-    contactRequestButtons()
+    "Документы приняты. Остался последний шаг: подтвердите профиль, поделившись номером телефона через MAX. Нажмите «Поделиться контактом». Без подтверждения номера приложение останется в ограниченном режиме.",
+    buttons
   );
 }
 
@@ -396,15 +400,26 @@ async function handleMaxUpdate(update) {
   if (type === "message_created") {
     const attachments = update.message?.body?.attachments || [];
     const contactAttachment = attachments.find((item) => item?.type === "contact");
-    if (contactAttachment && consentIsCurrent(current)) {
+    if (contactAttachment) {
       const payload = contactAttachment.payload || {};
       const maxInfoId = payload.max_info?.user_id;
-      if (maxInfoId === undefined || String(maxInfoId) === id) {
+      if (!consentIsCurrent(current)) {
+        await recordAdminLog("warning", "contact", "Контакт получен до принятия документов", { userId: id });
+        await sendConsentPrompt(id);
+      } else if (maxInfoId !== undefined && String(maxInfoId) !== id) {
+        await recordAdminLog("warning", "contact", "MAX contact user ID mismatch", { userId: id });
+        await sendMaxMessage(id, "Не удалось подтвердить, что это ваш контакт. Нажмите кнопку «Поделиться контактом» в сообщении бота и попробуйте ещё раз.");
+      } else {
         const saved = await saveSharedContact(id, payload);
         if (saved) {
-          await sendMaxMessage(id, "Контакт MAX подтверждён и сохранён в вашем профиле Подариса. Спасибо!");
+          await recordAdminLog("info", "contact", "Номер телефона успешно подтверждён и сохранён", { userId: id });
+          const buttons = process.env.MAX_MINI_APP_URL
+            ? [[{ type: "open_app", text: "Открыть Подарис", web_app: process.env.MAX_MINI_APP_URL }]]
+            : [];
+          await sendMaxMessage(id, "Номер телефона подтверждён! Полная авторизация завершена. Теперь можно пользоваться всеми возможностями Подариса.", buttons);
         } else {
-          await sendMaxMessage(id, "Не удалось подтвердить контакт MAX. Нажмите кнопку «Поделиться контактом» в сообщении бота и попробуйте ещё раз.");
+          await recordAdminLog("warning", "contact", "MAX contact signature validation failed", { userId: id, hasVcf: typeof payload.vcf_info === "string", hasHash: typeof payload.hash === "string" });
+          await sendMaxMessage(id, "MAX не смог подтвердить подпись контакта. Вернитесь к кнопке «Поделиться контактом» и отправьте контакт ещё раз. Не отправляйте номер обычным текстом.");
         }
       }
     }
@@ -819,10 +834,15 @@ module.exports.handler = async function (event = {}) {
 
       if (path === "/api/consent/status") {
         const consent = await getConsent(user.id);
+        const contact = await getSavedContact(user.id);
+        const accepted = consentIsCurrent(consent);
+        const fullyAuthorized = accepted && Boolean(contact?.phone);
         return response(200, {
           ok: true,
-          accepted: consentIsCurrent(consent),
-          required: !consentIsCurrent(consent),
+          accepted,
+          required: !accepted,
+          contactRequired: accepted && !contact?.phone,
+          fullyAuthorized,
           versions: currentConsentVersions(),
           legal: {
             agreementUrl: LEGAL_BASE_URL + "/user-agreement.html",
@@ -842,7 +862,7 @@ module.exports.handler = async function (event = {}) {
       const consent = await saveConsent(user.id, "mini_app");
       try { await sendContactPrompt(user.id); }
       catch (messageError) { console.error("[contact prompt]", messageError.message); }
-      return response(200, { ok: true, accepted: true, consent, contactRequestSent: true });
+      return response(200, { ok: true, accepted: true, consent, contactRequestSent: true, contactRequired: true, fullyAuthorized: false });
     } catch (error) {
       console.error("[consent]", error.message);
       return response(503, { error: "storage_unavailable" });
