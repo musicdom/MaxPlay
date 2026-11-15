@@ -599,7 +599,9 @@ async function handleGiftRequest(path, body, user) {
       id: crypto.randomUUID(),
       giftType,
       senderId: userId,
+      senderName: [user.firstName,user.lastName].filter(Boolean).join(" ").trim() || "Пользователь MAX",
       recipientId,
+      recipientName: "",
       status: "sent",
       message: typeof body.message === "string" ? body.message.slice(0, 500) : "",
       revealDelaySeconds,
@@ -675,6 +677,7 @@ async function handleGiftRequest(path, body, user) {
           const latest = await readGift(gift.id);
           if (!latest || latest.status !== "sent" || latest.recipientId) return giftError(409, "gift_already_claimed");
           latest.recipientId = userId;
+          latest.recipientName = [user.firstName,user.lastName].filter(Boolean).join(" ").trim() || "Пользователь MAX";
           latest.claimedByLink = true;
           latest.status = "claimed";
           latest.claimedAt = now;
@@ -682,7 +685,10 @@ async function handleGiftRequest(path, body, user) {
           latest.expiresAt = null;
           await saveGift(latest);
           await client.rPush("gifts:received:" + userId, latest.id);
-          
+          if (latest.senderId && latest.senderId !== "purchase" && latest.senderId !== userId) {
+            await client.lRem("gifts:sent:" + latest.senderId, 0, latest.id);
+            await client.rPush("gifts:history:" + latest.senderId, latest.id);
+          }
           return { statusCode: 200, body: { ok: true, gift: latest } };
         } finally {
           await client.del(claimLock);
@@ -690,11 +696,15 @@ async function handleGiftRequest(path, body, user) {
       }
 
       gift.status = "claimed";
+      gift.recipientName = [user.firstName,user.lastName].filter(Boolean).join(" ").trim() || "Пользователь MAX";
       gift.claimedAt = now;
       gift.opensAt = now + Number(gift.revealDelaySeconds || 0) * 1000;
       gift.expiresAt = null;
       await saveGift(gift);
-      await client.pExpireAt("gift:" + gift.id, gift.expiresAt);
+      if (gift.senderId && gift.senderId !== "purchase" && gift.senderId !== userId) {
+        await client.lRem("gifts:sent:" + gift.senderId, 0, gift.id);
+        await client.rPush("gifts:history:" + gift.senderId, gift.id);
+      }
       return { statusCode: 200, body: { ok: true, gift } };
     }
 
@@ -719,7 +729,9 @@ async function handleGiftRequest(path, body, user) {
       ...gift,
       id: forwardedId,
       senderId: userId,
+      senderName: [user.firstName,user.lastName].filter(Boolean).join(" ").trim() || "Пользователь MAX",
       recipientId: shareByLink ? null : newRecipientId,
+      recipientName: "",
       status: "sent",
       createdAt: now,
       claimedAt: null,
