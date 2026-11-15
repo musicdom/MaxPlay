@@ -685,8 +685,14 @@ async function handleGiftRequest(path, body, user) {
           if (!latest || latest.status !== "sent" || latest.recipientId) return giftError(409, "gift_already_claimed");
           latest.recipientId = userId;
           latest.claimedByLink = true;
-          gift = latest;
-          await client.rPush("gifts:received:" + userId, gift.id);
+          latest.status = "claimed";
+          latest.claimedAt = now;
+          latest.opensAt = now + Number(latest.revealDelaySeconds || 0) * 1000;
+          latest.expiresAt = latest.opensAt + 12 * 60 * 60 * 1000;
+          await saveGift(latest);
+          await client.rPush("gifts:received:" + userId, latest.id);
+          await client.pExpireAt("gift:" + latest.id, latest.expiresAt);
+          return { statusCode: 200, body: { ok: true, gift: latest } };
         } finally {
           await client.del(claimLock);
         }
