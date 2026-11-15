@@ -1157,23 +1157,27 @@ module.exports.handler = async function (event = {}) {
       }
 
       if (path === "/api/consent/status") {
-        const consent = await getConsent(user.id);
-        const contact = await getSavedContact(user.id);
+        const [consent, contact] = await Promise.all([
+          getConsent(user.id),
+          getSavedContact(user.id)
+        ]);
         const accepted = consentIsCurrent(consent);
         const fullyAuthorized = accepted && Boolean(contact?.phone);
+        const adminIds = new Set(String(process.env.ADMIN_MAX_IDS || "").split(",").map(value => value.trim()).filter(Boolean));
         return response(200, {
           ok: true,
           accepted,
           required: !accepted,
           contactRequired: accepted && !contact?.phone,
           fullyAuthorized,
+          isAdmin: adminIds.has(String(user.id)),
           versions: currentConsentVersions(),
           legal: {
             agreementUrl: LEGAL_BASE_URL + "/user-agreement.html",
             privacyUrl: LEGAL_BASE_URL + "/privacy-policy.html"
           },
           user,
-          consent: consentIsCurrent(consent) ? consent : null
+          consent: accepted ? consent : null
         });
       }
 
