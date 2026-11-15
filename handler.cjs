@@ -61,7 +61,28 @@ function response(statusCode, payload) {
   };
 }
 
+function getQueryParameters(event) {
+  if (event.queryStringParameters && typeof event.queryStringParameters === "object") {
+    return event.queryStringParameters;
+  }
+  const raw = event.rawQueryString || event.query || "";
+  return Object.fromEntries(new URLSearchParams(String(raw).replace(/^\?/, "")));
+}
+
 function getRequestPath(event) {
+  // One Yandex function root, with route selection through query parameters (Norka pattern).
+  const query = getQueryParameters(event);
+  const route = String(query.route || "").toLowerCase();
+  if (route === "health") return "/api/health";
+  if (route === "config") return "/api/config";
+  if (route === "webhook") return "/api/max/webhook";
+  if (route === "api") {
+    const endpoint = String(query.endpoint || "").replace(/^\/+|\/+$/g, "");
+    if (!endpoint || !/^[a-z0-9/_-]+$/i.test(endpoint) || endpoint.includes("..")) return "/__invalid_route__";
+    return "/api/" + endpoint;
+  }
+
+  // Keep path-based calls compatible where the HTTP trigger provides a path.
   const rawPath = event.path || event.rawPath || event.url || "/";
   const path = String(rawPath).split("?")[0];
   return path.length > 1 ? path.replace(/\/+$/, "") : path;
