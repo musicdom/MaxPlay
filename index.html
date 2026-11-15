@@ -78,6 +78,8 @@ html,body{background:#edf1ff;color:#17172b;font-family:var(--sans)}
 .access-status b{display:block;font-size:12px;color:#24233f}.access-status small{display:block;margin-top:4px;color:#8588a1;font-size:10px;line-height:1.4}
 .access-pill{flex:none;padding:7px 10px;border-radius:999px;background:#fff2dc;color:#95610b;font-size:10px;font-weight:800}
 .access-pill.full{background:#e5f8ef;color:#18774a}
+.auth-link{display:none;flex:none;padding:10px 13px;border:0;border-radius:11px;background:linear-gradient(105deg,#471aff,#9500ff);color:#fff;text-decoration:none;font-size:10px;font-weight:800;white-space:nowrap;box-shadow:0 5px 13px #5933ed25}
+.auth-link.visible{display:inline-flex}
 .gift-list{display:grid;gap:10px;padding:10px 0}
 .gift-card{padding:14px;border:1px solid #e8eaff;border-radius:17px;background:#fff}
 .gift-card-top{display:flex;align-items:center;gap:11px}
@@ -146,7 +148,7 @@ html,body{background:#edf1ff;color:#17172b;font-family:var(--sans)}
 <div class="profile-name" id="profileName">Мой профиль</div>
 <div class="profile-sub">Ваши подарки в одном месте</div>
 </div>
-<div class="access-status" id="accessStatus"><div><b>Проверяем уровень доступа</b><small>Статус профиля и доступные подарки загрузятся после авторизации.</small></div><span class="access-pill">Проверка</span></div>
+<div class="access-status" id="accessStatus"><div><b>Проверяем уровень доступа</b><small>Статус профиля и доступные подарки загрузятся после авторизации.</small></div><span class="access-pill">Проверка</span><a class="auth-link" id="authorizeButton" href="https://max.ru/se14711525_1_bot" target="_blank" rel="noopener">Авторизоваться</a></div>
 <div class="switcher">
 <button class="switch" data-filter="sent">Отправленные</button>
 <button class="switch active" data-filter="mine">Мои подарки</button>
@@ -315,22 +317,25 @@ async function loadGiftData(){
  status.querySelector('small').textContent=data.fullyAuthorized?'Доступны отправка и пересылка. Бесплатных подарков: '+data.giftCredits:'Можно смотреть полученные подарки и покупать новые. Для отправки подтвердите номер телефона через MAX.';
  status.querySelector('.access-pill').textContent=data.fullyAuthorized?'Полный доступ':'Ограниченный доступ';
  status.querySelector('.access-pill').classList.toggle('full',data.fullyAuthorized);
+ const authorizeButton=document.getElementById('authorizeButton');
+ if(authorizeButton)authorizeButton.classList.toggle('visible',!data.fullyAuthorized);
  const hint=document.getElementById('shopAccessHint');
- if(hint)hint.textContent=data.fullyAuthorized?'Полная авторизация активна. Бесплатных отправок осталось: '+currentGiftCredits+' из 3. Магазин доступен всем.':'Вы можете смотреть полученные подарки и пользоваться магазином. Для отправки и пересылки поделитесь контактом MAX.';
+ if(hint)hint.textContent=data.fullyAuthorized?'Полная авторизация активна. Бесплатных отправок осталось: '+currentGiftCredits+' из 3. Магазин доступен всем.':'Для полной авторизации подтвердите номер телефона через MAX. Нажмите «Авторизоваться» и поделитесь контактом в чате с ботом.';
  const tier=document.getElementById('profileTierInfo');
  if(tier)tier.textContent=data.fullyAuthorized?'Полная авторизация MAX. Бесплатных отправок осталось: '+currentGiftCredits+' из 3.':'Базовый доступ MAX. Просмотр полученных подарков и магазин доступны; отправка и пересылка — после подтверждения контакта.';
  const profileStatus=document.getElementById('profileCardStatus');
- if(profileStatus)profileStatus.textContent=data.fullyAuthorized?'Полная авторизация MAX':'Базовый доступ MAX';
+ if(profileStatus)profileStatus.textContent=data.fullyAuthorized?'Полная авторизация MAX':'Ожидается подтверждение номера телефона';
  const sentCount=document.getElementById('profileSentCount'),receivedCount=document.getElementById('profileReceivedCount');
  if(sentCount)sentCount.textContent=String(currentGiftData.sent.length);
  if(receivedCount)receivedCount.textContent=String(currentGiftData.received.length);
  const createButton=document.getElementById('createGiftFromShop');
- if(createButton)createButton.textContent=data.fullyAuthorized?'Создать и отправить · '+currentGiftCredits+' из 3':'Отправка после полной авторизации';
+ if(createButton)createButton.textContent=data.fullyAuthorized?'Создать и отправить · '+currentGiftCredits+' из 3':'Сначала авторизуйтесь';
+ if(createButton&&!data.fullyAuthorized)createButton.onclick=()=>{window.open('https://max.ru/se14711525_1_bot','_blank','noopener');};
  renderGiftCards();
 }
 document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-filter]').forEach(x=>x.classList.toggle('active',x===b));activeGiftFilter=b.dataset.filter;renderGiftCards();}));
 function showGiftModal(){
- if(!currentFullyAuthorized){alert('Чтобы отправлять подарки, поделитесь контактом MAX через чат с ботом Подарис. Получать подарки и пользоваться магазином можно без этого.');return;}
+ if(!currentFullyAuthorized){window.open('https://max.ru/se14711525_1_bot','_blank','noopener');return;}
  if(currentGiftCredits<1){alert('Три бесплатные отправки уже использованы. Вы можете выбрать подарок в магазине.');navigate('shop');return;}
  document.getElementById('giftCreatedResult').replaceChildren();
  document.getElementById('giftFormError').textContent='';
