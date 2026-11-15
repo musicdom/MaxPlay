@@ -630,7 +630,18 @@ async function listUserGifts(userId) {
   const seenHistory = new Set();
   for (const gift of historyValues) {
     if (!gift || String(gift.senderId || "") !== String(userId)) continue;
-    const key = gift.historyEventId || [gift.id, gift.recipientId || "", gift.claimedAt || gift.createdAt || ""].join(":");
+
+    // Legacy history entries store a mutable gift ID, not an immutable snapshot.
+    // If that gift is currently being sent again, the active "sent" list already
+    // represents it; don't show the stale history reference as a second card.
+    if (gift.status === "sent") continue;
+
+    // A legacy gift-ID entry and its newer gift-event snapshot can describe the
+    // same claim. Deduplicate by the claim itself, not by the event storage ID.
+    // Different recipients or claim times remain separate transfer records.
+    const key = gift.id
+      ? [String(gift.id), String(gift.recipientId || ""), String(gift.claimedAt || gift.createdAt || "")].join(":")
+      : String(gift.historyEventId || "");
     if (seenHistory.has(key)) continue;
     seenHistory.add(key);
     history.push(gift);
