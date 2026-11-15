@@ -241,6 +241,7 @@ html,body{background:#edf1ff;color:#17172b;font-family:var(--sans)}
  <div class="page-title"><div class="eyebrow">УПРАВЛЕНИЕ ПРОЕКТОМ</div><h1>Админ-панель</h1><p>Состояние сервисов и инструменты диагностики.</p></div>
  <div class="admin-panel"><h3>Пользователи</h3>
   <p class="admin-help">Список аккаунтов MAX. Открой пользователя, чтобы посмотреть посещения, авторизацию и подарки.</p>
+  <div class="admin-row" style="gap:8px;align-items:center"><input id="adminUserIdSearch" inputmode="numeric" pattern="[0-9]+" placeholder="MAX ID пользователя" aria-label="MAX ID пользователя" style="flex:1;min-width:0;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text)"><button class="admin-action secondary" id="adminUserIdFind" type="button">Найти</button></div>
   <button class="admin-action secondary" id="adminUsersRefresh">Обновить пользователей</button>
   <div class="admin-result" id="adminUsersResult">Загружаем пользователей…</div>
   <div id="adminUserDetail" hidden></div>
@@ -546,11 +547,41 @@ async function loadAdminUserDetail(userId){
   const data=await adminPost('/api/admin/user',{userId}),u=data.user,a=data.authorization,gifts=data.gifts||[],visits=data.visits||[];
   box.innerHTML='<div class="admin-user-detail-head"><b>'+adminEscape(u.name)+'</b><small>MAX ID: '+adminEscape(u.id)+(u.username?' · @'+adminEscape(u.username):'')+'</small><button type="button" class="admin-action secondary" id="adminUserDetailBack">Назад к списку</button></div>'+
    '<div class="admin-user-detail-grid"><div><small>Регистрация</small><b>'+adminEscape(adminDate(u.createdAt))+'</b></div><div><small>Последнее обновление профиля</small><b>'+adminEscape(adminDate(u.updatedAt))+'</b></div><div><small>Документы</small><b>'+(a.consentAccepted?'Приняты':'Не приняты')+'</b></div><div><small>Телефон</small><b>'+(a.contactProvided?'Подтверждён':'Не предоставлен')+'</b></div><div><small>Авторизация</small><b class="'+(a.fullyAuthorized?'admin-auth-ok':'admin-auth-no')+'">'+(a.fullyAuthorized?'Полная':'Не завершена')+'</b></div><div><small>Подарков в учёте</small><b>'+Number(data.giftsCount||0)+'</b></div></div>'+
+   '<button type="button" class="admin-action" id="adminUserReset" style="background:#a83242">Обнулить аккаунт</button><p class="admin-help">Сбросит авторизацию, историю заходов и личную коллекцию. Подарки, уже отправленные другим людям, и платёжные записи сохранятся.</p>'+
    '<h4>Подарки и отправители ('+gifts.length+')</h4>'+(gifts.length?'<div class="admin-user-gifts">'+gifts.map(g=>'<div class="admin-user-gift"><b>'+adminEscape(g.giftType)+'</b><small>От: '+adminEscape(g.sender)+' · Статус: '+adminEscape(g.status)+'</small><small>'+adminEscape(adminDate(g.createdAt))+' · ID: '+adminEscape(g.id)+'</small></div>').join('')+'</div>':'<p class="admin-help">Подарков не найдено.</p>')+
    '<h4>История заходов ('+visits.length+')</h4>'+(visits.length?'<div class="admin-user-visits">'+visits.slice().reverse().map(v=>'<div class="admin-user-gift"><b>'+adminEscape(adminDate(v.at))+'</b><small>Документы: '+(v.consentAccepted?'приняты':'нет')+' · Телефон: '+(v.contactProvided?'есть':'нет')+'</small><small>Авторизация на момент входа: '+(v.fullyAuthorized?'да':'нет')+'</small></div>').join('')+'</div>':'<p class="admin-help">История начнёт собираться после публикации обновления.</p>');
-  document.getElementById('adminUserDetailBack')?.addEventListener('click',()=>{box.hidden=true;box.innerHTML='';});box.scrollIntoView({behavior:'smooth',block:'start'});
+  document.getElementById('adminUserDetailBack')?.addEventListener('click',()=>{box.hidden=true;box.innerHTML='';});
+  document.getElementById('adminUserReset')?.addEventListener('click',()=>resetAdminUser(u.id));
+  box.scrollIntoView({behavior:'smooth',block:'start'});
  }catch(error){box.innerHTML='<p class="admin-help">Ошибка загрузки карточки: '+adminEscape(error.message)+'</p>';}
 }
+
+async function findAdminUserById(){
+ const input=document.getElementById('adminUserIdSearch');
+ const id=String(input?.value||'').trim();
+ if(!/^\\d+$/.test(id)){alert('Введите корректный MAX ID.');return;}
+ await loadAdminUserDetail(id);
+}
+async function resetAdminUser(userId){
+ const id=String(userId||'');
+ if(!/^\\d+$/.test(id))return;
+ const confirmation=prompt('ВНИМАНИЕ! Будет обнулён аккаунт MAX ID '+id+'.\\n\\nПодарки, уже отправленные другим людям, и платёжные записи останутся. Личная коллекция, авторизация и история заходов будут сброшены.\\n\\nДля подтверждения введите RESET:'+id);
+ if(confirmation!=='RESET:'+id)return;
+ const button=document.getElementById('adminUserReset');
+ if(button){button.disabled=true;button.textContent='Обнуляем…';}
+ try{
+  const result=await adminPost('/api/admin/user/reset',{userId:id,confirmation});
+  alert('Аккаунт '+id+' обнулён.\\nСброшено подарков: '+result.discardedGifts+'.\\nОтменено входящих подарков: '+result.cancelledIncoming+'.');
+  await loadAdminUsers();
+  await loadAdminUserDetail(id);
+ }catch(error){
+  alert('Не удалось обнулить аккаунт: '+error.message);
+  if(button){button.disabled=false;button.textContent='Обнулить аккаунт';}
+ }
+}
+document.getElementById('adminUserIdFind')?.addEventListener('click',findAdminUserById);
+document.getElementById('adminUserIdSearch')?.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();findAdminUserById();}});
+
 async function loadAdminWebhookDiagnostics(){
  const details=document.getElementById('adminWebhookDetails');
  details.textContent='Проверяем подписки MAX…';
