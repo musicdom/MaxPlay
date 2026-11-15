@@ -1232,7 +1232,7 @@ async function handleAdminUserDetail(userId) {
 async function handleAdminGrantGift(userId, giftType, adminUser) {
   const id = String(userId || "");
   const type = String(giftType || "");
-  if (!/^\\d+$/.test(id)) return { statusCode: 400, body: { ok: false, error: "invalid_user_id" } };
+  if (!/^[0-9]+$/.test(id)) return { statusCode: 400, body: { ok: false, error: "invalid_user_id" } };
   if (!/^joystick_[1-6]$/.test(type)) return { statusCode: 400, body: { ok: false, error: "invalid_gift_type" } };
   const client = await getRedis();
   if (!(await client.get("user:" + id))) return { statusCode: 404, body: { ok: false, error: "user_not_found" } };
