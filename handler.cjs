@@ -23,7 +23,7 @@ function createUpstashClient() {
 
   return {
     get: async (key) => command(["GET", key]),
-    set: async (key, value) => command(["SET", key, value]),
+    set: async (key, value, options = {}) => command(["SET", key, value, ...(options.nx ? ["NX"] : []), ...(options.px ? ["PX", String(options.px)] : [])]),
     del: async (key) => command(["DEL", key]),
     decr: async (key) => Number(await command(["DECR", key])),
     incr: async (key) => Number(await command(["INCR", key])),
@@ -96,7 +96,12 @@ function parseBody(event) {
   const raw = event.isBase64Encoded
     ? Buffer.from(String(body), "base64").toString("utf8")
     : String(body);
-  try { return JSON.parse(raw); } catch { throw new Error("Request body must be valid JSON"); }
+  try { return JSON.parse(raw); } catch {
+    const form = new URLSearchParams(raw);
+    const entries = [...form.entries()];
+    if (entries.length) return Object.fromEntries(entries);
+    throw new Error("Request body must be valid JSON or form data");
+  }
 }
 
 function extractWebAppData(value) {
@@ -476,9 +481,35 @@ async function isFullyAuthorized(userId) {
 
 async function ensureStarterGiftCredits(userId) {
   const client = await getRedis();
-  const key = "gift-credits:" + userId;
-  await client.set(key, "3", { NX: true });
-  return Number(await client.get(key) || 0);
+  // One-time starter inventory grant: exactly three copies of Joystick 1.
+  // Redis SET NX makes the grant idempotent across repeated auth and webhook calls.
+  const grant = await client.set("starter-gifts:" + userId, "granted", { nx: true });
+  if (grant === "OK") {
+    for (let index = 0; index < 3; index += 1) {
+      const now = Date.now();
+      const gift = {
+        id: crypto.randomUUID(),
+        giftType: "joystick_1",
+        senderId: "podaris",
+        recipientId: String(userId),
+        status: "owned",
+        message: "",
+        createdAt: now,
+        claimedAt: null,
+        opensAt: null,
+        expiresAt: null,
+        openedAt: null,
+        forwardedFrom: null,
+        shareUrl: null,
+        source: "starter_registration"
+      };
+      await client.set("gift:" + gift.id, JSON.stringify(gift));
+      await client.rPush("gifts:received:" + userId, gift.id);
+    }
+    // Starter gifts are inventory items, not spendable send credits.
+    await client.set("gift-credits:" + userId, "0");
+  }
+  return Number(await client.get("gift-credits:" + userId) || 0);
 }
 
 async function getGiftBalance(userId) {
@@ -615,6 +646,19 @@ async function handleGiftRequest(path, body, user) {
     return { statusCode: 201, body: { ok: true, gift, giftCredits: remaining, notificationSent } };
   }
 
+  if (path === "/api/gifts/keep") {
+    const giftId = String(body?.giftId || "");
+    if (!/^[0-9a-f-]{36}$/i.test(giftId)) return giftError(400, "invalid_gift_id");
+    const gift = await readGift(giftId);
+    if (!gift) return giftError(404, "gift_not_found");
+    if (gift.recipientId !== userId) return giftError(403, "not_gift_recipient");
+    if (!["owned", "kept"].includes(gift.status)) return giftError(409, "gift_not_keepable");
+    gift.status = "kept";
+    gift.keptAt = Date.now();
+    await saveGift(gift);
+    return { statusCode: 200, body: { ok: true, gift } };
+  }
+
   if (path === "/api/gifts/claim" || path === "/api/gifts/open" || path === "/api/gifts/forward") {
     const giftId = String(body?.giftId || "");
     if (!/^[0-9a-f-]{36}$/i.test(giftId)) return giftError(400, "invalid_gift_id");
@@ -657,7 +701,7 @@ async function handleGiftRequest(path, body, user) {
 
     if (!fullyAuthorized) return giftError(403, "full_authorization_required");
     if (gift.recipientId !== userId) return giftError(403, "not_gift_recipient");
-    if (gift.status !== "opened") return giftError(409, "gift_not_forwardable");
+    if (!["opened", "owned", "kept"].includes(gift.status)) return giftError(409, "gift_not_forwardable");
     const newRecipientId = String(body?.recipientId || "");
     if (!/^\d+$/.test(newRecipientId) || newRecipientId === userId) return giftError(400, "invalid_recipient");
     const forwarded = {
@@ -703,6 +747,152 @@ async function handleGiftRequest(path, body, user) {
   return giftError(404, "gift_route_not_found");
 }
 
+
+
+function shopCatalogItem(sku) {
+  const single = /^joystick_([1-6])$/.exec(String(sku || ""));
+  if (single) return { amount: 200, items: [{ giftType: "joystick_" + single[1], quantity: 1 }] };
+  if (sku === "joystick_collection") {
+    return { amount: 1200, items: [1, 2, 3, 4, 5, 6].map(number => ({ giftType: "joystick_" + number, quantity: 1 })) };
+  }
+  return null;
+}
+
+async function handleShopOrder(body, user) {
+  const receiver = String(process.env.YOOMONEY_RECEIVER || "");
+  const notificationSecret = String(process.env.YOOMONEY_NOTIFICATION_SECRET || "");
+  if (!receiver || !notificationSecret) {
+    return { statusCode: 503, body: { ok: false, error: "yoomoney_not_configured" } };
+  }
+  const consent = await getConsent(user.id);
+  if (!consentIsCurrent(consent)) return { statusCode: 403, body: { ok: false, error: "consent_required" } };
+  const item = shopCatalogItem(body?.sku);
+  if (!item) return { statusCode: 400, body: { ok: false, error: "invalid_shop_item" } };
+
+  const client = await getRedis();
+  const label = "pd_" + crypto.randomUUID().replace(/-/g, "");
+  const order = {
+    label,
+    userId: String(user.id),
+    amount: item.amount,
+    items: item.items,
+    status: "pending",
+    createdAt: new Date().toISOString()
+  };
+  await client.set("shop-order:" + label, JSON.stringify(order));
+  const makePaymentUrl = (paymentType) => {
+    const params = new URLSearchParams({
+      receiver,
+      "quickpay-form": "shop",
+      targets: "Подарис — коллекция Джойстик",
+      paymentType,
+      sum: String(item.amount),
+      label,
+      successURL: process.env.YOOMONEY_SUCCESS_URL || "https://musicdom.github.io/MaxPlay/?payment=success"
+    });
+    return "https://yoomoney.ru/quickpay/confirm?" + params.toString();
+  };
+  return {
+    statusCode: 201,
+    body: {
+      ok: true,
+      order: { label, amount: item.amount, status: "pending" },
+      paymentUrls: { wallet: makePaymentUrl("PC"), card: makePaymentUrl("AC") }
+    }
+  };
+}
+
+async function handleYooMoneyNotification(body) {
+  const secret = String(process.env.YOOMONEY_NOTIFICATION_SECRET || "");
+  if (!secret) return { statusCode: 503, body: { ok: false, error: "yoomoney_not_configured" } };
+  const notificationType = String(body?.notification_type || "");
+  if (!["p2p-incoming", "card-incoming"].includes(notificationType)) {
+    return { statusCode: 400, body: { ok: false, error: "unsupported_notification_type" } };
+  }
+  const label = String(body?.label || "");
+  const amount = Number(body?.amount);
+  const signatureParts = [
+    notificationType,
+    String(body?.operation_id || ""),
+    String(body?.amount || ""),
+    String(body?.currency || ""),
+    String(body?.datetime || ""),
+    String(body?.sender || ""),
+    String(body?.codepro || ""),
+    secret,
+    label
+  ];
+  const expected = crypto.createHash("sha1").update(signatureParts.join("&"), "utf8").digest("hex");
+  if (!safeEqual(expected.toLowerCase(), String(body?.sha1_hash || "").toLowerCase())) {
+    await recordAdminLog("warning", "yoomoney", "Отклонено уведомление с неверной подписью", { label: label.slice(0, 80) });
+    return { statusCode: 401, body: { ok: false, error: "invalid_notification_signature" } };
+  }
+  if (!/^pd_[a-f0-9]{32}$/i.test(label) || !Number.isFinite(amount) || amount <= 0) {
+    return { statusCode: 400, body: { ok: false, error: "invalid_payment_data" } };
+  }
+
+  const client = await getRedis();
+  const orderKey = "shop-order:" + label;
+  const raw = await client.get(orderKey);
+  if (!raw) return { statusCode: 404, body: { ok: false, error: "order_not_found" } };
+  let order;
+  try { order = JSON.parse(raw); } catch { return { statusCode: 500, body: { ok: false, error: "invalid_order_record" } }; }
+  if (order.status === "paid") return { statusCode: 200, body: { ok: true, alreadyProcessed: true } };
+  if (Math.abs(Number(order.amount) - amount) > 0.009) {
+    await recordAdminLog("warning", "yoomoney", "Сумма уведомления не совпала с заказом", { label, expected: order.amount, received: amount });
+    return { statusCode: 400, body: { ok: false, error: "payment_amount_mismatch" } };
+  }
+
+  const lockKey = "payment-lock:" + label;
+  const lock = await client.set(lockKey, "1", { nx: true, px: 60000 });
+  if (lock !== "OK") return { statusCode: 200, body: { ok: true, processing: true } };
+  try {
+    const latestRaw = await client.get(orderKey);
+    const latest = latestRaw ? JSON.parse(latestRaw) : null;
+    if (!latest) return { statusCode: 404, body: { ok: false, error: "order_not_found" } };
+    if (latest.status === "paid") return { statusCode: 200, body: { ok: true, alreadyProcessed: true } };
+
+    for (const item of latest.items || []) {
+      const quantity = Math.max(0, Math.min(20, Number(item.quantity) || 0));
+      if (!/^joystick_[1-6]$/.test(String(item.giftType || "")) || quantity < 1) {
+        throw new Error("Invalid gift item in paid order");
+      }
+      for (let index = 0; index < quantity; index += 1) {
+        const now = Date.now();
+        const gift = {
+          id: crypto.randomUUID(),
+          giftType: item.giftType,
+          senderId: "purchase",
+          recipientId: String(latest.userId),
+          status: "owned",
+          message: "",
+          createdAt: now,
+          claimedAt: null,
+          opensAt: null,
+          expiresAt: null,
+          openedAt: null,
+          forwardedFrom: null,
+          shareUrl: null,
+          source: "yoomoney_purchase",
+          orderLabel: label
+        };
+        await client.set("gift:" + gift.id, JSON.stringify(gift));
+        await client.rPush("gifts:received:" + latest.userId, gift.id);
+      }
+    }
+    latest.status = "paid";
+    latest.paidAt = new Date().toISOString();
+    latest.operationId = String(body?.operation_id || "");
+    await client.set(orderKey, JSON.stringify(latest));
+    await recordAdminLog("info", "yoomoney", "Оплата подтверждена, подарки начислены", { label, amount, userId: latest.userId });
+    return { statusCode: 200, body: { ok: true, paid: true } };
+  } catch (error) {
+    await recordAdminLog("error", "yoomoney", "Ошибка начисления подарков после оплаты", { label, message: error.message });
+    return { statusCode: 500, body: { ok: false, error: "gift_credit_failed" } };
+  } finally {
+    await client.del(lockKey);
+  }
+}
 
 async function handleAdminStatus(body){
  const allowed=new Set(String(process.env.ADMIN_MAX_IDS||'').split(',').map(value=>value.trim()).filter(Boolean));
@@ -876,7 +1066,7 @@ module.exports.handler = async function (event = {}) {
     }
   }
 
-  if (method === "POST" && ["/api/auth", "/api/consent/status", "/api/consent/accept", "/api/gifts/list", "/api/gifts/send", "/api/gifts/claim", "/api/gifts/open", "/api/gifts/forward", "/api/admin/status", "/api/admin/diagnostics", "/api/admin/register-webhook", "/api/admin/logs"].includes(path)) {
+  if (method === "POST" && ["/api/auth", "/api/consent/status", "/api/consent/accept", "/api/gifts/list", "/api/gifts/send", "/api/gifts/claim", "/api/gifts/open", "/api/gifts/keep", "/api/gifts/forward", "/api/shop/order", "/api/admin/status", "/api/admin/diagnostics", "/api/admin/register-webhook", "/api/admin/logs"].includes(path)) {
     if (!process.env.MAX_BOT_TOKEN) return response(503, { error: "max_bot_not_configured" });
     const auth = validateMaxInitData(body?.initData, process.env.MAX_BOT_TOKEN);
     if (!auth.ok) return response(401, { error: "unauthorized", reason: auth.reason });
@@ -910,6 +1100,10 @@ module.exports.handler = async function (event = {}) {
           ok: true, user, consentRequired: !consentIsCurrent(consent),
           fullyAuthorized, contactRequired: !contact?.phone, giftCredits
         });
+      }
+      if (path === "/api/shop/order") {
+        const order = await handleShopOrder(body, user);
+        return response(order.statusCode, order.body);
       }
       if (path.startsWith("/api/gifts/")) {
         const consent = await getConsent(user.id);
@@ -952,6 +1146,16 @@ module.exports.handler = async function (event = {}) {
     } catch (error) {
       console.error("[consent]", error.message);
       return response(503, { error: "storage_unavailable" });
+    }
+  }
+
+  if (method === "POST" && path === "/api/yoomoney/notify") {
+    try {
+      const result = await handleYooMoneyNotification(body);
+      return response(result.statusCode, result.body);
+    } catch (error) {
+      console.error("[YooMoney notification]", error.message);
+      return response(500, { ok: false, error: "notification_processing_failed" });
     }
   }
 
