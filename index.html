@@ -317,7 +317,7 @@ function renderGiftCards(){
       const keep=document.createElement('button');keep.className='secondary';keep.textContent='Оставить себе';keep.addEventListener('click',()=>giftAction('/api/gifts/keep',gift.id));actions.append(keep);
     }
     if(currentFullyAuthorized){
-      const share=document.createElement('button');share.textContent='Поделиться';share.addEventListener('click',()=>{const id=window.prompt('Введите MAX ID получателя');if(id)giftAction('/api/gifts/forward',gift.id,{recipientId:id});});actions.append(share);
+      const share=document.createElement('button');share.textContent='Поделиться';share.addEventListener('click',()=>shareGift(gift.id));actions.append(share);
     }else{
       const auth=document.createElement('button');auth.className='secondary';auth.textContent='Авторизоваться для отправки';auth.addEventListener('click',()=>window.open('https://max.ru/se14711525_1_bot','_blank','noopener'));actions.append(auth);
     }
@@ -331,7 +331,7 @@ function renderGiftCards(){
   }else if(activeGiftFilter==='mine'&&gift.status==='opened'){
     timer.textContent='Подарок открыт и сохранён в вашей коллекции.';
     if(currentFullyAuthorized){
-      const forward=document.createElement('button');forward.className='secondary';forward.textContent='Переслать';forward.addEventListener('click',()=>{const id=window.prompt('Введите MAX ID получателя');if(id)giftAction('/api/gifts/forward',gift.id,{recipientId:id});});actions.append(forward);
+      const forward=document.createElement('button');forward.className='secondary';forward.textContent='Поделиться';forward.addEventListener('click',()=>shareGift(gift.id));actions.append(forward);
     }
   }else if(gift.status==='sent'){
     timer.textContent=activeGiftFilter==='mine'?'Вам отправили подарок. Заберите его, чтобы запустить таймер.':'Ожидает, когда получатель заберёт подарок.';
@@ -354,8 +354,23 @@ setInterval(()=>{
  if(refresh)loadGiftData().catch(()=>{});
 },1000);
 async function giftAction(path,giftId,extra={}){
- try{const response=await fetch(window.PODARIS_API_URL(path),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData:window.podarisInitData,giftId,...extra})});const data=await response.json();if(!response.ok)throw new Error(data.error||'Не удалось выполнить действие');await loadGiftData();}
- catch(error){window.alert(error.message);}
+ try{const response=await fetch(window.PODARIS_API_URL(path),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData:window.podarisInitData,giftId,...extra})});const data=await response.json();if(!response.ok)throw new Error(data.error||'Не удалось выполнить действие');await loadGiftData();return data;}
+ catch(error){window.alert(error.message);return null;}
+}
+async function shareGift(giftId){
+ const data=await giftAction('/api/gifts/forward',giftId,{shareLink:true});
+ const link=data?.gift?.shareUrl;
+ if(!link)return;
+ const message='Вам отправили подарок в Подарис 🎁 Откройте ссылку, чтобы забрать его. Подарок можно получить только один раз: '+link;
+ const shareUrl='https://max.ru/:share?text='+encodeURIComponent(message);
+ try{
+  if(window.WebApp&&typeof window.WebApp.openMaxLink==='function')window.WebApp.openMaxLink(shareUrl);
+  else if(navigator.share)await navigator.share({title:'Подарок в Подарис',text:message,url:link});
+  else {await navigator.clipboard.writeText(link);window.alert('Одноразовая ссылка скопирована. Отправьте её другу в MAX.');}
+ }catch(error){
+  try{await navigator.clipboard.writeText(link);window.alert('Ссылка скопирована. Отправьте её другу в MAX.');}
+  catch{window.alert('Ссылка на подарок: '+link);}
+ }
 }
 async function loadGiftData(){
  if(!window.podarisInitData||!window.PODARIS_API_BASE)return;
@@ -525,9 +540,11 @@ async function checkAdminAccess(){
 }
 
 async function claimGiftFromLaunchLink(apiBase,initData){
- const giftId=new URLSearchParams(window.location.search).get('gift');
+ const queryGift=new URLSearchParams(window.location.search).get('gift');
+ const startParam=String(window.WebApp?.initDataUnsafe?.start_param||'');
+ const giftId=queryGift||(/^gift_[0-9a-f-]{36}$/i.test(startParam)?startParam.slice(5):'');
  if(!giftId)return;
- const response=await fetch(window.PODARIS_API_URL('/api/gifts/claim'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData,giftId})});
+ const response=await fetch(window.PODARIS_API_URL('/api/gifts/claim'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData,giftId,claimByLink:true})});
  const data=await response.json().catch(()=>({}));
  if(!response.ok)throw new Error(data.error||'Не удалось получить подарок');
  await loadGiftData();
@@ -655,11 +672,7 @@ async function claimGiftFromLaunchLink(apiBase,initData){
           const profileAvatar = document.getElementById("profileCardAvatar");
           if (profileAvatar) { profileAvatar.src = acceptedUser.photoUrl; profileAvatar.style.display = "block"; }
         }
-        const giftId=new URLSearchParams(window.location.search).get('gift');
-        if(giftId){
-          try{const claimResponse=await fetch(window.PODARIS_API_URL('/api/gifts/claim'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData,giftId})});const claimData=await claimResponse.json();if(!claimResponse.ok)throw new Error(claimData.error||'Подарок не найден');await loadGiftData();document.querySelector('[data-filter="mine"]')?.click();navigate('collection');}
-          catch(error){window.alert(error.message);}
-        }
+        try { await claimGiftFromLaunchLink(apiBase,initData); } catch(error) { window.alert(error.message); }
       } catch (error) {
         document.getElementById("consentError").textContent = error.message;
         acceptButton.textContent = "Повторить";
