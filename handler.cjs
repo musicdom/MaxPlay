@@ -1143,7 +1143,7 @@ async function listAdminUserIds(client) {
     if (!Array.isArray(result) || result.length < 2) break;
     cursor = String(result[0]);
     for (const key of result[1] || []) {
-      const match = /^user:(\\d+)$/.exec(String(key));
+      const match = /^user:(\d+)$/.exec(String(key));
       if (match) ids.add(match[1]);
     }
   } while (cursor !== "0");
@@ -1190,7 +1190,7 @@ async function handleAdminUsers() {
 }
 
 async function handleAdminUserDetail(userId) {
-  if (!/^\\d+$/.test(String(userId || ""))) return { statusCode: 400, body: { ok: false, error: "invalid_user_id" } };
+  if (!/^\d+$/.test(String(userId || ""))) return { statusCode: 400, body: { ok: false, error: "invalid_user_id" } };
   const client = await getRedis();
   const raw = await client.get("user:" + userId);
   if (!raw) return { statusCode: 404, body: { ok: false, error: "user_not_found" } };
@@ -1215,7 +1215,7 @@ async function handleAdminUserDetail(userId) {
     try {
       const gift = JSON.parse(giftRaw);
       let sender = null;
-      if (/^\\d+$/.test(String(gift.senderId || ""))) {
+      if (/^\d+$/.test(String(gift.senderId || ""))) {
         const senderRaw = await client.get("user:" + gift.senderId);
         try { const senderUser = senderRaw ? JSON.parse(senderRaw) : null; sender = senderUser ? ([senderUser.firstName,senderUser.lastName].filter(Boolean).join(" ") || senderUser.username || gift.senderId) : gift.senderId; } catch { sender = gift.senderId; }
       } else sender = gift.senderId === "podaris" ? "Подарис (стартовый)" : gift.senderId === "purchase" ? "Покупка в магазине" : gift.senderId || "Неизвестно";
