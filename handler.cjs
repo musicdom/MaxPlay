@@ -84,7 +84,10 @@ function createUpstashClient() {
     rPush: async (key, value) => Number(await command(["RPUSH", key, value])),
     lTrim: async (key, start, stop) => command(["LTRIM", key, start, stop]),
     pExpireAt: async (key, timestamp) => Number(await command(["PEXPIREAT", key, timestamp])),
-    ping: async () => command(["PING"])
+    ping: async () => command(["PING"]),
+    sAdd: async (key, value) => Number(await command(["SADD", key, value])),
+    sMembers: async (key) => (await command(["SMEMBERS", key])) || [],
+    scan: async (cursor, pattern, count = 500) => command(["SCAN", String(cursor), "MATCH", pattern, "COUNT", String(count)])
   };
 }
 
@@ -260,6 +263,7 @@ async function saveUser(user) {
     updatedAt: new Date().toISOString()
   };
   await client.set(key, JSON.stringify(record));
+  await client.sAdd("users:index", String(user.id));
   return record;
 }
 
@@ -1117,6 +1121,121 @@ async function handleAdminLogs() {
   } catch (error) { return { statusCode: 503, body: { ok: false, error: "admin_logs_unavailable" } }; }
 }
 
+async function recordUserVisit(userId, state = {}) {
+  const client = await getRedis();
+  const entry = {
+    at: new Date().toISOString(),
+    consentAccepted: Boolean(state.consentAccepted),
+    fullyAuthorized: Boolean(state.fullyAuthorized),
+    contactProvided: Boolean(state.contactProvided),
+    source: "mini_app"
+  };
+  const key = "user:visits:" + userId;
+  await client.rPush(key, JSON.stringify(entry));
+  await client.lTrim(key, -100, -1);
+}
+
+async function listAdminUserIds(client) {
+  const ids = new Set((await client.sMembers("users:index")).map(String));
+  let cursor = "0";
+  do {
+    const result = await client.scan(cursor, "user:*", 500);
+    if (!Array.isArray(result) || result.length < 2) break;
+    cursor = String(result[0]);
+    for (const key of result[1] || []) {
+      const match = /^user:(\\d+)$/.exec(String(key));
+      if (match) ids.add(match[1]);
+    }
+  } while (cursor !== "0");
+  return [...ids];
+}
+
+async function handleAdminUsers() {
+  const client = await getRedis();
+  const ids = await listAdminUserIds(client);
+  const users = [];
+  for (const id of ids) {
+    const raw = await client.get("user:" + id);
+    if (!raw) continue;
+    let user;
+    try { user = JSON.parse(raw); } catch { continue; }
+    const [consent, contact, giftIds, visitRaw] = await Promise.all([
+      client.get("consent:" + id),
+      client.get("contact:" + id),
+      client.lRange("gifts:received:" + id, 0, -1),
+      client.lRange("user:visits:" + id, -1, -1)
+    ]);
+    let consentData = null;
+    let contactData = null;
+    let lastVisit = null;
+    try { consentData = consent ? JSON.parse(consent) : null; } catch {}
+    try { contactData = contact ? JSON.parse(contact) : null; } catch {}
+    try { lastVisit = visitRaw[0] ? JSON.parse(visitRaw[0]) : null; } catch {}
+    users.push({
+      id,
+      name: [user.firstName, user.lastName].filter(Boolean).join(" ") || user.username || "Пользователь MAX",
+      username: user.username || null,
+      photoUrl: user.photoUrl || null,
+      createdAt: user.createdAt || null,
+      updatedAt: user.updatedAt || null,
+      lastVisitAt: lastVisit?.at || user.updatedAt || null,
+      consentAccepted: consentData ? consentData.agreementVersion === AGREEMENT_VERSION && consentData.privacyVersion === PRIVACY_VERSION : false,
+      contactProvided: Boolean(contactData?.phone),
+      fullyAuthorized: Boolean(consentData && consentData.agreementVersion === AGREEMENT_VERSION && consentData.privacyVersion === PRIVACY_VERSION && contactData?.phone),
+      giftsCount: new Set(giftIds).size
+    });
+  }
+  users.sort((a,b) => String(b.lastVisitAt || b.updatedAt || "").localeCompare(String(a.lastVisitAt || a.updatedAt || "")));
+  return { statusCode: 200, body: { ok: true, users, total: users.length } };
+}
+
+async function handleAdminUserDetail(userId) {
+  if (!/^\\d+$/.test(String(userId || ""))) return { statusCode: 400, body: { ok: false, error: "invalid_user_id" } };
+  const client = await getRedis();
+  const raw = await client.get("user:" + userId);
+  if (!raw) return { statusCode: 404, body: { ok: false, error: "user_not_found" } };
+  const user = JSON.parse(raw);
+  const [consentRaw, contactRaw, receivedIds, sentIds, historyIds, visitsRaw] = await Promise.all([
+    client.get("consent:" + userId),
+    client.get("contact:" + userId),
+    client.lRange("gifts:received:" + userId, 0, -1),
+    client.lRange("gifts:sent:" + userId, 0, -1),
+    client.lRange("gifts:history:" + userId, 0, -1),
+    client.lRange("user:visits:" + userId, 0, -1)
+  ]);
+  let consent = null, contact = null;
+  try { consent = consentRaw ? JSON.parse(consentRaw) : null; } catch {}
+  try { contact = contactRaw ? JSON.parse(contactRaw) : null; } catch {}
+  const fullyAuthorized = Boolean(consent && consent.agreementVersion === AGREEMENT_VERSION && consent.privacyVersion === PRIVACY_VERSION && contact?.phone);
+  const allIds = [...new Set([...receivedIds, ...sentIds, ...historyIds])];
+  const gifts = [];
+  for (const giftId of allIds) {
+    const giftRaw = await client.get("gift:" + giftId);
+    if (!giftRaw) continue;
+    try {
+      const gift = JSON.parse(giftRaw);
+      let sender = null;
+      if (/^\\d+$/.test(String(gift.senderId || ""))) {
+        const senderRaw = await client.get("user:" + gift.senderId);
+        try { const senderUser = senderRaw ? JSON.parse(senderRaw) : null; sender = senderUser ? ([senderUser.firstName,senderUser.lastName].filter(Boolean).join(" ") || senderUser.username || gift.senderId) : gift.senderId; } catch { sender = gift.senderId; }
+      } else sender = gift.senderId === "podaris" ? "Подарис (стартовый)" : gift.senderId === "purchase" ? "Покупка в магазине" : gift.senderId || "Неизвестно";
+      gifts.push({ id: gift.id, giftType: gift.giftType, status: gift.status, sender, senderId: gift.senderId || null, recipientId: gift.recipientId || null, createdAt: gift.createdAt || null, source: gift.source || null });
+    } catch {}
+  }
+  const visits = visitsRaw.map(item => { try { return JSON.parse(item); } catch { return null; } }).filter(Boolean);
+  return {
+    statusCode: 200,
+    body: {
+      ok: true,
+      user: { id: String(userId), name: [user.firstName,user.lastName].filter(Boolean).join(" ") || user.username || "Пользователь MAX", username: user.username || null, photoUrl: user.photoUrl || null, createdAt: user.createdAt || null, updatedAt: user.updatedAt || null },
+      authorization: { consentAccepted: Boolean(consent && consent.agreementVersion === AGREEMENT_VERSION && consent.privacyVersion === PRIVACY_VERSION), contactProvided: Boolean(contact?.phone), fullyAuthorized, authorizedAt: contact?.sharedAt || null },
+      gifts,
+      giftsCount: gifts.filter(g => ["owned","opened","kept","claimed"].includes(g.status)).length,
+      visits
+    }
+  };
+}
+
 // Yandex Cloud Functions Node.js 22 HTTP handler. Entry point: handler.handler
 module.exports.handler = async function (event = {}) {
   const method = String(event.httpMethod || event.requestContext?.httpMethod || event.method || "GET").toUpperCase();
@@ -1162,7 +1281,7 @@ module.exports.handler = async function (event = {}) {
     }
   }
 
-  if (method === "POST" && ["/api/auth", "/api/consent/status", "/api/consent/accept", "/api/gifts/list", "/api/gifts/send", "/api/gifts/claim", "/api/gifts/open", "/api/gifts/keep", "/api/gifts/forward", "/api/shop/order", "/api/admin/status", "/api/admin/diagnostics", "/api/admin/register-webhook", "/api/admin/logs"].includes(path)) {
+  if (method === "POST" && ["/api/auth", "/api/consent/status", "/api/consent/accept", "/api/gifts/list", "/api/gifts/send", "/api/gifts/claim", "/api/gifts/open", "/api/gifts/keep", "/api/gifts/forward", "/api/shop/order", "/api/admin/status", "/api/admin/diagnostics", "/api/admin/register-webhook", "/api/admin/logs", "/api/admin/users", "/api/admin/user"].includes(path)) {
     if (!process.env.MAX_BOT_TOKEN) return response(503, { error: "max_bot_not_configured" });
     const auth = validateMaxInitData(body?.initData, process.env.MAX_BOT_TOKEN);
     if (!auth.ok) return response(401, { error: "unauthorized", reason: auth.reason });
@@ -1185,6 +1304,14 @@ module.exports.handler = async function (event = {}) {
           const logs = await handleAdminLogs();
           return response(logs.statusCode, logs.body);
         }
+        if (path === "/api/admin/users") {
+          const users = await handleAdminUsers();
+          return response(users.statusCode, users.body);
+        }
+        if (path === "/api/admin/user") {
+          const detail = await handleAdminUserDetail(body?.userId);
+          return response(detail.statusCode, detail.body);
+        }
         return response(404, { error: "admin_route_not_found" });
       }
       if (path === "/api/auth") {
@@ -1192,6 +1319,7 @@ module.exports.handler = async function (event = {}) {
         const contact = await getSavedContact(user.id);
         const fullyAuthorized = consentIsCurrent(consent) && Boolean(contact?.phone);
         const giftCredits = fullyAuthorized ? await ensureStarterGiftCredits(user.id) : await getGiftBalance(user.id);
+        await recordUserVisit(user.id, { consentAccepted: consentIsCurrent(consent), fullyAuthorized, contactProvided: Boolean(contact?.phone) });
         return response(200, {
           ok: true, user, consentRequired: !consentIsCurrent(consent),
           fullyAuthorized, contactRequired: !contact?.phone, giftCredits
