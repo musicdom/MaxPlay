@@ -30,6 +30,7 @@ function createUpstashClient() {
     lRange: async (key, start, stop) => (await command(["LRANGE", key, start, stop])) || [],
     lRem: async (key, count, value) => Number(await command(["LREM", key, count, value])),
     rPush: async (key, value) => Number(await command(["RPUSH", key, value])),
+    lTrim: async (key, start, stop) => command(["LTRIM", key, start, stop]),
     pExpireAt: async (key, timestamp) => Number(await command(["PEXPIREAT", key, timestamp])),
     ping: async () => command(["PING"])
   };
@@ -696,6 +697,43 @@ async function handleAdminStatus(body){
  return {statusCode:200,body:{ok:true,isAdmin:true,userId:String(body.__verifiedUserId),redis,maxBotConfigured:Boolean(process.env.MAX_BOT_TOKEN),webhookSecretConfigured:Boolean(process.env.MAX_WEBHOOK_SECRET),checkedAt:new Date().toISOString()}};
 }
 
+async function recordAdminLog(level, source, message, details = {}) {
+  try {
+    const client = await getRedis();
+    const entry = { at: new Date().toISOString(), level: String(level || "info").slice(0, 12), source: String(source || "server").slice(0, 40), message: String(message || "Событие").slice(0, 240), details: details && typeof details === "object" ? details : {} };
+    await client.rPush("admin:logs", JSON.stringify(entry));
+    await client.lTrim("admin:logs", -50, -1);
+  } catch (error) { console.error("[admin log write]", error.message); }
+}
+
+async function handleAdminDiagnostics() {
+  const webhookUrl = "https://functions.yandexcloud.net/d4eu88tanqd001ko5llp?route=webhook";
+  if (!process.env.MAX_BOT_TOKEN) return { statusCode: 200, body: { ok: true, apiReachable: false, webhookConfigured: false, error: "max_bot_not_configured" } };
+  try {
+    const result = await fetch("https://platform-api2.max.ru/subscriptions", { method: "GET", headers: { Authorization: process.env.MAX_BOT_TOKEN } });
+    const payload = await result.json().catch(() => ({}));
+    if (!result.ok) {
+      await recordAdminLog("error", "max-subscriptions", "MAX API вернул ошибку", { status: result.status });
+      return { statusCode: 200, body: { ok: true, apiReachable: false, webhookConfigured: false, error: "max_api_error", status: result.status } };
+    }
+    const subscriptions = Array.isArray(payload.subscriptions) ? payload.subscriptions : Array.isArray(payload) ? payload : [];
+    const matching = subscriptions.find(item => String(item.url || "") === webhookUrl);
+    return { statusCode: 200, body: { ok: true, checkedAt: new Date().toISOString(), apiReachable: true, webhookConfigured: Boolean(matching), webhookUrl, subscriptionCount: subscriptions.length, updateTypes: matching && Array.isArray(matching.update_types) ? matching.update_types : [], secretConfigured: Boolean(matching && matching.secret) } };
+  } catch (error) {
+    await recordAdminLog("error", "max-subscriptions", "Не удалось проверить подписку MAX", { message: error.message });
+    return { statusCode: 200, body: { ok: true, apiReachable: false, webhookConfigured: false, error: "max_api_unavailable" } };
+  }
+}
+
+async function handleAdminLogs() {
+  try {
+    const client = await getRedis();
+    const raw = await client.lRange("admin:logs", -30, -1);
+    const logs = raw.map(item => { try { return JSON.parse(item); } catch { return null; } }).filter(Boolean).reverse();
+    return { statusCode: 200, body: { ok: true, logs, checkedAt: new Date().toISOString() } };
+  } catch (error) { return { statusCode: 503, body: { ok: false, error: "admin_logs_unavailable" } }; }
+}
+
 // Yandex Cloud Functions Node.js 22 HTTP handler. Entry point: handler.handler
 module.exports.handler = async function (event = {}) {
   const method = String(event.httpMethod || event.requestContext?.httpMethod || event.method || "GET").toUpperCase();
@@ -741,16 +779,26 @@ module.exports.handler = async function (event = {}) {
     }
   }
 
-  if (method === "POST" && ["/api/auth", "/api/consent/status", "/api/consent/accept", "/api/gifts/list", "/api/gifts/send", "/api/gifts/claim", "/api/gifts/open", "/api/gifts/forward", "/api/admin/status"].includes(path)) {
+  if (method === "POST" && ["/api/auth", "/api/consent/status", "/api/consent/accept", "/api/gifts/list", "/api/gifts/send", "/api/gifts/claim", "/api/gifts/open", "/api/gifts/forward", "/api/admin/status", "/api/admin/diagnostics", "/api/admin/logs"].includes(path)) {
     if (!process.env.MAX_BOT_TOKEN) return response(503, { error: "max_bot_not_configured" });
     const auth = validateMaxInitData(body?.initData, process.env.MAX_BOT_TOKEN);
     if (!auth.ok) return response(401, { error: "unauthorized", reason: auth.reason });
 
     try {
       const user = await saveUser(auth.user);
-      if (path === "/api/admin/status") {
+      if (path.startsWith("/api/admin/")) {
         const adminResult = await handleAdminStatus({ __verifiedUserId: user.id });
-        return response(adminResult.statusCode, adminResult.body);
+        if (adminResult.statusCode !== 200) return response(adminResult.statusCode, adminResult.body);
+        if (path === "/api/admin/status") return response(200, adminResult.body);
+        if (path === "/api/admin/diagnostics") {
+          const diagnostic = await handleAdminDiagnostics();
+          return response(diagnostic.statusCode, diagnostic.body);
+        }
+        if (path === "/api/admin/logs") {
+          const logs = await handleAdminLogs();
+          return response(logs.statusCode, logs.body);
+        }
+        return response(404, { error: "admin_route_not_found" });
       }
       if (path === "/api/auth") {
         const consent = await getConsent(user.id);
@@ -808,9 +856,11 @@ module.exports.handler = async function (event = {}) {
     }
     try {
       await handleMaxUpdate(body);
+      await recordAdminLog("info", "max-webhook", "Получено обновление MAX", { updateType: String(body?.update_type || "unknown") });
       return response(200, { ok: true });
     } catch (error) {
       console.error("[MAX webhook]", error.message);
+      await recordAdminLog("error", "max-webhook", error.message);
       return response(500, { error: "webhook_processing_failed" });
     }
   }
