@@ -589,11 +589,15 @@ async function saveGift(gift) {
 
 async function listUserGifts(userId) {
   const client = await getRedis();
-  const [receivedIds, sentIds, historyIds] = await Promise.all([
+  const [receivedRaw, sentRaw, historyRaw] = await Promise.all([
     client.lRange("gifts:received:" + userId, 0, -1),
     client.lRange("gifts:sent:" + userId, 0, -1),
     client.lRange("gifts:history:" + userId, 0, -1)
   ]);
+  // Redis lists can contain legacy duplicate references; one gift ID is one item.
+  const receivedIds = [...new Set(receivedRaw)];
+  const sentIds = [...new Set(sentRaw)];
+  const historyIds = [...new Set(historyRaw)];
   const [received, sent, history] = await Promise.all([
     Promise.all(receivedIds.map(readGift)),
     Promise.all(sentIds.map(readGift)),
