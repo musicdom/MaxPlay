@@ -961,7 +961,7 @@ async function handleYooMoneyNotification(body) {
     await recordAdminLog("error", "yoomoney", "Ошибка начисления подарков после оплаты", { label, message: error.message });
     return { statusCode: 500, body: { ok: false, error: "gift_credit_failed" } };
   } finally {
-    await client.del(lockKey);
+    await client.eval("if redis.call('GET',KEYS[1])==ARGV[1] then return redis.call('DEL',KEYS[1]) end; return 0", [lockKey], [lockToken]);
   }
 }
 
@@ -1220,7 +1220,7 @@ async function handleAdminUserDetail(userId) {
 
 async function handleAdminResetUser(userId, confirmation) {
   const id = String(userId || "");
-  if (!/^\\d+$/.test(id)) return { statusCode: 400, body: { ok: false, error: "invalid_user_id" } };
+  if (!/^\d+$/.test(id)) return { statusCode: 400, body: { ok: false, error: "invalid_user_id" } };
   if (String(confirmation || "") !== "RESET:" + id) {
     return { statusCode: 400, body: { ok: false, error: "reset_confirmation_mismatch" } };
   }
@@ -1228,7 +1228,8 @@ async function handleAdminResetUser(userId, confirmation) {
   const userRaw = await client.get("user:" + id);
   if (!userRaw) return { statusCode: 404, body: { ok: false, error: "user_not_found" } };
   const lockKey = "admin:account-reset-lock:" + id;
-  const lock = await client.set(lockKey, crypto.randomUUID(), { nx: true, px: 120000 });
+  const lockToken = crypto.randomUUID();
+  const lock = await client.set(lockKey, lockToken, { nx: true, px: 120000 });
   if (lock !== "OK") return { statusCode: 409, body: { ok: false, error: "account_reset_in_progress" } };
   try {
     const receivedIds = [...new Set((await client.lRange("gifts:received:" + id, 0, -1)).map(String))];
