@@ -1229,6 +1229,33 @@ async function handleAdminUserDetail(userId) {
 }
 
 
+async function handleAdminGrantGift(userId, giftType, adminUser) {
+  const id = String(userId || "");
+  const type = String(giftType || "");
+  if (!/^\\d+$/.test(id)) return { statusCode: 400, body: { ok: false, error: "invalid_user_id" } };
+  if (!/^joystick_[1-6]$/.test(type)) return { statusCode: 400, body: { ok: false, error: "invalid_gift_type" } };
+  const client = await getRedis();
+  if (!(await client.get("user:" + id))) return { statusCode: 404, body: { ok: false, error: "user_not_found" } };
+  const now = Date.now();
+  const giftId = crypto.randomUUID();
+  const gift = {
+    id: giftId, giftType: type, senderId: String(adminUser.id),
+    senderName: "Администратор", recipientId: id, recipientName: "",
+    ownerId: id, status: "owned", message: "Подарок от администрации Подариса",
+    revealDelaySeconds: 0, createdAt: now, claimedAt: null, opensAt: null,
+    expiresAt: null, openedAt: null, forwardedFrom: null, shareUrl: null,
+    source: "admin_grant", grantedBy: String(adminUser.id)
+  };
+  const created = await client.eval(
+    "if redis.call('EXISTS',KEYS[1])==1 then return 0 end; redis.call('SET',KEYS[1],ARGV[1]); if not redis.call('LPOS',KEYS[2],ARGV[2]) then redis.call('RPUSH',KEYS[2],ARGV[2]); end; return 1",
+    ["gift:" + giftId, "gifts:received:" + id],
+    [JSON.stringify(gift), giftId]
+  );
+  if (Number(created) !== 1) return { statusCode: 409, body: { ok: false, error: "gift_creation_conflict" } };
+  await recordAdminLog("info", "admin", "Подарок выдан пользователю", { adminId: String(adminUser.id), userId: id, giftId, giftType: type });
+  return { statusCode: 200, body: { ok: true, gift: { id: giftId, giftType: type, recipientId: id, status: "owned" } } };
+}
+
 async function handleAdminResetUser(userId, confirmation) {
   const id = String(userId || "");
   if (!/^\d+$/.test(id)) return { statusCode: 400, body: { ok: false, error: "invalid_user_id" } };
@@ -1328,7 +1355,7 @@ module.exports.handler = async function (event = {}) {
     }
   }
 
-  if (method === "POST" && ["/api/auth", "/api/consent/status", "/api/consent/accept", "/api/gifts/list", "/api/gifts/send", "/api/gifts/claim", "/api/gifts/open", "/api/gifts/keep", "/api/gifts/forward", "/api/shop/order", "/api/admin/status", "/api/admin/diagnostics", "/api/admin/register-webhook", "/api/admin/logs", "/api/admin/users", "/api/admin/user", "/api/admin/user/reset"].includes(path)) {
+  if (method === "POST" && ["/api/auth", "/api/consent/status", "/api/consent/accept", "/api/gifts/list", "/api/gifts/send", "/api/gifts/claim", "/api/gifts/open", "/api/gifts/keep", "/api/gifts/forward", "/api/shop/order", "/api/admin/status", "/api/admin/diagnostics", "/api/admin/register-webhook", "/api/admin/logs", "/api/admin/users", "/api/admin/user", "/api/admin/user/reset", "/api/admin/user/gift"].includes(path)) {
     if (!process.env.MAX_BOT_TOKEN) return response(503, { error: "max_bot_not_configured" });
     const auth = validateMaxInitData(body?.initData, process.env.MAX_BOT_TOKEN);
     if (!auth.ok) return response(401, { error: "unauthorized", reason: auth.reason });
@@ -1362,6 +1389,10 @@ module.exports.handler = async function (event = {}) {
         if (path === "/api/admin/user/reset") {
           const reset = await handleAdminResetUser(body?.userId, body?.confirmation);
           return response(reset.statusCode, reset.body);
+        }
+        if (path === "/api/admin/user/gift") {
+          const grant = await handleAdminGrantGift(body?.userId, body?.giftType, user);
+          return response(grant.statusCode, grant.body);
         }
         return response(404, { error: "admin_route_not_found" });
       }
