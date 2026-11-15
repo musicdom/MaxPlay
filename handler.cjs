@@ -806,7 +806,7 @@ async function handleShopOrder(body, user) {
 async function handleYooMoneyNotification(body) {
   const secret = String(process.env.YOOMONEY_NOTIFICATION_SECRET || "");
   if (!secret) return { statusCode: 503, body: { ok: false, error: "yoomoney_not_configured" } };
-  const fields = fields?.fields && typeof body.fields === "object" ? body.fields : body;
+  const fields = body?.fields && typeof body.fields === "object" ? body.fields : body;
   const notificationType = String(fields?.notification_type || "");
   if (!["p2p-incoming", "card-incoming"].includes(notificationType)) {
     return { statusCode: 400, body: { ok: false, error: "unsupported_notification_type" } };
