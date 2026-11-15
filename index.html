@@ -391,20 +391,28 @@ async function createShopOrder(sku, button){
  const buttons=[...document.querySelectorAll('[data-buy-sku]')];
  buttons.forEach(item=>item.disabled=true);
  result.classList.add('visible');
- result.textContent='Создаём заказ…';
+ result.textContent='Создаём заказ и переходим к оплате…';
  try{
+  if(!window.podarisInitData)throw new Error('Не удалось получить данные авторизации MAX. Закройте и снова откройте приложение через бота.');
   const response=await fetch(window.PODARIS_API_URL('/api/shop/order'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData:window.podarisInitData,sku})});
-  const data=await response.json();
-  if(!response.ok||!data.ok)throw new Error(data.error==='yoomoney_not_configured'?'Оплата пока не настроена на сервере.':(data.error||'Не удалось создать заказ'));
-  result.replaceChildren();
-  const heading=document.createElement('b');heading.textContent='Заказ создан · '+data.order.amount+' ₽';result.append(heading);
-  const note=document.createElement('p');note.textContent='Выберите способ оплаты. Подарок появится в вашей коллекции после подтверждения платежа ЮMoney.';result.append(note);
-  const options=document.createElement('div');options.className='shop-payment-options';
-  const wallet=document.createElement('button');wallet.textContent='Оплатить из кошелька ЮMoney';wallet.addEventListener('click',()=>{window.location.href=data.paymentUrls.wallet;});
-  const card=document.createElement('button');card.className='secondary';card.textContent='Оплатить банковской картой';card.addEventListener('click',()=>{window.location.href=data.paymentUrls.card;});
-  options.append(wallet,card);result.append(options);
- }catch(error){result.textContent=error.message;}
- finally{buttons.forEach(item=>item.disabled=false);}
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok||!data.ok){
+   const messages={
+    yoomoney_not_configured:'На сервере не настроены реквизиты YooMoney. Заказ не создан.',
+    unauthorized:'Не удалось подтвердить авторизацию MAX. Перезапустите приложение через бота.',
+    consent_required:'Сначала примите пользовательское соглашение и политику конфиденциальности.',
+    invalid_shop_item:'Не удалось определить выбранный подарок.'
+   };
+   throw new Error(messages[data.error]||data.error||'Не удалось создать заказ. Попробуйте ещё раз.');
+  }
+  const paymentUrl=data.paymentUrls?.card||data.paymentUrls?.wallet;
+  if(!paymentUrl)throw new Error('Заказ создан, но сервер не вернул ссылку YooMoney. Обратитесь в поддержку.');
+  result.textContent='Заказ создан · '+data.order.amount+' ₽. Открываем защищённую страницу YooMoney…';
+  window.location.assign(paymentUrl);
+ }catch(error){
+  result.textContent=error.message||'Не удалось начать оплату. Попробуйте ещё раз.';
+  buttons.forEach(item=>item.disabled=false);
+ }
 }
 document.querySelectorAll('[data-buy-sku]').forEach(button=>button.addEventListener('click',()=>createShopOrder(button.dataset.buySku,button)));
 document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-filter]').forEach(x=>x.classList.toggle('active',x===b));activeGiftFilter=b.dataset.filter;renderGiftCards();}));
