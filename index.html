@@ -168,6 +168,10 @@ html,body{background:#edf1ff;color:#17172b;font-family:var(--sans)}
 .gift-tile-action{width:100%;margin-top:5px;padding:8px 4px;border:0;border-radius:8px;background:#5634f5;color:#fff;font-size:8px;font-weight:800}
 .gift-tile-action.secondary{background:#f0efff;color:#5634f5}
 @media(max-width:360px){.gift-list{gap:6px}.gift-card{padding:7px 5px}.gift-tile-title{font-size:8px}.gift-tile-action{font-size:7px}}
+
+.admin-user-card{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;padding:12px;margin-top:8px;border:1px solid var(--line);border-radius:13px;background:#fff;color:var(--ink)}
+.admin-user-main,.admin-user-meta{display:flex;flex-direction:column;gap:4px;min-width:0}.admin-user-main b{font-size:13px}.admin-user-main small,.admin-user-meta small,.admin-user-detail-grid small,.admin-user-gift small{font-size:10px;color:var(--muted);overflow-wrap:anywhere}.admin-user-meta{text-align:right;flex:none}.admin-user-meta b{font-size:18px;color:var(--red)}.admin-auth-ok{color:#16834a!important}.admin-auth-no{color:#c04444!important}
+.admin-user-detail-head{padding:14px 0 8px;display:flex;flex-direction:column;gap:5px}.admin-user-detail-head>b{font-size:15px}.admin-user-detail-head>small{font-size:10px;color:var(--muted)}.admin-user-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0 16px}.admin-user-detail-grid>div{display:flex;flex-direction:column;gap:5px;padding:10px;border:1px solid var(--line);border-radius:10px}.admin-user-detail-grid b{font-size:11px;overflow-wrap:anywhere}.admin-user-detail-grid small{font-size:9px;color:var(--muted)}#adminUserDetail h4{font-size:13px;margin:15px 0 8px}.admin-user-gift{padding:10px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:4px}.admin-user-gift b{font-size:11px}.admin-user-visits{max-height:260px;overflow:auto}
 </style>
 </head>
 <body>
@@ -235,6 +239,12 @@ html,body{background:#edf1ff;color:#17172b;font-family:var(--sans)}
 </section>
 <section class="screen admin-screen" id="admin">
  <div class="page-title"><div class="eyebrow">УПРАВЛЕНИЕ ПРОЕКТОМ</div><h1>Админ-панель</h1><p>Состояние сервисов и инструменты диагностики.</p></div>
+ <div class="admin-panel"><h3>Пользователи</h3>
+  <p class="admin-help">Список аккаунтов MAX. Открой пользователя, чтобы посмотреть посещения, авторизацию и подарки.</p>
+  <button class="admin-action secondary" id="adminUsersRefresh">Обновить пользователей</button>
+  <div class="admin-result" id="adminUsersResult">Загружаем пользователей…</div>
+  <div id="adminUserDetail" hidden></div>
+ </div>
  <div class="admin-panel"><h3>Состояние системы</h3>
   <div class="admin-row"><span>Yandex Cloud Function</span><b class="admin-status" id="adminFunction">Проверка…</b></div>
   <div class="admin-row"><span>Redis (Upstash)</span><b class="admin-status" id="adminRedis">Проверка…</b></div>
@@ -289,6 +299,7 @@ document.getElementById('adminRefresh')?.addEventListener('click',loadAdminStatu
 document.getElementById('adminWebhookCheck')?.addEventListener('click',loadAdminWebhookDiagnostics);
 document.getElementById('adminWebhookRegister')?.addEventListener('click',registerAdminWebhook);
 document.getElementById('adminLogsRefresh')?.addEventListener('click',loadAdminLogs);
+document.getElementById('adminUsersRefresh')?.addEventListener('click',loadAdminUsers);
 const profileActions=document.querySelectorAll('.profile-menu button');
 profileActions[0]?.addEventListener('click',()=>{navigate('collection');document.querySelector('[data-filter="mine"]')?.click();});
 profileActions[1]?.addEventListener('click',()=>{navigate('collection');document.querySelector('[data-filter="sent"]')?.click();});
@@ -503,11 +514,40 @@ document.getElementById('giftCreateForm')?.addEventListener('submit',async event
 /* Аватар и профиль пользователя будут подключены через MAX Mini App bridge. */
 
 
-async function adminPost(path) {
- const response=await fetch(window.PODARIS_API_URL(path),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData:window.podarisInitData})});
+async function adminPost(path,extra={}) {
+ const response=await fetch(window.PODARIS_API_URL(path),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...extra,initData:window.podarisInitData})});
  const data=await response.json().catch(()=>({}));
  if(!response.ok||!data.ok)throw new Error(data.error||'Не удалось выполнить проверку');
  return data;
+}
+
+function adminEscape(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
+function adminDate(value){if(!value)return '—';const date=new Date(value);return Number.isNaN(date.getTime())?'—':date.toLocaleString('ru-RU');}
+async function loadAdminUsers(){
+ const box=document.getElementById('adminUsersResult'),detail=document.getElementById('adminUserDetail');
+ box.textContent='Загружаем пользователей…';
+ try{
+  const data=await adminPost('/api/admin/users');box.innerHTML='';
+  const heading=document.createElement('div');heading.className='admin-help';heading.textContent='Всего пользователей: '+data.total;box.append(heading);
+  if(!data.users.length){const empty=document.createElement('p');empty.className='admin-help';empty.textContent='Пользователей пока нет.';box.append(empty);return;}
+  data.users.forEach(user=>{
+   const button=document.createElement('button');button.type='button';button.className='admin-user-card';
+   button.innerHTML='<span class="admin-user-main"><b>'+adminEscape(user.name)+'</b><small>MAX ID: '+adminEscape(user.id)+(user.username?' · @'+adminEscape(user.username):'')+'</small><small>Последний вход: '+adminEscape(adminDate(user.lastVisitAt))+'</small></span><span class="admin-user-meta"><b>'+Number(user.giftsCount||0)+'</b><small>подарков</small><small class="'+(user.fullyAuthorized?'admin-auth-ok':'admin-auth-no')+'">'+(user.fullyAuthorized?'Авторизован':'Не авторизован')+'</small></span>';
+   button.addEventListener('click',()=>loadAdminUserDetail(user.id));box.append(button);
+  });
+  detail.hidden=true;detail.innerHTML='';
+ }catch(error){box.textContent='Не удалось загрузить пользователей: '+error.message;}
+}
+async function loadAdminUserDetail(userId){
+ const box=document.getElementById('adminUserDetail');box.hidden=false;box.innerHTML='<p class="admin-help">Загружаем карточку пользователя…</p>';
+ try{
+  const data=await adminPost('/api/admin/user',{userId}),u=data.user,a=data.authorization,gifts=data.gifts||[],visits=data.visits||[];
+  box.innerHTML='<div class="admin-user-detail-head"><b>'+adminEscape(u.name)+'</b><small>MAX ID: '+adminEscape(u.id)+(u.username?' · @'+adminEscape(u.username):'')+'</small><button type="button" class="admin-action secondary" id="adminUserDetailBack">Назад к списку</button></div>'+
+   '<div class="admin-user-detail-grid"><div><small>Регистрация</small><b>'+adminEscape(adminDate(u.createdAt))+'</b></div><div><small>Последнее обновление профиля</small><b>'+adminEscape(adminDate(u.updatedAt))+'</b></div><div><small>Документы</small><b>'+(a.consentAccepted?'Приняты':'Не приняты')+'</b></div><div><small>Телефон</small><b>'+(a.contactProvided?'Подтверждён':'Не предоставлен')+'</b></div><div><small>Авторизация</small><b class="'+(a.fullyAuthorized?'admin-auth-ok':'admin-auth-no')+'">'+(a.fullyAuthorized?'Полная':'Не завершена')+'</b></div><div><small>Подарков в учёте</small><b>'+Number(data.giftsCount||0)+'</b></div></div>'+
+   '<h4>Подарки и отправители ('+gifts.length+')</h4>'+(gifts.length?'<div class="admin-user-gifts">'+gifts.map(g=>'<div class="admin-user-gift"><b>'+adminEscape(g.giftType)+'</b><small>От: '+adminEscape(g.sender)+' · Статус: '+adminEscape(g.status)+'</small><small>'+adminEscape(adminDate(g.createdAt))+' · ID: '+adminEscape(g.id)+'</small></div>').join('')+'</div>':'<p class="admin-help">Подарков не найдено.</p>')+
+   '<h4>История заходов ('+visits.length+')</h4>'+(visits.length?'<div class="admin-user-visits">'+visits.slice().reverse().map(v=>'<div class="admin-user-gift"><b>'+adminEscape(adminDate(v.at))+'</b><small>Документы: '+(v.consentAccepted?'приняты':'нет')+' · Телефон: '+(v.contactProvided?'есть':'нет')+'</small><small>Авторизация на момент входа: '+(v.fullyAuthorized?'да':'нет')+'</small></div>').join('')+'</div>':'<p class="admin-help">История начнёт собираться после публикации обновления.</p>');
+  document.getElementById('adminUserDetailBack')?.addEventListener('click',()=>{box.hidden=true;box.innerHTML='';});box.scrollIntoView({behavior:'smooth',block:'start'});
+ }catch(error){box.innerHTML='<p class="admin-help">Ошибка загрузки карточки: '+adminEscape(error.message)+'</p>';}
 }
 async function loadAdminWebhookDiagnostics(){
  const details=document.getElementById('adminWebhookDetails');
@@ -562,7 +602,7 @@ async function loadAdminStatus(){
   set('adminBot',data.maxBotConfigured?'Настроен':'Не настроен',data.maxBotConfigured);
   set('adminWebhookSecret',data.webhookSecretConfigured?'Настроен':'Не настроен',data.webhookSecretConfigured);
   result.textContent='Проверка завершена: '+new Date(data.checkedAt).toLocaleString('ru-RU');
-  await Promise.all([loadAdminWebhookDiagnostics(),loadAdminLogs()]);
+  await Promise.all([loadAdminWebhookDiagnostics(),loadAdminLogs(),loadAdminUsers()]);
  }catch(error){result.textContent='Ошибка: '+error.message;}
 }
 async function checkAdminAccess(){
