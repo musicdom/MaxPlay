@@ -760,10 +760,13 @@ function shopCatalogItem(sku) {
 }
 
 async function handleShopOrder(body, user) {
-  const receiver = String(process.env.YOOMONEY_RECEIVER || "");
-  const notificationSecret = String(process.env.YOOMONEY_NOTIFICATION_SECRET || "");
-  if (!receiver || !notificationSecret) {
-    return { statusCode: 503, body: { ok: false, error: "yoomoney_not_configured" } };
+  const receiver = String(process.env.YOOMONEY_RECEIVER || "").trim();
+  const notificationSecret = String(process.env.YOOMONEY_NOTIFICATION_SECRET || "").trim();
+  if (!receiver) {
+    return { statusCode: 503, body: { ok: false, error: "yoomoney_receiver_not_configured" } };
+  }
+  if (!notificationSecret) {
+    return { statusCode: 503, body: { ok: false, error: "yoomoney_notification_secret_not_configured" } };
   }
   const consent = await getConsent(user.id);
   if (!consentIsCurrent(consent)) return { statusCode: 403, body: { ok: false, error: "consent_required" } };
@@ -784,14 +787,14 @@ async function handleShopOrder(body, user) {
   const makePaymentUrl = (paymentType) => {
     const params = new URLSearchParams({
       receiver,
-      "quickpay-form": "shop",
+      "quickpay-form": "button",
       targets: "Подарис — коллекция Джойстик",
       paymentType,
-      sum: String(item.amount),
+      sum: Number(item.amount).toFixed(2),
       label,
       successURL: process.env.YOOMONEY_SUCCESS_URL || "https://musicdom.github.io/MaxPlay/?payment=success"
     });
-    return "https://yoomoney.ru/quickpay/confirm?" + params.toString();
+    return "https://yoomoney.ru/quickpay/confirm.xml?" + params.toString();
   };
   return {
     statusCode: 201,
