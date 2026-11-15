@@ -398,7 +398,9 @@ async function createShopOrder(sku, button){
   const data=await response.json().catch(()=>({}));
   if(!response.ok||!data.ok){
    const messages={
-    yoomoney_not_configured:'На сервере не настроены реквизиты YooMoney. Заказ не создан.',
+    yoomoney_receiver_not_configured:'На сервере не указан номер кошелька-получателя YooMoney. Заказ не создан.',
+    yoomoney_notification_secret_not_configured:'Не настроен секрет уведомлений YooMoney. Оплата временно отключена, чтобы деньги не потерялись.',
+    yoomoney_not_configured:'Оплата YooMoney пока не настроена на сервере.',
     unauthorized:'Не удалось подтвердить авторизацию MAX. Перезапустите приложение через бота.',
     consent_required:'Сначала примите пользовательское соглашение и политику конфиденциальности.',
     invalid_shop_item:'Не удалось определить выбранный подарок.'
