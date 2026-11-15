@@ -287,7 +287,7 @@ function renderGiftCards(){
  document.getElementById('windowTitle').textContent=states[activeGiftFilter].title;
  document.getElementById('giftCount').textContent=items.length+' подарков';
  document.getElementById('emptyTitle').textContent=activeGiftFilter==='mine'?'Пока нет подарков':'Пока здесь пусто';
- document.getElementById('emptyText').textContent=activeGiftFilter==='mine'?'Здесь появятся подарки, которые вам отправили.':'Здесь будут отображаться подарки, которые вы отправили другим людям.';
+ document.getElementById('emptyText').textContent=activeGiftFilter==='mine'?'Здесь будут ваши стартовые, полученные и купленные подарки.':'Здесь будут отображаться подарки, которые вы отправили другим людям.';
  document.getElementById('emptyIcon').textContent=activeGiftFilter==='mine'?'💝':'🎁';
  list.replaceChildren();
  items.forEach(gift=>{
@@ -306,7 +306,7 @@ function renderGiftCards(){
   if(joystickImage){const image=document.createElement('img');image.src=joystickImage;image.alt=visual[1];image.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:13px';icon.append(image);}else icon.textContent=visual[0];
   const details=document.createElement('div');
   const title=document.createElement('div');title.className='gift-card-title';title.textContent=visual[1];
-  const meta=document.createElement('div');meta.className='gift-card-meta';meta.textContent=activeGiftFilter==='mine'?'Отправлен вам':'Получатель MAX ID: '+gift.recipientId;
+  const meta=document.createElement('div');meta.className='gift-card-meta';meta.textContent=activeGiftFilter==='mine'?(gift.source==='starter_registration'?'Стартовый подарок':gift.source==='yoomoney_purchase'?'Покупка':'В вашей коллекции'):'Получатель MAX ID: '+gift.recipientId;
   details.append(title,meta);top.append(icon,details);card.append(top);
   if(gift.message){const message=document.createElement('div');message.className='gift-card-meta';message.style.marginTop='10px';message.textContent=gift.message;card.append(message);}
   const timer=document.createElement('div');timer.className='gift-card-timer';card.append(timer);
