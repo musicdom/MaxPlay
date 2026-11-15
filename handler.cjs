@@ -87,7 +87,8 @@ function createUpstashClient() {
     ping: async () => command(["PING"]),
     sAdd: async (key, value) => Number(await command(["SADD", key, value])),
     sMembers: async (key) => (await command(["SMEMBERS", key])) || [],
-    scan: async (cursor, pattern, count = 500) => command(["SCAN", String(cursor), "MATCH", pattern, "COUNT", String(count)])
+    scan: async (cursor, pattern, count = 500) => command(["SCAN", String(cursor), "MATCH", pattern, "COUNT", String(count)]),
+    eval: async (script, keys = [], args = []) => command(["EVAL", script, String(keys.length), ...keys, ...args.map(value => String(value))])
   };
 }
 
@@ -594,39 +595,51 @@ async function listUserGifts(userId) {
     client.lRange("gifts:sent:" + userId, 0, -1),
     client.lRange("gifts:history:" + userId, 0, -1)
   ]);
-  // Deduplicate IDs and classify outgoing gifts by the immutable current senderId,
-  // not by list membership: gifts:history also contains items the user received
-  // and later forwarded, which must not be counted as gifts sent by this user.
-  const receivedIds = [...new Set(receivedRaw)];
-  const outgoingIds = [...new Set([...sentRaw, ...historyRaw])];
-  const [received, outgoing] = await Promise.all([
-    Promise.all(receivedIds.map(readGift)),
-    Promise.all(outgoingIds.map(readGift))
-  ]);
-  async function normalize(gift, giftId, listKey) {
-    if (!gift) {
-      await client.lRem(listKey, 0, giftId);
-      return null;
-    }
-    return gift;
-  }
-  const normalizedReceived = await Promise.all(received.map((gift,index)=>normalize(gift,receivedIds[index],"gifts:received:"+userId)));
-  const normalizedOutgoing = await Promise.all(outgoing.map((gift,index)=>normalize(gift,outgoingIds[index],"gifts:sent:"+userId)));
-  const ownOutgoing = normalizedOutgoing.filter(gift => gift && String(gift.senderId || "") === String(userId));
-  const uniqueOutgoing = [...new Map(ownOutgoing.map(gift => [gift.id, gift])).values()];
-  return {
-    received: normalizedReceived.filter(Boolean),
-    sent: uniqueOutgoing.filter(gift => gift.status === "sent"),
-    history: uniqueOutgoing.filter(gift => gift.status !== "sent")
-  };
-}
 
+  const receivedIds = [...new Set(receivedRaw.map(String))];
+  const sentIds = [...new Set(sentRaw.map(String))];
+  const [receivedValues, sentValues] = await Promise.all([
+    Promise.all(receivedIds.map(readGift)),
+    Promise.all(sentIds.map(readGift))
+  ]);
+
+  const received = receivedValues.filter(gift =>
+    gift && String(gift.recipientId || "") === String(userId)
+  );
+  const sent = sentValues.filter(gift =>
+    gift && gift.status === "sent" && String(gift.senderId || "") === String(userId)
+  );
+
+  // New history entries are immutable snapshots stored under gift-event:<eventId>.
+  // Legacy entries are gift IDs; keep them readable without mutating old records.
+  const historyValues = await Promise.all(historyRaw.map(async rawId => {
+    const eventRaw = await client.get("gift-event:" + rawId);
+    if (eventRaw) {
+      try {
+        const event = JSON.parse(eventRaw);
+        if (event && event.gift) return { ...event.gift, historyEventId: event.id || String(rawId), historyAt: event.claimedAt || event.sentAt || null };
+      } catch {}
+    }
+    return readGift(String(rawId));
+  }));
+  const history = [];
+  const seenHistory = new Set();
+  for (const gift of historyValues) {
+    if (!gift || String(gift.senderId || "") !== String(userId)) continue;
+    const key = gift.historyEventId || [gift.id, gift.recipientId || "", gift.claimedAt || gift.createdAt || ""].join(":");
+    if (seenHistory.has(key)) continue;
+    seenHistory.add(key);
+    history.push(gift);
+  }
+
+  return { received, sent, history };
+}
 function giftError(statusCode, error, extra = {}) {
   return { statusCode, body: { ok: false, error, ...extra } };
 }
 
 async function handleGiftRequest(path, body, user) {
-  const userId = user.id;
+  const userId = String(user.id);
   const consent = await getConsent(userId);
   if (!consentIsCurrent(consent)) return giftError(403, "consent_required");
   const client = await getRedis();
@@ -637,9 +650,10 @@ async function handleGiftRequest(path, body, user) {
   if (path === "/api/gifts/list") {
     const gifts = await listUserGifts(userId);
     return { statusCode: 200, body: {
-      ok: true, fullyAuthorized, canSend: fullyAuthorized && balance > 0,
+      ok: true, fullyAuthorized, canSend: fullyAuthorized && gifts.received.some(g => ["owned","opened","kept"].includes(g.status)),
       canBuy: true, canViewReceived: true, canForward: fullyAuthorized,
-      giftCredits: balance, gifts: { received: gifts.received, sent: fullyAuthorized ? gifts.sent : [], history: fullyAuthorized ? gifts.history : [] }
+      giftCredits: balance,
+      gifts: { received: gifts.received, sent: gifts.sent, history: fullyAuthorized ? gifts.history : [] }
     }};
   }
 
@@ -653,192 +667,126 @@ async function handleGiftRequest(path, body, user) {
     if (!Number.isInteger(revealDelaySeconds) || revealDelaySeconds < 0 || revealDelaySeconds > 30 * 24 * 60 * 60) {
       return giftError(400, "invalid_reveal_delay");
     }
-    const remaining = await client.decr("gift-credits:" + userId);
-    if (remaining < 0) {
-      await client.incr("gift-credits:" + userId);
-      return giftError(409, "no_free_gifts_remaining");
-    }
     const now = Date.now();
+    const giftId = crypto.randomUUID();
     const gift = {
-      id: crypto.randomUUID(),
-      giftType,
-      senderId: userId,
+      id: giftId, giftType, senderId: userId,
       senderName: [user.firstName,user.lastName].filter(Boolean).join(" ").trim() || "Пользователь MAX",
-      recipientId,
-      recipientName: "",
-      status: "sent",
+      recipientId, recipientName: "", ownerId: null, status: "sent",
       message: typeof body.message === "string" ? body.message.slice(0, 500) : "",
-      revealDelaySeconds,
-      createdAt: now,
-      claimedAt: null,
-      opensAt: null,
-      expiresAt: null,
-      openedAt: null,
+      revealDelaySeconds, createdAt: now, lastSentAt: now, transferCount: 1,
+      claimedAt: null, opensAt: null, expiresAt: null, openedAt: null,
       forwardedFrom: null,
       shareUrl: process.env.MAX_MINI_APP_URL
-        ? process.env.MAX_MINI_APP_URL + (process.env.MAX_MINI_APP_URL.includes("?") ? "&" : "?") + "gift=" + crypto.randomUUID()
+        ? process.env.MAX_MINI_APP_URL + (process.env.MAX_MINI_APP_URL.includes("?") ? "&" : "?") + "gift=" + giftId
         : null
     };
-    if (gift.shareUrl) gift.shareUrl = gift.shareUrl.slice(0, gift.shareUrl.lastIndexOf("=") + 1) + gift.id;
-    try {
-      await client.set("gift:" + gift.id, JSON.stringify(gift));
-      await client.rPush("gifts:sent:" + userId, gift.id);
-      await client.rPush("gifts:received:" + recipientId, gift.id);
-    } catch (error) {
-      await client.incr("gift-credits:" + userId);
-      throw error;
-    }
+    const result = await client.eval(
+      "local credits=tonumber(redis.call('GET',KEYS[1]) or '0'); if credits<1 then return -1 end; if redis.call('EXISTS',KEYS[2])==1 then return -2 end; redis.call('DECR',KEYS[1]); redis.call('SET',KEYS[2],ARGV[1]); redis.call('RPUSH',KEYS[3],ARGV[2]); redis.call('RPUSH',KEYS[4],ARGV[2]); return credits-1",
+      ["gift-credits:" + userId, "gift:" + giftId, "gifts:sent:" + userId, "gifts:received:" + recipientId],
+      [JSON.stringify(gift), giftId]
+    );
+    if (Number(result) === -1) return giftError(409, "no_free_gifts_remaining");
+    if (Number(result) < 0) return giftError(409, "gift_creation_conflict");
     let notificationSent = false;
     if (gift.shareUrl) {
       try {
-        await sendMaxMessage(
-          recipientId,
-          "Вам отправили подарок в Подарис! Нажмите кнопку, чтобы забрать его. После получения начнётся таймер, а когда он закончится, у вас будет 12 часов, чтобы открыть подарок.",
-          [[{ type: "open_app", text: "Получить подарок", web_app: gift.shareUrl }]]
-        );
+        await sendMaxMessage(recipientId, "Вам отправили подарок в Подарис! Нажмите кнопку, чтобы забрать его. После получения начнётся таймер, а когда он закончится, у вас будет 12 часов, чтобы открыть подарок.",
+          [[{ type: "open_app", text: "Получить подарок", web_app: gift.shareUrl }]]);
         notificationSent = true;
-      } catch (error) {
-        console.warn("[gift notification]", error.message);
-      }
+      } catch (error) { console.warn("[gift notification]", error.message); }
     }
-    return { statusCode: 201, body: { ok: true, gift, giftCredits: remaining, notificationSent } };
+    return { statusCode: 201, body: { ok: true, gift, giftCredits: Number(result), notificationSent } };
   }
 
   if (path === "/api/gifts/keep") {
     const giftId = String(body?.giftId || "");
     if (!/^[0-9a-f-]{36}$/i.test(giftId)) return giftError(400, "invalid_gift_id");
-    const gift = await readGift(giftId);
-    if (!gift) return giftError(404, "gift_not_found");
-    if (gift.recipientId !== userId) return giftError(403, "not_gift_recipient");
-    if (!["owned", "kept"].includes(gift.status)) return giftError(409, "gift_not_keepable");
-    gift.status = "kept";
-    gift.keptAt = Date.now();
-    await saveGift(gift);
-    return { statusCode: 200, body: { ok: true, gift } };
+    const now = Date.now();
+    const result = await client.eval(
+      "local raw=redis.call('GET',KEYS[1]); if not raw then return 'missing' end; local g=cjson.decode(raw); if tostring(g.recipientId or '')~=ARGV[1] then return 'not_owner' end; if g.status~='owned' and g.status~='kept' then return 'not_keepable' end; g.status='kept'; g.keptAt=tonumber(ARGV[2]); g.ownerId=ARGV[1]; redis.call('SET',KEYS[1],cjson.encode(g)); return cjson.encode(g)",
+      ["gift:" + giftId], [userId, now]
+    );
+    if (result === "missing") return giftError(404, "gift_not_found");
+    if (result === "not_owner") return giftError(403, "not_gift_recipient");
+    if (result === "not_keepable") return giftError(409, "gift_not_keepable");
+    return { statusCode: 200, body: { ok: true, gift: JSON.parse(result) } };
   }
 
-  if (path === "/api/gifts/claim" || path === "/api/gifts/open" || path === "/api/gifts/forward") {
+  if (path === "/api/gifts/claim") {
     const giftId = String(body?.giftId || "");
     if (!/^[0-9a-f-]{36}$/i.test(giftId)) return giftError(400, "invalid_gift_id");
-    const gift = await readGift(giftId);
-    if (!gift) return giftError(404, "gift_not_found");
     const now = Date.now();
+    const eventId = crypto.randomUUID();
+    const recipientName = [user.firstName,user.lastName].filter(Boolean).join(" ").trim() || "Пользователь MAX";
+    const result = await client.eval(
+      "local raw=redis.call('GET',KEYS[1]); if not raw then return 'missing' end; local g=cjson.decode(raw); if g.status=='claimed' or g.status=='opened' or g.status=='kept' or g.status=='owned' then if tostring(g.recipientId or '')==ARGV[1] then return 'already:'..cjson.encode(g) end; return 'claimed' end; if g.status~='sent' then return 'not_claimable' end; if g.recipientId and tostring(g.recipientId)~='' and tostring(g.recipientId)~=ARGV[1] then return 'wrong_recipient' end; local sender=tostring(g.senderId or ''); g.recipientId=ARGV[1]; g.recipientName=ARGV[2]; g.ownerId=ARGV[1]; g.status='claimed'; g.claimedAt=tonumber(ARGV[3]); g.opensAt=tonumber(ARGV[3])+tonumber(g.revealDelaySeconds or 0)*1000; g.expiresAt=cjson.null; redis.call('SET',KEYS[1],cjson.encode(g)); redis.call('RPUSH',KEYS[3],ARGV[4]); if sender~='' and sender~='purchase' and sender~='podaris' and sender~=ARGV[1] then redis.call('LREM',KEYS[2],0,ARGV[4]); local ev={id=ARGV[5],gift=g,senderId=sender,recipientId=ARGV[1],sentAt=tonumber(g.lastSentAt or g.createdAt or ARGV[3]),claimedAt=tonumber(ARGV[3]),eventType='claimed'}; redis.call('SET',KEYS[5],cjson.encode(ev)); redis.call('RPUSH',KEYS[4],ARGV[5]); end; return 'ok:'..cjson.encode(g)",
+      ["gift:" + giftId, "gifts:sent:" + (await readGift(giftId))?.senderId, "gifts:received:" + userId, "gifts:history:" + ((await readGift(giftId))?.senderId || "none"), "gift-event:" + eventId],
+      [userId, recipientName, now, giftId, eventId]
+    );
+    if (result === "missing") return giftError(404, "gift_not_found");
+    if (result === "claimed") return giftError(409, "gift_already_claimed");
+    if (result === "not_claimable") return giftError(409, "gift_not_claimable");
+    if (result === "wrong_recipient") return giftError(403, "not_gift_recipient");
+    const already = String(result).startsWith("already:");
+    const giftJson = String(result).slice(already ? 8 : 3);
+    const gift = JSON.parse(giftJson);
+    return { statusCode: 200, body: { ok: true, gift, alreadyClaimed: already } };
+  }
 
-    if (path === "/api/gifts/claim") {
-      if (gift.status === "claimed" || gift.status === "opened") {
-        if (gift.recipientId === userId) return { statusCode: 200, body: { ok: true, gift, alreadyClaimed: true } };
-        return giftError(409, "gift_already_claimed");
-      }
-      if (gift.status !== "sent") return giftError(409, "gift_not_claimable");
-      if (gift.recipientId && gift.recipientId !== userId) return giftError(403, "not_gift_recipient");
-
-      // A gift shared by link has no recipient until the first authenticated user claims it.
-      if (!gift.recipientId) {
-        const claimLock = "gift-claim-lock:" + gift.id;
-        const locked = await client.set(claimLock, userId, { nx: true, px: 30000 });
-        if (locked !== "OK") return giftError(409, "gift_already_claimed");
-        try {
-          const latest = await readGift(gift.id);
-          if (!latest || latest.status !== "sent" || latest.recipientId) return giftError(409, "gift_already_claimed");
-          latest.recipientId = userId;
-          latest.recipientName = [user.firstName,user.lastName].filter(Boolean).join(" ").trim() || "Пользователь MAX";
-          latest.claimedByLink = true;
-          latest.status = "claimed";
-          latest.claimedAt = now;
-          latest.opensAt = now + Number(latest.revealDelaySeconds || 0) * 1000;
-          latest.expiresAt = null;
-          await saveGift(latest);
-          await client.rPush("gifts:received:" + userId, latest.id);
-          if (latest.senderId && latest.senderId !== "purchase" && latest.senderId !== userId) {
-            await client.lRem("gifts:sent:" + latest.senderId, 0, latest.id);
-            await client.rPush("gifts:history:" + latest.senderId, latest.id);
-          }
-          return { statusCode: 200, body: { ok: true, gift: latest } };
-        } finally {
-          await client.del(claimLock);
-        }
-      }
-
-      gift.status = "claimed";
-      gift.recipientName = [user.firstName,user.lastName].filter(Boolean).join(" ").trim() || "Пользователь MAX";
-      gift.claimedAt = now;
-      gift.opensAt = now + Number(gift.revealDelaySeconds || 0) * 1000;
-      gift.expiresAt = null;
-      await saveGift(gift);
-      if (gift.senderId && gift.senderId !== "purchase" && gift.senderId !== userId) {
-        await client.lRem("gifts:sent:" + gift.senderId, 0, gift.id);
-        await client.rPush("gifts:history:" + gift.senderId, gift.id);
-      }
-      return { statusCode: 200, body: { ok: true, gift } };
+  if (path === "/api/gifts/open") {
+    const giftId = String(body?.giftId || "");
+    if (!/^[0-9a-f-]{36}$/i.test(giftId)) return giftError(400, "invalid_gift_id");
+    const now = Date.now();
+    const result = await client.eval(
+      "local raw=redis.call('GET',KEYS[1]); if not raw then return 'missing' end; local g=cjson.decode(raw); if tostring(g.recipientId or '')~=ARGV[1] then return 'not_owner' end; if g.status=='opened' then return cjson.encode(g) end; if g.status~='claimed' then return 'not_ready' end; if tonumber(g.opensAt or 0)>tonumber(ARGV[2]) then return 'not_ready' end; g.status='opened'; g.openedAt=tonumber(ARGV[2]); g.ownerId=ARGV[1]; redis.call('SET',KEYS[1],cjson.encode(g)); return cjson.encode(g)",
+      ["gift:" + giftId], [userId, now]
+    );
+    if (result === "missing") return giftError(404, "gift_not_found");
+    if (result === "not_owner") return giftError(403, "not_gift_recipient");
+    if (result === "not_ready") {
+      const gift = await readGift(giftId);
+      return giftError(409, "gift_not_ready", { opensAt: gift?.opensAt || null });
     }
+    return { statusCode: 200, body: { ok: true, gift: JSON.parse(result) } };
+  }
 
-    if (path === "/api/gifts/open") {
-      if (gift.recipientId !== userId) return giftError(403, "not_gift_recipient");
-      if (gift.status !== "claimed") return giftError(409, "gift_not_ready");
-      if (now < gift.opensAt) return giftError(409, "gift_not_ready", { opensAt: gift.opensAt });
-      gift.status = "opened";
-      gift.openedAt = now;
-      await saveGift(gift);
-      return { statusCode: 200, body: { ok: true, gift } };
-    }
-
+  if (path === "/api/gifts/forward") {
     if (!fullyAuthorized) return giftError(403, "full_authorization_required");
-    if (gift.recipientId !== userId) return giftError(403, "not_gift_recipient");
-    if (!["opened", "owned", "kept"].includes(gift.status)) return giftError(409, "gift_not_forwardable");
+    const giftId = String(body?.giftId || "");
+    if (!/^[0-9a-f-]{36}$/i.test(giftId)) return giftError(400, "invalid_gift_id");
     const shareByLink = body?.shareLink === true;
     const newRecipientId = shareByLink ? "" : String(body?.recipientId || "");
     if (!shareByLink && (!/^\d+$/.test(newRecipientId) || newRecipientId === userId)) return giftError(400, "invalid_recipient");
-    const forwardedId = crypto.randomUUID();
-    const forwarded = {
-      ...gift,
-      id: forwardedId,
-      senderId: userId,
-      senderName: [user.firstName,user.lastName].filter(Boolean).join(" ").trim() || "Пользователь MAX",
-      recipientId: shareByLink ? null : newRecipientId,
-      recipientName: "",
-      status: "sent",
-      createdAt: now,
-      claimedAt: null,
-      opensAt: null,
-      expiresAt: null,
-      openedAt: null,
-      forwardedFrom: gift.id,
-      claimedByLink: false,
-      shareUrl: shareByLink
-        ? "https://max.ru/se14711525_1_bot?startapp=gift_" + forwardedId
-        : (process.env.MAX_MINI_APP_URL
-          ? process.env.MAX_MINI_APP_URL + (process.env.MAX_MINI_APP_URL.includes("?") ? "&" : "?") + "gift=" + forwardedId
-          : null)
-    };
-    gift.status = "forwarded";
-    gift.forwardedAt = now;
-    await saveGift(gift);
-    await client.lRem("gifts:received:" + userId, 0, gift.id);
-    await client.rPush("gifts:history:" + userId, gift.id);
-    await client.set("gift:" + forwarded.id, JSON.stringify(forwarded));
-    await client.rPush("gifts:sent:" + userId, forwarded.id);
+    const now = Date.now();
+    const senderName = [user.firstName,user.lastName].filter(Boolean).join(" ").trim() || "Пользователь MAX";
+    const shareUrl = shareByLink
+      ? "https://max.ru/se14711525_1_bot?startapp=gift_" + giftId
+      : (process.env.MAX_MINI_APP_URL
+        ? process.env.MAX_MINI_APP_URL + (process.env.MAX_MINI_APP_URL.includes("?") ? "&" : "?") + "gift=" + giftId
+        : null);
+    const result = await client.eval(
+      "local raw=redis.call('GET',KEYS[1]); if not raw then return 'missing' end; local g=cjson.decode(raw); if tostring(g.recipientId or '')~=ARGV[1] then return 'not_owner' end; if g.status~='opened' and g.status~='owned' and g.status~='kept' then return 'not_forwardable' end; g.originSenderId=g.originSenderId or g.senderId or ''; g.originSenderName=g.originSenderName or g.senderName or ''; g.senderId=ARGV[1]; g.senderName=ARGV[2]; g.recipientId=(ARGV[3]=='') and cjson.null or ARGV[3]; g.recipientName=''; g.ownerId=cjson.null; g.status='sent'; g.lastSentAt=tonumber(ARGV[4]); g.transferCount=tonumber(g.transferCount or 0)+1; g.claimedAt=cjson.null; g.opensAt=cjson.null; g.expiresAt=cjson.null; g.openedAt=cjson.null; g.keptAt=cjson.null; g.shareUrl=(ARGV[5]=='') and cjson.null or ARGV[5]; redis.call('SET',KEYS[1],cjson.encode(g)); redis.call('LREM',KEYS[2],0,ARGV[6]); redis.call('RPUSH',KEYS[3],ARGV[6]); if ARGV[3]~='' then redis.call('RPUSH',KEYS[4],ARGV[6]); end; return cjson.encode(g)",
+      ["gift:" + giftId, "gifts:received:" + userId, "gifts:sent:" + userId, "gifts:received:" + (newRecipientId || "none")],
+      [userId, senderName, newRecipientId, now, shareUrl || "", giftId]
+    );
+    if (result === "missing") return giftError(404, "gift_not_found");
+    if (result === "not_owner") return giftError(403, "not_gift_recipient");
+    if (result === "not_forwardable") return giftError(409, "gift_not_forwardable");
+    const gift = JSON.parse(result);
     let notificationSent = false;
-    if (!shareByLink) {
-      await client.rPush("gifts:received:" + newRecipientId, forwarded.id);
-      if (forwarded.shareUrl) {
-        try {
-          await sendMaxMessage(
-            newRecipientId,
-            "Вам переслали подарок в Подарис! Заберите его по кнопке ниже.",
-            [[{ type: "open_app", text: "Получить подарок", web_app: forwarded.shareUrl }]]
-          );
-          notificationSent = true;
-        } catch (error) {
-          console.warn("[forward notification]", error.message);
-        }
-      }
+    if (newRecipientId && gift.shareUrl) {
+      try {
+        await sendMaxMessage(newRecipientId, "Вам переслали подарок в Подарис! Заберите его по кнопке ниже.",
+          [[{ type: "open_app", text: "Получить подарок", web_app: gift.shareUrl }]]);
+        notificationSent = true;
+      } catch (error) { console.warn("[forward notification]", error.message); }
     }
-    return { statusCode: 201, body: { ok: true, gift: forwarded, notificationSent, shareByLink } };
+    return { statusCode: 201, body: { ok: true, gift, notificationSent, shareByLink } };
   }
 
   return giftError(404, "gift_route_not_found");
 }
-
 
 
 function shopCatalogItem(sku) {
@@ -1218,10 +1166,12 @@ async function handleAdminUserDetail(userId) {
   const allIds = [...new Set([...receivedIds, ...sentIds, ...historyIds])];
   const gifts = [];
   for (const giftId of allIds) {
-    const giftRaw = await client.get("gift:" + giftId);
+    const eventRaw = historyIds.includes(giftId) ? await client.get("gift-event:" + giftId) : null;
+    const giftRaw = eventRaw || await client.get("gift:" + giftId);
     if (!giftRaw) continue;
     try {
-      const gift = JSON.parse(giftRaw);
+      const parsed = JSON.parse(giftRaw);
+      const gift = eventRaw && parsed.gift ? { ...parsed.gift, historyEventId: parsed.id } : parsed;
       let sender = null;
       if (/^\d+$/.test(String(gift.senderId || ""))) {
         const senderRaw = await client.get("user:" + gift.senderId);
