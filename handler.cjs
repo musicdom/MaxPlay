@@ -1217,6 +1217,60 @@ async function handleAdminUserDetail(userId) {
   };
 }
 
+
+async function handleAdminResetUser(userId, confirmation) {
+  const id = String(userId || "");
+  if (!/^\\d+$/.test(id)) return { statusCode: 400, body: { ok: false, error: "invalid_user_id" } };
+  if (String(confirmation || "") !== "RESET:" + id) {
+    return { statusCode: 400, body: { ok: false, error: "reset_confirmation_mismatch" } };
+  }
+  const client = await getRedis();
+  const userRaw = await client.get("user:" + id);
+  if (!userRaw) return { statusCode: 404, body: { ok: false, error: "user_not_found" } };
+  const lockKey = "admin:account-reset-lock:" + id;
+  const lock = await client.set(lockKey, crypto.randomUUID(), { nx: true, px: 120000 });
+  if (lock !== "OK") return { statusCode: 409, body: { ok: false, error: "account_reset_in_progress" } };
+  try {
+    const receivedIds = [...new Set((await client.lRange("gifts:received:" + id, 0, -1)).map(String))];
+    let discardedGifts = 0;
+    let cancelledIncoming = 0;
+    for (const giftId of receivedIds) {
+      const currentRaw = await client.get("gift:" + giftId);
+      let currentGift = null;
+      try { currentGift = currentRaw ? JSON.parse(currentRaw) : null; } catch {}
+      const senderId = String(currentGift?.senderId || "");
+      const eventId = crypto.randomUUID();
+      const result = await client.eval(
+        "local raw=redis.call('GET',KEYS[1]); if not raw then return 0 end; local g=cjson.decode(raw); if tostring(g.recipientId or '')~=ARGV[1] then return 0 end; local oldStatus=tostring(g.status or ''); if oldStatus~='sent' and oldStatus~='claimed' and oldStatus~='opened' and oldStatus~='owned' and oldStatus~='kept' and oldStatus~='expired' then return 0 end; local sender=tostring(g.senderId or ''); g.status='reset_discarded'; g.ownerId=cjson.null; g.recipientId=cjson.null; g.recipientName=''; g.resetAt=tonumber(ARGV[2]); g.resetReason='recipient_account_reset'; redis.call('SET',KEYS[1],cjson.encode(g)); if oldStatus=='sent' and sender~='' and sender~='podaris' and sender~='purchase' and sender~=ARGV[1] then local ev={id=ARGV[3],gift=g,senderId=sender,recipientId=ARGV[1],sentAt=tonumber(g.lastSentAt or g.createdAt or ARGV[2]),resetAt=tonumber(ARGV[2]),eventType='recipient_account_reset'}; redis.call('SET',KEYS[2],cjson.encode(ev)); redis.call('RPUSH',KEYS[3],ARGV[3]); end; return oldStatus=='sent' and 2 or 1",
+        ["gift:" + giftId, "gift-event:" + eventId, "gifts:history:" + (senderId || "none")],
+        [id, Date.now(), eventId]
+      );
+      if (Number(result) === 1) discardedGifts += 1;
+      if (Number(result) === 2) { discardedGifts += 1; cancelledIncoming += 1; }
+    }
+    await client.eval(
+      "return redis.call('DEL',unpack(KEYS))",
+      ["consent:" + id,"contact:" + id,"user:visits:" + id,"gifts:received:" + id,"gifts:sent:" + id,"gifts:history:" + id,"gift-credits:" + id],
+      []
+    );
+    await recordAdminLog("warning", "admin", "Аккаунт пользователя обнулён", {
+      userId: id, discardedGifts, cancelledIncoming,
+      starterGrantPreserved: Boolean(await client.get("starter-gifts:" + id)),
+      paymentOrdersPreserved: true
+    });
+    return {
+      statusCode: 200,
+      body: {
+        ok: true, userId: id, discardedGifts, cancelledIncoming,
+        authorizationReset: true, visitHistoryCleared: true,
+        sentGiftsToOtherUsersPreserved: true, paymentOrdersPreserved: true
+      }
+    };
+  } finally {
+    await client.del(lockKey);
+  }
+}
+
 // Yandex Cloud Functions Node.js 22 HTTP handler. Entry point: handler.handler
 module.exports.handler = async function (event = {}) {
   const method = String(event.httpMethod || event.requestContext?.httpMethod || event.method || "GET").toUpperCase();
@@ -1262,7 +1316,7 @@ module.exports.handler = async function (event = {}) {
     }
   }
 
-  if (method === "POST" && ["/api/auth", "/api/consent/status", "/api/consent/accept", "/api/gifts/list", "/api/gifts/send", "/api/gifts/claim", "/api/gifts/open", "/api/gifts/keep", "/api/gifts/forward", "/api/shop/order", "/api/admin/status", "/api/admin/diagnostics", "/api/admin/register-webhook", "/api/admin/logs", "/api/admin/users", "/api/admin/user"].includes(path)) {
+  if (method === "POST" && ["/api/auth", "/api/consent/status", "/api/consent/accept", "/api/gifts/list", "/api/gifts/send", "/api/gifts/claim", "/api/gifts/open", "/api/gifts/keep", "/api/gifts/forward", "/api/shop/order", "/api/admin/status", "/api/admin/diagnostics", "/api/admin/register-webhook", "/api/admin/logs", "/api/admin/users", "/api/admin/user", "/api/admin/user/reset"].includes(path)) {
     if (!process.env.MAX_BOT_TOKEN) return response(503, { error: "max_bot_not_configured" });
     const auth = validateMaxInitData(body?.initData, process.env.MAX_BOT_TOKEN);
     if (!auth.ok) return response(401, { error: "unauthorized", reason: auth.reason });
@@ -1292,6 +1346,10 @@ module.exports.handler = async function (event = {}) {
         if (path === "/api/admin/user") {
           const detail = await handleAdminUserDetail(body?.userId);
           return response(detail.statusCode, detail.body);
+        }
+        if (path === "/api/admin/user/reset") {
+          const reset = await handleAdminResetUser(body?.userId, body?.confirmation);
+          return response(reset.statusCode, reset.body);
         }
         return response(404, { error: "admin_route_not_found" });
       }
