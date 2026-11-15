@@ -559,13 +559,13 @@ async function loadAdminUserDetail(userId){
 async function findAdminUserById(){
  const input=document.getElementById('adminUserIdSearch');
  const id=String(input?.value||'').trim();
- if(!/^\\d+$/.test(id)){alert('Введите корректный MAX ID.');return;}
+ if(!/^\d+$/.test(id)){alert('Введите корректный MAX ID.');return;}
  await loadAdminUserDetail(id);
 }
 async function resetAdminUser(userId){
  const id=String(userId||'');
- if(!/^\\d+$/.test(id))return;
- const confirmation=prompt('ВНИМАНИЕ! Будет обнулён аккаунт MAX ID '+id+'.\\n\\nПодарки, уже отправленные другим людям, и платёжные записи останутся. Личная коллекция, авторизация и история заходов будут сброшены.\\n\\nДля подтверждения введите RESET:'+id);
+ if(!/^\d+$/.test(id))return;
+ const confirmation=prompt('ВНИМАНИЕ! Будет обнулён аккаунт MAX ID '+id+'.\n\nПодарки, уже отправленные другим людям, и платёжные записи останутся. Личная коллекция, авторизация и история заходов будут сброшены.\n\nДля подтверждения введите RESET:'+id);
  if(confirmation!=='RESET:'+id)return;
  const button=document.getElementById('adminUserReset');
  if(button){button.disabled=true;button.textContent='Обнуляем…';}
