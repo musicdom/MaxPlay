@@ -330,7 +330,6 @@ async function loadGiftData(){
  if(receivedCount)receivedCount.textContent=String(currentGiftData.received.length);
  const createButton=document.getElementById('createGiftFromShop');
  if(createButton)createButton.textContent=data.fullyAuthorized?'Создать и отправить · '+currentGiftCredits+' из 3':'Сначала авторизуйтесь';
- if(createButton&&!data.fullyAuthorized)createButton.onclick=()=>{window.open('https://max.ru/se14711525_1_bot','_blank','noopener');};
  renderGiftCards();
 }
 document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-filter]').forEach(x=>x.classList.toggle('active',x===b));activeGiftFilter=b.dataset.filter;renderGiftCards();}));
