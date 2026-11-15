@@ -6,7 +6,7 @@ const path = require("node:path");
 let maxCertificates;
 function getMaxCertificates() {
   if (maxCertificates) return maxCertificates;
-  const certDir = path.join(__dirname, "certs");
+  const certDir = path.join(process.cwd(), "certs");
   const rootPath = path.join(certDir, "russian_trusted_root_ca.pem");
   const gostPath = path.join(certDir, "russian_trusted_root_ca_gost_2025.pem");
   if (!fs.existsSync(rootPath) || !fs.existsSync(gostPath)) {
