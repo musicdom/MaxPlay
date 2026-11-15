@@ -132,6 +132,21 @@ html,body{background:#edf1ff;color:#17172b;font-family:var(--sans)}
 .gift-modal-footer{display:flex;gap:8px;margin-top:16px}.gift-modal-footer button{flex:1}
 .gift-profile-tier{margin-top:10px;padding:12px;border-radius:12px;background:#fff;border:1px solid #e5e8fb;font-size:9px;color:#6f7593;line-height:1.6}
 .gift-share-link{display:block;margin-top:8px;padding:10px;border-radius:9px;background:#f3f1ff;color:#5634f5;font-size:8px;overflow-wrap:anywhere}
+.shop-collection-card{margin:14px 0;padding:16px;border:1px solid #dddafa;border-radius:19px;background:linear-gradient(145deg,#fff,#f5f2ff);box-shadow:0 8px 24px #4c35a010}
+.shop-collection-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.shop-collection-top b{font-size:15px;color:#282344}.shop-collection-top small{display:block;margin-top:5px;color:#85829f;font-size:10px}
+.shop-price{font-size:18px;font-weight:900;color:#5634f5;white-space:nowrap}
+.shop-previews{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin:13px 0}
+.shop-previews img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:9px;background:#f1efff}
+.shop-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+.shop-item{overflow:hidden;border:1px solid #e7e8f5;border-radius:15px;background:#fff}
+.shop-item img{display:block;width:100%;aspect-ratio:1;object-fit:cover;background:#f4f2fb}
+.shop-item-info{padding:10px}.shop-item-info b{display:block;font-size:11px;color:#292642}.shop-item-info small{display:block;margin:4px 0 9px;color:#8587a0;font-size:9px}
+.shop-buy{width:100%;border:0;border-radius:9px;padding:10px 7px;background:#5634f5;color:white;font-size:10px;font-weight:800}
+.shop-buy:disabled{opacity:.5}
+.shop-payment-result{display:none;margin-top:14px;padding:14px;border:1px solid #e4e4f5;border-radius:14px;background:#fff}
+.shop-payment-result.visible{display:block}.shop-payment-result b{font-size:12px}.shop-payment-result p{font-size:10px;color:#777b96;line-height:1.5}
+.shop-payment-options{display:grid;gap:8px;margin-top:10px}.shop-payment-options button{border:0;border-radius:10px;padding:12px;background:#5634f5;color:#fff;font-size:11px;font-weight:800}
+.shop-payment-options button.secondary{background:#f0efff;color:#5634f5}
 
 .admin-entry{display:none!important}.admin-entry.visible{display:flex!important}
 .admin-screen{padding-bottom:28px}.admin-panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;margin:12px 0;box-shadow:0 5px 20px #25204b08}
@@ -168,14 +183,30 @@ html,body{background:#edf1ff;color:#17172b;font-family:var(--sans)}
 <section class="screen" id="shop">
 <div class="page-title"><div class="eyebrow">ВЫБИРАЙТЕ С УДОВОЛЬСТВИЕМ</div><h1>Магазин подарков</h1><p>Найдите подарок, который захочется открыть.</p></div>
 <div class="shop-banner"><span class="shop-banner-icon">🎁</span><div><b>Подарки с настроением</b><small>Выбирайте понравившийся вариант — его можно будет купить себе или отправить близкому человеку.</small></div></div>
-<div class="section-head"><strong>Выберите концепцию подарка</strong><text>3 варианта</text></div>
-<div class="gift-type-grid">
- <div class="gift-type-card"><span class="gift-card-icon">✳️</span><div><b>Подарок проекта</b><small>Особенный подарок с фирменным оформлением Подариса.</small></div></div>
- <div class="gift-type-card"><span class="gift-card-icon">💗</span><div><b>Сердце для родных</b><small>Тёплый подарок для самых близких людей.</small></div></div>
- <div class="gift-type-card"><span class="gift-card-icon">🎁</span><div><b>Подарок другу</b><small>Небольшой сюрприз, которым приятно поделиться.</small></div></div>
+<div class="section-head"><strong>Коллекция Джойстик</strong><text>6 подарков</text></div>
+<div class="shop-collection-card">
+ <div class="shop-collection-top"><div><b>Полная коллекция «Джойстик»</b><small>Все шесть подарков одной покупкой</small></div><span class="shop-price">1 200 ₽</span></div>
+ <div class="shop-previews">
+  <img src="https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D0%B8%CC%86%D1%81%D1%82%D0%B8%D0%BA%201.png" alt="Джойстик 1">
+  <img src="https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D1%81%D1%82%D0%B8%D0%BA%202.png" alt="Джойстик 2">
+  <img src="https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D1%81%D1%82%D0%B8%D0%BA%203.png" alt="Джойстик 3">
+  <img src="https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D1%81%D1%82%D0%B8%D0%BA%204.png" alt="Джойстик 4">
+  <img src="https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D1%81%D1%82%D0%B8%D0%BA%205.png" alt="Джойстик 5">
+  <img src="https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D1%81%D1%82%D0%B8%D0%BA%206.png" alt="Джойстик 6">
+ </div>
+ <button class="shop-buy" data-buy-sku="joystick_collection">Купить коллекцию · 1 200 ₽</button>
 </div>
-<div class="auth-hint" id="shopAccessHint">Покупка подарков будет доступна всем пользователям. Для бесплатной отправки и пересылки подарков потребуется полная авторизация.</div>
-<button class="primary" id="createGiftFromShop" style="width:100%;margin-top:14px">Создать и отправить подарок</button>
+<div class="section-head"><strong>Подарки по отдельности</strong><text>200 ₽ за штуку</text></div>
+<div class="shop-grid">
+ <article class="shop-item"><img src="https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D0%B8%CC%86%D1%81%D1%82%D0%B8%D0%BA%201.png" alt="Джойстик 1"><div class="shop-item-info"><b>Джойстик 1</b><small>200 ₽</small><button class="shop-buy" data-buy-sku="joystick_1">Купить подарок</button></div></article>
+ <article class="shop-item"><img src="https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D1%81%D1%82%D0%B8%D0%BA%202.png" alt="Джойстик 2"><div class="shop-item-info"><b>Джойстик 2</b><small>200 ₽</small><button class="shop-buy" data-buy-sku="joystick_2">Купить подарок</button></div></article>
+ <article class="shop-item"><img src="https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D1%81%D1%82%D0%B8%D0%BA%203.png" alt="Джойстик 3"><div class="shop-item-info"><b>Джойстик 3</b><small>200 ₽</small><button class="shop-buy" data-buy-sku="joystick_3">Купить подарок</button></div></article>
+ <article class="shop-item"><img src="https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D1%81%D1%82%D0%B8%D0%BA%204.png" alt="Джойстик 4"><div class="shop-item-info"><b>Джойстик 4</b><small>200 ₽</small><button class="shop-buy" data-buy-sku="joystick_4">Купить подарок</button></div></article>
+ <article class="shop-item"><img src="https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D1%81%D1%82%D0%B8%D0%BA%205.png" alt="Джойстик 5"><div class="shop-item-info"><b>Джойстик 5</b><small>200 ₽</small><button class="shop-buy" data-buy-sku="joystick_5">Купить подарок</button></div></article>
+ <article class="shop-item"><img src="https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D1%81%D1%82%D0%B8%D0%BA%206.png" alt="Джойстик 6"><div class="shop-item-info"><b>Джойстик 6</b><small>200 ₽</small><button class="shop-buy" data-buy-sku="joystick_6">Купить подарок</button></div></article>
+</div>
+<div class="shop-payment-result" id="shopPaymentResult" aria-live="polite"></div>
+<div class="auth-hint" id="shopAccessHint">После полной регистрации вы получите три подарка «Джойстик 1» бесплатно. Их можно оставить себе или отправить другому пользователю.</div>
 </section>
 <section class="screen" id="profile">
 <div class="page-title"><div class="eyebrow">ВАШ АККАУНТ</div><h1>Профиль</h1><p>Ваша личная страница в Подарис.</p></div>
@@ -262,8 +293,17 @@ function renderGiftCards(){
  items.forEach(gift=>{
   const card=document.createElement('article');card.className='gift-card';
   const top=document.createElement('div');top.className='gift-card-top';
-  const visual=({project:['✳️','Подарок проекта'],family_heart:['💗','Сердце для родных'],friend:['🎁','Подарок другу']})[gift.giftType]||['🎁','Подарок'];
-  const icon=document.createElement('div');icon.className='gift-card-icon';icon.textContent=visual[0];
+  const joystickImage = ({
+    joystick_1:'https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D0%B8%CC%86%D1%81%D1%82%D0%B8%D0%BA%201.png',
+    joystick_2:'https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D1%81%D1%82%D0%B8%D0%BA%202.png',
+    joystick_3:'https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D1%81%D1%82%D0%B8%D0%BA%203.png',
+    joystick_4:'https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D1%81%D1%82%D0%B8%D0%BA%204.png',
+    joystick_5:'https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D1%81%D1%82%D0%B8%D0%BA%205.png',
+    joystick_6:'https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D1%81%D1%82%D0%B8%D0%BA%206.png'
+  })[gift.giftType];
+  const visual=({project:['✳️','Подарок проекта'],family_heart:['💗','Сердце для родных'],friend:['🎁','Подарок другу']})[gift.giftType]||(/^joystick_[1-6]$/.test(gift.giftType||'')?['🎮','Джойстик '+gift.giftType.split('_')[1]]:['🎁','Подарок']);
+  const icon=document.createElement('div');icon.className='gift-card-icon';
+  if(joystickImage){const image=document.createElement('img');image.src=joystickImage;image.alt=visual[1];image.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:13px';icon.append(image);}else icon.textContent=visual[0];
   const details=document.createElement('div');
   const title=document.createElement('div');title.className='gift-card-title';title.textContent=visual[1];
   const meta=document.createElement('div');meta.className='gift-card-meta';meta.textContent=activeGiftFilter==='mine'?'Отправлен вам':'Получатель MAX ID: '+gift.recipientId;
@@ -271,7 +311,17 @@ function renderGiftCards(){
   if(gift.message){const message=document.createElement('div');message.className='gift-card-meta';message.style.marginTop='10px';message.textContent=gift.message;card.append(message);}
   const timer=document.createElement('div');timer.className='gift-card-timer';card.append(timer);
   const actions=document.createElement('div');actions.className='gift-card-actions';card.append(actions);
-  if(activeGiftFilter==='mine'&&gift.status==='sent'){
+  if(activeGiftFilter==='mine'&&['owned','kept'].includes(gift.status)){
+    timer.textContent=gift.status==='kept'?'Подарок сохранён у вас. Вы можете поделиться им в любой момент.':'Этот подарок ваш. Оставьте его себе или поделитесь с другим человеком.';
+    if(gift.status==='owned'){
+      const keep=document.createElement('button');keep.className='secondary';keep.textContent='Оставить себе';keep.addEventListener('click',()=>giftAction('/api/gifts/keep',gift.id));actions.append(keep);
+    }
+    if(currentFullyAuthorized){
+      const share=document.createElement('button');share.textContent='Поделиться';share.addEventListener('click',()=>{const id=window.prompt('Введите MAX ID получателя');if(id)giftAction('/api/gifts/forward',gift.id,{recipientId:id});});actions.append(share);
+    }else{
+      const auth=document.createElement('button');auth.className='secondary';auth.textContent='Авторизоваться для отправки';auth.addEventListener('click',()=>window.open('https://max.ru/se14711525_1_bot','_blank','noopener'));actions.append(auth);
+    }
+  }else if(activeGiftFilter==='mine'&&gift.status==='sent'){
     timer.textContent='Заберите подарок, чтобы запустить таймер ожидания.';
     const claim=document.createElement('button');claim.textContent='Забрать подарок';claim.addEventListener('click',()=>giftAction('/api/gifts/claim',gift.id));actions.append(claim);
   }else if(activeGiftFilter==='mine'&&gift.status==='claimed'){
@@ -317,15 +367,15 @@ async function loadGiftData(){
  currentGiftCredits=Number(data.giftCredits||0);
  const status=document.getElementById('accessStatus');
  status.querySelector('b').textContent=data.fullyAuthorized?'Полная авторизация':'Базовый доступ';
- status.querySelector('small').textContent=data.fullyAuthorized?'Доступны отправка и пересылка. Бесплатных подарков: '+data.giftCredits:'Можно смотреть полученные подарки и покупать новые. Для отправки подтвердите номер телефона через MAX.';
+ status.querySelector('small').textContent=data.fullyAuthorized?'Полная регистрация завершена. В вашей коллекции доступны подарки, которыми можно делиться.':'Можно смотреть магазин и получать подарки. Для полной регистрации подтвердите номер телефона через MAX.';
  status.querySelector('.access-pill').textContent=data.fullyAuthorized?'Полный доступ':'Ограниченный доступ';
  status.querySelector('.access-pill').classList.toggle('full',data.fullyAuthorized);
  const authorizeButton=document.getElementById('authorizeButton');
  if(authorizeButton)authorizeButton.classList.toggle('visible',!data.fullyAuthorized);
  const hint=document.getElementById('shopAccessHint');
- if(hint)hint.textContent=data.fullyAuthorized?'Полная авторизация активна. Бесплатных отправок осталось: '+currentGiftCredits+' из 3. Магазин доступен всем.':'Для полной авторизации подтвердите номер телефона через MAX. Нажмите «Авторизоваться» и поделитесь контактом в чате с ботом.';
+ if(hint)hint.textContent=data.fullyAuthorized?'Полная регистрация завершена. Три стартовых подарка «Джойстик 1» уже доступны в вашей коллекции.':'После полной регистрации вы получите три подарка «Джойстик 1» бесплатно. Подтвердите номер телефона через MAX.';
  const tier=document.getElementById('profileTierInfo');
- if(tier)tier.textContent=data.fullyAuthorized?'Полная авторизация MAX. Бесплатных отправок осталось: '+currentGiftCredits+' из 3.':'Базовый доступ MAX. Просмотр полученных подарков и магазин доступны; отправка и пересылка — после подтверждения контакта.';
+ if(tier)tier.textContent=data.fullyAuthorized?'Полная регистрация MAX. Вам выданы три подарка «Джойстик 1». Их можно оставить себе или отправить.':'Базовый доступ MAX. После подтверждения номера телефона вы получите три подарка «Джойстик 1».';
  const profileStatus=document.getElementById('profileCardStatus');
  if(profileStatus)profileStatus.textContent=data.fullyAuthorized?'Полная авторизация MAX':'Ожидается подтверждение номера телефона';
  const sentCount=document.getElementById('profileSentCount'),receivedCount=document.getElementById('profileReceivedCount');
@@ -335,6 +385,28 @@ async function loadGiftData(){
  if(createButton)createButton.textContent=data.fullyAuthorized?'Создать и отправить · '+currentGiftCredits+' из 3':'Сначала авторизуйтесь';
  renderGiftCards();
 }
+
+async function createShopOrder(sku, button){
+ const result=document.getElementById('shopPaymentResult');
+ const buttons=[...document.querySelectorAll('[data-buy-sku]')];
+ buttons.forEach(item=>item.disabled=true);
+ result.classList.add('visible');
+ result.textContent='Создаём заказ…';
+ try{
+  const response=await fetch(window.PODARIS_API_URL('/api/shop/order'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData:window.podarisInitData,sku})});
+  const data=await response.json();
+  if(!response.ok||!data.ok)throw new Error(data.error==='yoomoney_not_configured'?'Оплата пока не настроена на сервере.':(data.error||'Не удалось создать заказ'));
+  result.replaceChildren();
+  const heading=document.createElement('b');heading.textContent='Заказ создан · '+data.order.amount+' ₽';result.append(heading);
+  const note=document.createElement('p');note.textContent='Выберите способ оплаты. Подарок появится в вашей коллекции после подтверждения платежа ЮMoney.';result.append(note);
+  const options=document.createElement('div');options.className='shop-payment-options';
+  const wallet=document.createElement('button');wallet.textContent='Оплатить из кошелька ЮMoney';wallet.addEventListener('click',()=>{window.location.href=data.paymentUrls.wallet;});
+  const card=document.createElement('button');card.className='secondary';card.textContent='Оплатить банковской картой';card.addEventListener('click',()=>{window.location.href=data.paymentUrls.card;});
+  options.append(wallet,card);result.append(options);
+ }catch(error){result.textContent=error.message;}
+ finally{buttons.forEach(item=>item.disabled=false);}
+}
+document.querySelectorAll('[data-buy-sku]').forEach(button=>button.addEventListener('click',()=>createShopOrder(button.dataset.buySku,button)));
 document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-filter]').forEach(x=>x.classList.toggle('active',x===b));activeGiftFilter=b.dataset.filter;renderGiftCards();}));
 function showGiftModal(){
  if(!currentFullyAuthorized){window.open('https://max.ru/se14711525_1_bot','_blank','noopener');return;}
