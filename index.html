@@ -562,22 +562,71 @@ async function findAdminUserById(){
  if(!/^\d+$/.test(id)){alert('Введите корректный MAX ID.');return;}
  await loadAdminUserDetail(id);
 }
-async function resetAdminUser(userId){
+function showAdminResetConfirmation(userId){
  const id=String(userId||'');
- if(!/^\d+$/.test(id))return;
- const confirmation=prompt('ВНИМАНИЕ! Будет обнулён аккаунт MAX ID '+id+'.\n\nПодарки, уже отправленные другим людям, и платёжные записи останутся. Личная коллекция, авторизация и история заходов будут сброшены.\n\nДля подтверждения введите RESET:'+id);
- if(confirmation!=='RESET:'+id)return;
- const button=document.getElementById('adminUserReset');
- if(button){button.disabled=true;button.textContent='Обнуляем…';}
+ if(!/^\\d+$/.test(id))return;
+ const box=document.getElementById('adminUserDetail');
+ if(!box)return;
+ box.querySelector('#adminResetConfirmPanel')?.remove();
+ const panel=document.createElement('div');
+ panel.id='adminResetConfirmPanel';
+ panel.className='admin-user-gift';
+ panel.style.cssText='margin-top:14px;padding:14px;border:1px solid #b94b5b;border-radius:12px';
+ const title=document.createElement('b');
+ title.textContent='Подтверждение обнуления';
+ const description=document.createElement('p');
+ description.className='admin-help';
+ description.textContent='Будет сброшена личная коллекция, авторизация и история заходов аккаунта MAX ID '+id+'. Подарки, уже переданные другим людям, и платёжные записи сохранятся. Это действие нельзя отменить.';
+ const input=document.createElement('input');
+ input.id='adminResetConfirmInput';
+ input.inputMode='numeric';
+ input.autocomplete='off';
+ input.placeholder='Введите RESET:'+id;
+ input.setAttribute('aria-label','Подтверждение обнуления аккаунта');
+ input.style.cssText='width:100%;box-sizing:border-box;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text);margin:8px 0';
+ const actions=document.createElement('div');
+ actions.className='admin-row';
+ actions.style.cssText='display:flex;gap:8px';
+ const confirm=document.createElement('button');
+ confirm.type='button';
+ confirm.className='admin-action';
+ confirm.style.background='#a83242';
+ confirm.textContent='Подтвердить обнуление';
+ confirm.disabled=true;
+ const cancel=document.createElement('button');
+ cancel.type='button';
+ cancel.className='admin-action secondary';
+ cancel.textContent='Отмена';
+ input.addEventListener('input',()=>{confirm.disabled=input.value.trim()!=='RESET:'+id;});
+ input.addEventListener('keydown',event=>{if(event.key==='Enter'&&!confirm.disabled)confirm.click();});
+ cancel.addEventListener('click',()=>panel.remove());
+ confirm.addEventListener('click',()=>performAdminUserReset(id,confirm));
+ actions.append(confirm,cancel);
+ panel.append(title,description,input,actions);
+ box.append(panel);
+ input.focus();
+ panel.scrollIntoView({behavior:'smooth',block:'center'});
+}
+async function performAdminUserReset(userId,button){
+ const id=String(userId||'');
+ if(!/^\\d+$/.test(id))return;
+ button.disabled=true;
+ button.textContent='Обнуляем…';
  try{
-  const result=await adminPost('/api/admin/user/reset',{userId:id,confirmation});
-  alert('Аккаунт '+id+' обнулён.\\nСброшено подарков: '+result.discardedGifts+'.\\nОтменено входящих подарков: '+result.cancelledIncoming+'.');
+  const result=await adminPost('/api/admin/user/reset',{userId:id,confirmation:'RESET:'+id});
+  const panel=document.getElementById('adminResetConfirmPanel');
+  if(panel)panel.remove();
+  alert('Аккаунт '+id+' обнулён.\\nСброшено подарков: '+Number(result.discardedGifts||0)+'.\\nОтменено входящих подарков: '+Number(result.cancelledIncoming||0)+'.');
   await loadAdminUsers();
   await loadAdminUserDetail(id);
  }catch(error){
   alert('Не удалось обнулить аккаунт: '+error.message);
-  if(button){button.disabled=false;button.textContent='Обнулить аккаунт';}
+  button.disabled=false;
+  button.textContent='Подтвердить обнуление';
  }
+}
+async function resetAdminUser(userId){
+ showAdminResetConfirmation(userId);
 }
 document.getElementById('adminUserIdFind')?.addEventListener('click',findAdminUserById);
 document.getElementById('adminUserIdSearch')?.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();findAdminUserById();}});
