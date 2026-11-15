@@ -687,6 +687,15 @@ async function handleGiftRequest(path, body, user) {
   return giftError(404, "gift_route_not_found");
 }
 
+
+async function handleAdminStatus(body){
+ const allowed=new Set(String(process.env.ADMIN_MAX_IDS||'').split(',').map(value=>value.trim()).filter(Boolean));
+ if(!allowed.has(String(body?.__verifiedUserId||'')))return {statusCode:403,body:{error:'admin_access_denied'}};
+ let redis='unavailable';
+ try{const client=await getRedis();await client.ping();redis='ok';}catch(error){console.error('[admin redis]',error.message);}
+ return {statusCode:200,body:{ok:true,isAdmin:true,userId:String(body.__verifiedUserId),redis,maxBotConfigured:Boolean(process.env.MAX_BOT_TOKEN),webhookSecretConfigured:Boolean(process.env.MAX_WEBHOOK_SECRET),checkedAt:new Date().toISOString()}};
+}
+
 // Yandex Cloud Functions Node.js 22 HTTP handler. Entry point: handler.handler
 module.exports.handler = async function (event = {}) {
   const method = String(event.httpMethod || event.requestContext?.httpMethod || event.method || "GET").toUpperCase();
@@ -732,13 +741,17 @@ module.exports.handler = async function (event = {}) {
     }
   }
 
-  if (method === "POST" && ["/api/auth", "/api/consent/status", "/api/consent/accept", "/api/gifts/list", "/api/gifts/send", "/api/gifts/claim", "/api/gifts/open", "/api/gifts/forward"].includes(path)) {
+  if (method === "POST" && ["/api/auth", "/api/consent/status", "/api/consent/accept", "/api/gifts/list", "/api/gifts/send", "/api/gifts/claim", "/api/gifts/open", "/api/gifts/forward", "/api/admin/status"].includes(path)) {
     if (!process.env.MAX_BOT_TOKEN) return response(503, { error: "max_bot_not_configured" });
     const auth = validateMaxInitData(body?.initData, process.env.MAX_BOT_TOKEN);
     if (!auth.ok) return response(401, { error: "unauthorized", reason: auth.reason });
 
     try {
       const user = await saveUser(auth.user);
+      if (path === "/api/admin/status") {
+        const adminResult = await handleAdminStatus({ __verifiedUserId: user.id });
+        return response(adminResult.statusCode, adminResult.body);
+      }
       if (path === "/api/auth") {
         const consent = await getConsent(user.id);
         const contact = await getSavedContact(user.id);
