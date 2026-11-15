@@ -553,7 +553,7 @@ async function claimGiftFromLaunchLink(apiBase,initData){
  if(!giftId)return;
  const response=await fetch(window.PODARIS_API_URL('/api/gifts/claim'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData,giftId,claimByLink:true})});
  const data=await response.json().catch(()=>({}));
- if(!response.ok)throw new Error(data.error||'Не удалось получить подарок');
+ if(!response.ok){const errors={gift_already_claimed:'Этот подарок уже забрал другой человек. Ссылка одноразовая.',gift_not_found:'Подарок не найден или ссылка устарела.',gift_not_claimable:'Этот подарок уже нельзя получить.'};throw new Error(errors[data.error]||data.error||'Не удалось получить подарок');}
  await loadGiftData();
  document.querySelector('[data-filter="mine"]')?.click();
  navigate('collection');
