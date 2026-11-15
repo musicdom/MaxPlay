@@ -594,14 +594,14 @@ async function listUserGifts(userId) {
     client.lRange("gifts:sent:" + userId, 0, -1),
     client.lRange("gifts:history:" + userId, 0, -1)
   ]);
-  // Redis lists can contain legacy duplicate references; one gift ID is one item.
+  // Deduplicate IDs and classify outgoing gifts by the immutable current senderId,
+  // not by list membership: gifts:history also contains items the user received
+  // and later forwarded, which must not be counted as gifts sent by this user.
   const receivedIds = [...new Set(receivedRaw)];
-  const sentIds = [...new Set(sentRaw)];
-  const historyIds = [...new Set(historyRaw)];
-  const [received, sent, history] = await Promise.all([
+  const outgoingIds = [...new Set([...sentRaw, ...historyRaw])];
+  const [received, outgoing] = await Promise.all([
     Promise.all(receivedIds.map(readGift)),
-    Promise.all(sentIds.map(readGift)),
-    Promise.all(historyIds.map(readGift))
+    Promise.all(outgoingIds.map(readGift))
   ]);
   async function normalize(gift, giftId, listKey) {
     if (!gift) {
@@ -610,10 +610,14 @@ async function listUserGifts(userId) {
     }
     return gift;
   }
+  const normalizedReceived = await Promise.all(received.map((gift,index)=>normalize(gift,receivedIds[index],"gifts:received:"+userId)));
+  const normalizedOutgoing = await Promise.all(outgoing.map((gift,index)=>normalize(gift,outgoingIds[index],"gifts:sent:"+userId)));
+  const ownOutgoing = normalizedOutgoing.filter(gift => gift && String(gift.senderId || "") === String(userId));
+  const uniqueOutgoing = [...new Map(ownOutgoing.map(gift => [gift.id, gift])).values()];
   return {
-    received: (await Promise.all(received.map((gift,index)=>normalize(gift,receivedIds[index],"gifts:received:"+userId)))).filter(Boolean),
-    sent: (await Promise.all(sent.map((gift,index)=>normalize(gift,sentIds[index],"gifts:sent:"+userId)))).filter(g=>g&&g.status==="sent"),
-    history: (await Promise.all(history.map((gift,index)=>normalize(gift,historyIds[index],"gifts:history:"+userId)))).filter(Boolean)
+    received: normalizedReceived.filter(Boolean),
+    sent: uniqueOutgoing.filter(gift => gift.status === "sent"),
+    history: uniqueOutgoing.filter(gift => gift.status !== "sent")
   };
 }
 
