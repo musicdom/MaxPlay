@@ -610,17 +610,26 @@ function showAdminResetConfirmation(userId){
 async function performAdminUserReset(userId,button){
  const id=String(userId||'');
  if(!/^\\d+$/.test(id))return;
+ const panel=document.getElementById('adminResetConfirmPanel');
  button.disabled=true;
  button.textContent='Обнуляем…';
  try{
   const result=await adminPost('/api/admin/user/reset',{userId:id,confirmation:'RESET:'+id});
-  const panel=document.getElementById('adminResetConfirmPanel');
   if(panel)panel.remove();
-  alert('Аккаунт '+id+' обнулён.\\nСброшено подарков: '+Number(result.discardedGifts||0)+'.\\nОтменено входящих подарков: '+Number(result.cancelledIncoming||0)+'.');
   await loadAdminUsers();
   await loadAdminUserDetail(id);
+  const detail=document.getElementById('adminUserDetail');
+  if(detail){
+   const notice=document.createElement('p');
+   notice.className='admin-help';
+   notice.style.cssText='padding:12px;border-radius:10px;background:var(--surface);border:1px solid #4b9b70';
+   notice.textContent='Аккаунт '+id+' обнулён. Сброшено подарков: '+Number(result.discardedGifts||0)+'. Отменено входящих подарков: '+Number(result.cancelledIncoming||0)+'.';
+   detail.prepend(notice);
+  }
  }catch(error){
-  alert('Не удалось обнулить аккаунт: '+error.message);
+  let message=panel?.querySelector('#adminResetError');
+  if(!message&&panel){message=document.createElement('p');message.id='adminResetError';message.className='admin-help';panel.append(message);}
+  if(message)message.textContent='Не удалось обнулить аккаунт: '+error.message;
   button.disabled=false;
   button.textContent='Подтвердить обнуление';
  }
