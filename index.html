@@ -280,7 +280,7 @@ html,body{background:#edf1ff;color:#17172b;font-family:var(--sans)}
    <div class="gift-form-field"><label for="giftRecipient">MAX ID получателя</label><input id="giftRecipient" inputmode="numeric" pattern="[0-9]+" required placeholder="Введите MAX ID"></div>
    <div class="gift-form-field"><label for="giftType">Вид подарка</label><select id="giftType"><option value="project">Подарок проекта</option><option value="family_heart">Сердце для родных</option><option value="friend">Подарок другу</option></select></div>
    <div class="gift-form-field"><label for="giftMessage">Послание получателю</label><textarea id="giftMessage" maxlength="500" placeholder="Напишите несколько тёплых слов…"></textarea></div>
-   <div class="gift-form-field"><label for="giftDelay">Таймер до открытия (часов)</label><input id="giftDelay" type="number" min="0" max="720" step="1" value="0" required><small>От 0 до 720 часов. После окончания таймера подарок можно открыть в течение 12 часов.</small></div>
+   <div class="gift-form-field"><label for="giftDelay">Таймер до открытия (часов; 0 — без таймера)</label><input id="giftDelay" type="number" min="0" max="720" step="1" value="0" required><small>От 0 до 720 часов. После получения подарок будет закрыт до конца таймера. Затем у получателя будет 12 часов, чтобы оставить его себе или передать дальше.</small></div>
    <div class="gift-modal-footer"><button type="button" class="gift-action secondary" id="giftCancel">Отмена</button><button type="submit" class="gift-action" id="giftSubmit">Отправить</button></div>
    <div class="consent-error" id="giftFormError" aria-live="polite"></div>
    <div id="giftCreatedResult"></div>
@@ -344,9 +344,10 @@ function renderGiftCards(){
     joystick_6:'https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D1%81%D1%82%D0%B8%D0%BA%206.png'
   })[gift.giftType];
   const names={joystick_1:'Геймпад «Неон»',joystick_2:'Геймпад «Пульс»',joystick_3:'Геймпад «Аркада»',joystick_4:'Геймпад «Турбо»',joystick_5:'Геймпад «Кибер»',joystick_6:'Геймпад «Легенда»'};
-  const visual=({project:['✳️','Подарок проекта'],family_heart:['💗','Сердце для родных'],friend:['🎁','Подарок другу']})[gift.giftType]||(/^joystick_[1-6]$/.test(gift.giftType||'')?['🎮',names[gift.giftType]]:['🎁','Подарок']);
+  const isSealed=gift.status==='claimed'&&Number(gift.opensAt||0)>Date.now();
+  const visual=isSealed?['🔒','Запечатанный подарок']:(({project:['✳️','Подарок проекта'],family_heart:['💗','Сердце для родных'],friend:['🎁','Подарок другу']})[gift.giftType]||(/^joystick_[1-6]$/.test(gift.giftType||'')?['🎮',names[gift.giftType]]:['🎁','Подарок']));
   const icon=document.createElement('div');icon.className='gift-card-icon';
-  if(joystickImage){const image=document.createElement('img');image.src=joystickImage;image.alt=visual[1];icon.append(image);}else icon.textContent=visual[0];
+  if(!isSealed&&joystickImage){const image=document.createElement('img');image.src=joystickImage;image.alt=visual[1];icon.append(image);}else icon.textContent=visual[0];
   const title=document.createElement('b');title.className='gift-tile-title';title.textContent=visual[1];
   const meta=document.createElement('small');meta.className='gift-tile-meta';
   if(activeGiftFilter==='mine'){
@@ -358,7 +359,7 @@ function renderGiftCards(){
   }
   const info=document.createElement('div');info.className='gift-tile-info';info.append(title,meta);
   const head=document.createElement('div');head.className='gift-tile-head';head.append(icon,info);card.append(head);
-  if(gift.message){const message=document.createElement('p');message.className='gift-tile-message';message.textContent=gift.message;card.append(message);}
+  if(gift.message&&!isSealed){const message=document.createElement('p');message.className='gift-tile-message';message.textContent=gift.message;card.append(message);}
   const footer=document.createElement('div');footer.className='gift-tile-footer';
   if(activeGiftFilter==='mine'){
     if(gift.status==='claimed'){
@@ -366,11 +367,15 @@ function renderGiftCards(){
       const expired=Number(gift.expiresAt||0)>0&&Date.now()>Number(gift.expiresAt);
       footer.textContent=remaining>0?'Открыть можно через '+formatRemaining(remaining):expired?'Срок открытия истёк':'Подарок можно открыть';
       if(remaining<=0&&!expired){const open=document.createElement('button');open.className='gift-tile-action';open.textContent='Открыть';open.addEventListener('click',()=>giftAction('/api/gifts/open',gift.id));card.append(open);}
-    }else if(gift.status==='expired')footer.textContent='Срок открытия истёк';
-    else if(gift.status==='opened')footer.textContent='Открыт · в вашей коллекции';
-    else footer.textContent=gift.status==='kept'?'Сохранён в вашей коллекции':'Ваш подарок';
-    if(['owned','kept','opened'].includes(gift.status)&&currentFullyAuthorized){
-      const share=document.createElement('button');share.className='gift-tile-action secondary';share.textContent='Подарить';share.addEventListener('click',()=>shareGift(gift.id));card.append(share);
+    }else if(gift.status==='expired')footer.textContent='Время выбора истекло. Подарок больше нельзя забрать или передать.';
+    else if(gift.status==='opened'){
+      footer.textContent='Подарок открыт. В течение 12 часов выберите: оставить себе или передать дальше.';
+      const keep=document.createElement('button');keep.className='gift-tile-action';keep.textContent='Оставить себе';keep.addEventListener('click',()=>giftAction('/api/gifts/keep',gift.id));card.append(keep);
+      if(currentFullyAuthorized){const forward=document.createElement('button');forward.className='gift-tile-action secondary';forward.textContent='Передать дальше';forward.addEventListener('click',()=>shareGift(gift.id));card.append(forward);}
+      const deadline=document.createElement('small');deadline.className='gift-tile-meta';deadline.textContent='Выбор до: '+new Date(Number(gift.expiresAt||0)).toLocaleString('ru-RU');card.append(deadline);
+    }else footer.textContent=gift.status==='kept'?'Сохранён в вашей коллекции':'Ваш подарок';
+    if(['owned','kept'].includes(gift.status)&&currentFullyAuthorized){
+      const share=document.createElement('button');share.className='gift-tile-action secondary';share.textContent='Поделиться подарком';share.addEventListener('click',()=>shareGift(gift.id));card.append(share);
     }
   }else if(activeGiftFilter==='incoming'){
     footer.textContent='Ожидает получения';
