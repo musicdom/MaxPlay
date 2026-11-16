@@ -231,7 +231,7 @@ function validateMaxInitData(initData, botToken) {
       lastName: typeof user.last_name === "string" ? user.last_name : "",
       username: typeof user.username === "string" ? user.username : null,
       languageCode: typeof user.language_code === "string" ? user.language_code : null,
-      photoUrl: typeof user.photo_url === "string" ? user.photo_url : null
+      photoUrl: [user.photo_url, user.photoUrl, user.avatar_url, user.avatarUrl].find(value => typeof value === "string" && value.trim()) || null
     },
     authDate
   };
@@ -259,7 +259,7 @@ async function saveUser(user) {
     lastName: user.lastName || existing.lastName || "",
     username: user.username || existing.username || null,
     languageCode: user.languageCode || existing.languageCode || null,
-    photoUrl: user.photoUrl || existing.photoUrl || null,
+    photoUrl: user.photoUrl || user.photo_url || user.avatar_url || user.avatarUrl || existing.photoUrl || null,
     createdAt,
     updatedAt: new Date().toISOString()
   };
@@ -650,7 +650,7 @@ async function listUserGifts(userId) {
   const profileIds = [...new Set([...received, ...sent, ...history].flatMap(g => [String(g.senderId || ""), String(g.recipientId || "")]).filter(id => /^\\d+$/.test(id)))];
   const profilePairs = await Promise.all(profileIds.map(async id => {
     const raw = await client.get("user:" + id);
-    try { const profile = raw ? JSON.parse(raw) : null; return [id, profile ? { photoUrl: profile.photoUrl || null, name: [profile.firstName, profile.lastName].filter(Boolean).join(" ").trim() || profile.username || id } : null]; }
+    try { const profile = raw ? JSON.parse(raw) : null; return [id, profile ? { photoUrl: profile.photoUrl || profile.photo_url || profile.avatar_url || profile.avatarUrl || null, name: [profile.firstName, profile.lastName].filter(Boolean).join(" ").trim() || profile.username || id } : null]; }
     catch { return [id, null]; }
   }));
   const profiles = new Map(profilePairs);
