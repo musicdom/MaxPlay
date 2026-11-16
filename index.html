@@ -98,7 +98,7 @@ html,body{background:#edf1ff;color:#17172b;font-family:var(--sans)}
 button.task-link{cursor:pointer}.task-link-primary{border-color:transparent;background:linear-gradient(105deg,#471aff,#9500ff);color:#fff}
 .task-message{margin-top:9px;color:#727895;font-size:9px;line-height:1.5}
 .tasks-footnote{padding:12px 13px;border-radius:12px;background:#eeefff;color:#656b91;font-size:9px;line-height:1.6}
-#starterMilestones{display:none}
+#starterMilestones{display:grid}
 @media(max-width:370px){.task-card{padding:12px}.task-state{font-size:7px;padding:5px 6px}.task-actions{gap:6px}.task-link{padding:8px 9px}}
 /* Authorization and gift collection */
 .access-status{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:14px 0;padding:13px 15px;border:1px solid #e8eaff;border-radius:16px;background:#fff}
@@ -270,7 +270,7 @@ button.task-link{cursor:pointer}.task-link-primary{border-color:transparent;back
   <div id="starterVerifyMessage" class="task-message" aria-live="polite"></div>
  </article>
 </div>
-<div class="tasks-footnote">Каждый подарок начисляется один раз после успешной проверки. Полученные подарки появятся в разделе «Мои подарки».</div>
+<div id="tasksLoadMessage" class="task-message" aria-live="polite">Обновляем статусы заданий…</div><button type="button" class="task-link" id="refreshTasks">Обновить статусы</button><div class="tasks-footnote">Каждый подарок начисляется один раз после успешной проверки. Полученные подарки появятся в разделе «Мои подарки».</div>
 </section>
 <section class="screen" id="shop">
 <div class="page-title"><div class="eyebrow">ВЫБИРАЙТЕ С УДОВОЛЬСТВИЕМ</div><h1>Магазин подарков</h1><p>Найдите подарок, который захочется открыть.</p></div>
@@ -361,7 +361,7 @@ button.task-link{cursor:pointer}.task-link-primary{border-color:transparent;back
 <script src="./api-config.js"></script>
 <script>
 const screens={collection:document.getElementById('collection'),tasks:document.getElementById('tasks'),shop:document.getElementById('shop'),profile:document.getElementById('profile'),admin:document.getElementById('admin')};
-function navigate(name){Object.values(screens).forEach(x=>x.classList.remove('active'));(screens[name]||screens.collection).classList.add('active');document.querySelectorAll('[data-screen]').forEach(b=>b.classList.toggle('active',b.dataset.screen===name));window.scrollTo({top:0,behavior:'smooth'});}
+function navigate(name){Object.values(screens).forEach(x=>x.classList.remove('active'));(screens[name]||screens.collection).classList.add('active');document.querySelectorAll('[data-screen]').forEach(b=>b.classList.toggle('active',b.dataset.screen===name));window.scrollTo({top:0,behavior:'smooth'});if(name==='tasks')loadStarterMilestones();}
 document.querySelectorAll('[data-screen]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.screen)));
 document.getElementById('buyGift').addEventListener('click',()=>navigate('shop'));
 document.getElementById('adminEntry')?.addEventListener('click',()=>{navigate('admin');loadAdminStatus();});
@@ -612,9 +612,12 @@ async function loadStarterMilestones(){
  const panel=document.getElementById('starterMilestones');
  if(!panel||!window.podarisInitData)return;
  try{
-  const response=await fetch(window.PODARIS_API_URL('/api/gifts/starter/status'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData:window.podarisInitData})});
-  const data=await response.json();if(!response.ok||!data.ok)return;
   panel.style.display='grid';
+  const loadMessage=document.getElementById('tasksLoadMessage');
+  if(loadMessage)loadMessage.textContent='Проверяем выполнение заданий…';
+  const response=await fetch(window.PODARIS_API_URL('/api/gifts/starter/status'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData:window.podarisInitData})});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok||!data.ok)throw new Error(data.error||'Сервер не вернул статусы заданий');
   const states={consent:'taskConsentState',contact:'taskContactState',channel:'taskChannelState'};
   Object.entries(states).forEach(([key,id])=>{
    const el=document.getElementById(id);if(!el)return;
@@ -625,8 +628,14 @@ async function loadStarterMilestones(){
   const button=document.getElementById('verifyStarterChannel');
   button.disabled=!data.channelConfigured||data.milestones.channel;
   button.textContent=data.milestones.channel?'Подписка подтверждена':'Проверить подписку';
- }catch(error){console.warn('[starter milestones]',error);}
+  if(loadMessage)loadMessage.textContent='Статусы заданий обновлены.';
+ }catch(error){
+  console.warn('[starter milestones]',error);
+  const loadMessage=document.getElementById('tasksLoadMessage');
+  if(loadMessage)loadMessage.textContent='Не удалось обновить статусы. Проверьте подключение и нажмите «Обновить статусы».';
+ }
 }
+document.getElementById('refreshTasks')?.addEventListener('click',loadStarterMilestones);
 document.getElementById('verifyStarterChannel')?.addEventListener('click',async()=>{
  const button=document.getElementById('verifyStarterChannel'),message=document.getElementById('starterVerifyMessage');
  button.disabled=true;message.textContent='Проверяем подписку в MAX…';
@@ -925,12 +934,20 @@ async function claimGiftFromLaunchLink(apiBase,initData){
  const startParam=String(window.WebApp?.initDataUnsafe?.start_param||'');
  const giftId=queryGift||(/^gift_[0-9a-f-]{36}$/i.test(startParam)?startParam.slice(5):'');
  if(!giftId)return;
- const response=await fetch(window.PODARIS_API_URL('/api/gifts/claim'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData,giftId,claimByLink:true})});
- const data=await response.json().catch(()=>({}));
- if(!response.ok){const errors={gift_already_claimed:'Этот подарок уже забрал другой человек. Ссылка одноразовая.',gift_not_found:'Подарок не найден или ссылка устарела.',gift_not_claimable:'Этот подарок уже нельзя получить.',gift_self_claim_not_allowed:'Нельзя забрать собственный подарок. Отправьте ссылку другому человеку.'};throw new Error(errors[data.error]||data.error||'Не удалось получить подарок');}
+ // Opening a link only opens the incoming inbox; it does not claim the gift.
  await loadGiftData();
- document.querySelector('[data-filter="mine"]')?.click();
+ const gift=(currentGiftData.received||[]).find(item=>String(item.id)===giftId);
  navigate('collection');
+ if(gift&&gift.status==='sent'){
+  document.querySelector('[data-filter="incoming"]')?.click();
+ }else if(gift&&['claimed','opened','owned','kept','expired'].includes(gift.status)){
+  document.querySelector('[data-filter="mine"]')?.click();
+ }else{
+  document.querySelector('[data-filter="incoming"]')?.click();
+  const title=document.getElementById('emptyTitle');
+  const description=document.getElementById('emptyText');
+  if(title&&description){title.textContent='Подарок не найден';description.textContent='Проверьте, что вы открыли ссылку из своего аккаунта MAX и подарок ещё не забрали.';}
+ }
 }
 /* Server-verified MAX identity and mandatory, versioned legal consent. */
 (async function initializePodarisAccess(){
