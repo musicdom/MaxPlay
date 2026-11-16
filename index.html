@@ -387,8 +387,9 @@ function renderGiftCards(){
    const row=document.createElement('article');row.className='gift-flow-row incoming-flow-row';
    const flow=document.createElement('div');flow.className='gift-flow';
    const from=document.createElement('span');from.className='gift-flow-avatar';
-   if(gift.senderPhotoUrl){const avatar=document.createElement('img');avatar.src=gift.senderPhotoUrl;avatar.alt='';avatar.loading='lazy';avatar.referrerPolicy='no-referrer';avatar.onerror=()=>{from.textContent='🤪';};from.append(avatar);}
-   else from.textContent='🤪';
+   const senderInitial=String(gift.senderName||'').trim().slice(0,1).toUpperCase()||'•';
+   if(gift.senderPhotoUrl){const avatar=document.createElement('img');avatar.src=gift.senderPhotoUrl;avatar.alt='';avatar.loading='lazy';avatar.referrerPolicy='no-referrer';avatar.onerror=()=>{from.textContent=senderInitial;};from.append(avatar);}
+   else from.textContent=senderInitial;
    const arrow=document.createElement('span');arrow.className='gift-flow-arrow';arrow.textContent='▶️';
    const present=document.createElement('span');present.className='gift-flow-gift';present.textContent='🎁';
    flow.append(from,arrow,present);
