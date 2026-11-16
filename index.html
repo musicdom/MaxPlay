@@ -184,6 +184,7 @@ html,body{background:#edf1ff;color:#17172b;font-family:var(--sans)}
 .gift-flow-avatar.gift-flow-waiting{border-color:#ffe2aa;background:#fff4df}
 .gift-flow-arrow{font-size:13px}
 .gift-flow-gift{width:35px;height:35px;display:grid;place-items:center;border-radius:11px;background:linear-gradient(145deg,#e3f8ff,#eee7ff);font-size:23px}
+.gift-flow-gift img{width:100%;height:100%;object-fit:contain;display:block;border-radius:9px}
 .gift-flow-received{background:#e5f8ef}
 .gift-flow-waiting{background:#fff4df}
 .gift-flow-info{min-width:0;flex:1;display:flex;flex-direction:column;gap:4px}
@@ -332,6 +333,17 @@ let currentGiftData={received:[],sent:[],history:[]};
 let currentFullyAuthorized=false;
 let currentGiftCredits=0;
 function formatRemaining(ms){if(ms<=0)return '00:00:00';const total=Math.floor(ms/1000),days=Math.floor(total/86400),hours=Math.floor(total%86400/3600),minutes=Math.floor(total%3600/60),seconds=total%60;return (days?days+' д ':'')+[hours,minutes,seconds].map(v=>String(v).padStart(2,'0')).join(':');}
+function giftImageUrl(giftType){
+ const images={
+  joystick_1:'https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D0%B8%CC%86%D1%81%D1%82%D0%B8%D0%BA%201.png',
+  joystick_2:'https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D1%81%D1%82%D0%B8%D0%BA%202.png',
+  joystick_3:'https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D1%81%D1%82%D0%B8%D0%BA%203.png',
+  joystick_4:'https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D1%81%D1%82%D0%B8%D0%BA%204.png',
+  joystick_5:'https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D1%81%D1%82%D0%B8%D0%BA%205.png',
+  joystick_6:'https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D1%81%D1%82%D0%B8%D0%BA%206.png'
+ };
+ return images[giftType]||'';
+}
 function renderGiftCards(){
  const list=document.getElementById('giftList'),empty=document.getElementById('emptyState');
  const allReceived=currentGiftData.received||[];
@@ -365,11 +377,11 @@ function renderGiftCards(){
     else holder.textContent=fallback;
     return holder;
    };
-   const from=makeAvatar(gift.senderPhotoUrl,'😀');
-   const arrow1=document.createElement('span');arrow1.className='gift-flow-arrow';arrow1.textContent='▶️';
-   const present=document.createElement('span');present.className='gift-flow-gift';present.textContent='🎁';
-   const arrow2=document.createElement('span');arrow2.className='gift-flow-arrow';arrow2.textContent='▶️';
-   const to=received?makeAvatar(gift.recipientPhotoUrl,'😁','gift-flow-received'):makeAvatar(null,'❓','gift-flow-waiting');
+   const from=makeAvatar(gift.senderPhotoUrl,String(gift.senderName||'').trim().slice(0,1).toUpperCase()||'•');
+   const arrow1=document.createElement('span');arrow1.className='gift-flow-arrow';arrow1.textContent='→';
+   const present=document.createElement('span');present.className='gift-flow-gift';const giftImage=document.createElement('img');giftImage.src=giftImageUrl(gift.giftType);giftImage.alt='Подарок';giftImage.loading='lazy';giftImage.onerror=()=>{present.textContent='Подарок';};if(giftImage.src&&giftImageUrl(gift.giftType))present.append(giftImage);else present.textContent='Подарок';
+   const arrow2=document.createElement('span');arrow2.className='gift-flow-arrow';arrow2.textContent='→';
+   const to=received?makeAvatar(gift.recipientPhotoUrl,String(gift.recipientName||'').trim().slice(0,1).toUpperCase()||'•','gift-flow-received'):makeAvatar(null,'?','gift-flow-waiting');
    flow.append(from,arrow1,present,arrow2,to);
    const info=document.createElement('div');info.className='gift-flow-info';
    const title=document.createElement('b');title.textContent=received?'Подарок получен':'Ожидает получения';
@@ -390,8 +402,10 @@ function renderGiftCards(){
    const senderInitial=String(gift.senderName||'').trim().slice(0,1).toUpperCase()||'•';
    if(gift.senderPhotoUrl){const avatar=document.createElement('img');avatar.src=gift.senderPhotoUrl;avatar.alt='';avatar.loading='lazy';avatar.referrerPolicy='no-referrer';avatar.onerror=()=>{from.textContent=senderInitial;};from.append(avatar);}
    else from.textContent=senderInitial;
-   const arrow=document.createElement('span');arrow.className='gift-flow-arrow';arrow.textContent='▶️';
-   const present=document.createElement('span');present.className='gift-flow-gift';present.textContent='🎁';
+   const arrow=document.createElement('span');arrow.className='gift-flow-arrow';arrow.textContent='→';
+   const present=document.createElement('span');present.className='gift-flow-gift';
+   const giftImage=document.createElement('img');giftImage.src=giftImageUrl(gift.giftType);giftImage.alt='Подарок';giftImage.loading='lazy';giftImage.onerror=()=>{present.textContent='Подарок';};
+   if(giftImageUrl(gift.giftType))present.append(giftImage);else present.textContent='Подарок';
    flow.append(from,arrow,present);
    const info=document.createElement('div');info.className='gift-flow-info';
    const title=document.createElement('b');title.textContent='Вам отправили подарок';
