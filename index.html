@@ -340,7 +340,7 @@ button.task-link{cursor:pointer}.task-link-primary{border-color:transparent;back
  <div class="admin-panel"><h3>Настройки и дальнейшие инструменты</h3><p class="admin-help">Здесь будем постепенно добавлять управление пользователями, подарками, документами, рассылками и служебными операциями. Каждое действие будет проверяться сервером.</p></div>
  <button class="admin-action secondary" id="adminBack">Вернуться в профиль</button>
 </section>
-<nav class="bottom-nav" aria-label="Основная навигация"><button class="nav-btn active" data-screen="collection"><span class="nav-icon">⌂</span><span>Главная</span></button><button class="nav-btn" data-screen="tasks"><span class="nav-icon">✓</span><span>Задания</span></button><button class="nav-btn" data-screen="shop"><span class="nav-icon">▧</span><span>Магазин</span></button><button class="nav-btn" data-screen="profile"><span class="nav-icon">◉</span><span>Профиль</span></button></nav>
+<nav class="bottom-nav" aria-label="Основная навигация"><button class="nav-btn active" data-screen="collection"><span class="nav-icon">⌂</span><span>Главная</span></button><button class="nav-btn" data-screen="tasks" type="button" onclick="navigate('tasks')"><span class="nav-icon">✓</span><span>Задания</span></button><button class="nav-btn" data-screen="shop"><span class="nav-icon">▧</span><span>Магазин</span></button><button class="nav-btn" data-screen="profile"><span class="nav-icon">◉</span><span>Профиль</span></button></nav>
 </div>
 <div class="gift-modal-backdrop" id="giftModalBackdrop">
  <div class="gift-modal" role="dialog" aria-modal="true" aria-labelledby="giftModalTitle">
@@ -361,7 +361,7 @@ button.task-link{cursor:pointer}.task-link-primary{border-color:transparent;back
 <script src="./api-config.js"></script>
 <script>
 const screens={collection:document.getElementById('collection'),tasks:document.getElementById('tasks'),shop:document.getElementById('shop'),profile:document.getElementById('profile'),admin:document.getElementById('admin')};
-function navigate(name){Object.values(screens).forEach(x=>x.classList.remove('active'));(screens[name]||screens.collection).classList.add('active');document.querySelectorAll('[data-screen]').forEach(b=>b.classList.toggle('active',b.dataset.screen===name));window.scrollTo({top:0,behavior:'smooth'});if(name==='tasks')loadStarterMilestones();}
+function navigate(name){Object.values(screens).filter(Boolean).forEach(x=>x.classList.remove('active'));const target=screens[name]||screens.collection;if(!target)return;target.classList.add('active');document.querySelectorAll('[data-screen]').forEach(b=>b.classList.toggle('active',b.dataset.screen===name));window.scrollTo({top:0,behavior:'smooth'});if(name==='tasks')loadStarterMilestones();}
 document.querySelectorAll('[data-screen]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.screen)));
 document.getElementById('buyGift').addEventListener('click',()=>navigate('shop'));
 document.getElementById('adminEntry')?.addEventListener('click',()=>{navigate('admin');loadAdminStatus();});
