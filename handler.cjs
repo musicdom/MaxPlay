@@ -647,7 +647,21 @@ async function listUserGifts(userId) {
     history.push(gift);
   }
 
-  return { received, sent, history };
+  const profileIds = [...new Set([...sent, ...history].flatMap(g => [String(g.senderId || ""), String(g.recipientId || "")]).filter(id => /^\\d+$/.test(id)))];
+  const profilePairs = await Promise.all(profileIds.map(async id => {
+    const raw = await client.get("user:" + id);
+    try { const profile = raw ? JSON.parse(raw) : null; return [id, profile ? { photoUrl: profile.photoUrl || null, name: [profile.firstName, profile.lastName].filter(Boolean).join(" ").trim() || profile.username || id } : null]; }
+    catch { return [id, null]; }
+  }));
+  const profiles = new Map(profilePairs);
+  const addAvatars = gift => ({
+    ...gift,
+    senderPhotoUrl: profiles.get(String(gift.senderId || ""))?.photoUrl || null,
+    recipientPhotoUrl: profiles.get(String(gift.recipientId || ""))?.photoUrl || null,
+    senderName: gift.senderName || profiles.get(String(gift.senderId || ""))?.name || "Пользователь MAX",
+    recipientName: gift.recipientName || profiles.get(String(gift.recipientId || ""))?.name || ""
+  });
+  return { received, sent: sent.map(addAvatars), history: history.map(addAvatars) };
 }
 function giftError(statusCode, error, extra = {}) {
   return { statusCode, body: { ok: false, error, ...extra } };
