@@ -444,9 +444,29 @@ async function sendConsentPrompt(userId) {
 
 async function handleMaxUpdate(update) {
   const type = update.update_type;
+  if (type === "bot_added" && update.is_channel === true && update.chat_id !== undefined) {
+    const client = await getRedis();
+    await client.set("podaris:loviday:channel_id", String(update.chat_id));
+    await recordAdminLog("info", "channel-subscription", "Бот добавлен в канал MAX; сохранён ID канала для проверки подписок", {
+      chatId: String(update.chat_id), channel: "https://max.ru/channel_loviday"
+    });
+  }
+  if (type === "bot_removed" && update.is_channel === true && update.chat_id !== undefined) {
+    const client = await getRedis();
+    const currentChannelId = await client.get("podaris:loviday:channel_id");
+    if (String(currentChannelId || "") === String(update.chat_id)) {
+      await client.del("podaris:loviday:channel_id");
+      await recordAdminLog("warning", "channel-subscription", "Бот удалён из канала ЛовиДай; проверка подписки отключена", {
+        chatId: String(update.chat_id)
+      });
+    }
+  }
   const user = update.user || update.callback?.user || update.message?.sender || {};
   const userId = user.user_id ?? user.id;
-  if (userId === undefined || userId === null) return;
+  if (userId === undefined || userId === null) {
+    if (type === "bot_added" || type === "bot_removed") return;
+    return;
+  }
 
   const id = String(userId);
   await saveUser({
@@ -1052,24 +1072,13 @@ async function handleAdminRegisterWebhook() {
 
     const subscriptions = Array.isArray(listPayload.subscriptions) ? listPayload.subscriptions : Array.isArray(listPayload) ? listPayload : [];
     const existing = subscriptions.find(item => String(item.url || "") === webhookUrl);
-    if (existing) {
-      return {
-        statusCode: 200,
-        body: {
-          ok: true, alreadyRegistered: true, webhookConfigured: true,
-          subscriptionCount: subscriptions.length,
-          updateTypes: Array.isArray(existing.update_types) ? existing.update_types : [],
-          webhookUrl
-        }
-      };
-    }
-
+    // POST /subscriptions updates the event types for an existing webhook URL.
     const registerResponse = await maxApiFetch("https://platform-api2.max.ru/subscriptions", {
       method: "POST",
       headers,
       body: JSON.stringify({
         url: webhookUrl,
-        update_types: ["bot_started", "message_created", "message_callback"],
+        update_types: ["bot_started", "message_created", "message_callback", "bot_added", "bot_removed"],
         secret
       })
     });
