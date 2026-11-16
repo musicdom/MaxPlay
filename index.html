@@ -176,7 +176,8 @@ html,body{background:#edf1ff;color:#17172b;font-family:var(--sans)}
 /* Wide, horizontal gift transfer history */
 .gift-list-flow{display:grid;grid-template-columns:minmax(0,1fr);gap:9px;padding:12px 0}
 .gift-flow-row{width:100%;min-width:0;display:flex;align-items:center;gap:10px;padding:12px 11px;border:1px solid #e5e9ff;border-radius:15px;background:linear-gradient(110deg,#fff 0%,#f8f8ff 100%);box-shadow:0 4px 14px #424b9409}
-.gift-flow{display:flex;align-items:center;justify-content:center;gap:3px;flex:none;white-space:nowrap}
+.sent-flow-row{flex-direction:column;align-items:stretch;gap:10px}.sent-flow-row .gift-flow{width:100%;justify-content:space-evenly;gap:clamp(12px,5vw,26px)}.sent-flow-row .gift-flow-arrow{font-size:17px}.sent-flow-info{width:100%;text-align:center;align-items:center}.sent-flow-row .gift-flow-copy{align-self:center}
+.gift-flow{display:flex;align-items:center;justify-content:center;gap:3px;flex:none;white-space:nowrap}.sent-flow-row .gift-flow{gap:clamp(12px,5vw,26px)}
 .gift-flow-person{width:31px;height:31px;display:grid;place-items:center;border-radius:11px;background:#f0efff;font-size:18px}
 .gift-flow-avatar{width:34px;height:34px;flex:none;display:grid;place-items:center;overflow:hidden;border-radius:50%;border:2px solid #e7e5ff;background:#f0efff;font-size:17px;box-sizing:border-box}
 .gift-flow-avatar img{width:100%;height:100%;object-fit:cover;display:block}
@@ -383,7 +384,7 @@ function renderGiftCards(){
    const arrow2=document.createElement('span');arrow2.className='gift-flow-arrow';arrow2.textContent='→';
    const to=received?makeAvatar(gift.recipientPhotoUrl,String(gift.recipientName||'').trim().slice(0,1).toUpperCase()||'•','gift-flow-received'):makeAvatar(null,'?','gift-flow-waiting');
    flow.append(from,arrow1,present,arrow2,to);
-   const info=document.createElement('div');info.className='gift-flow-info';
+   const info=document.createElement('div');info.className='gift-flow-info sent-flow-info';
    const title=document.createElement('b');title.textContent=received?'Подарок получен':'Ожидает получения';
    const meta=document.createElement('small');meta.textContent=received?'Получатель: '+(gift.recipientName||'Пользователь MAX'):'Получатель ещё не забрал подарок';
    info.append(title,meta);row.append(flow,info);
