@@ -455,7 +455,7 @@ async function handleMaxUpdate(update) {
     lastName: typeof user.last_name === "string" ? user.last_name : "",
     username: typeof user.username === "string" ? user.username : null,
     languageCode: typeof update.user_locale === "string" ? update.user_locale : null,
-    photoUrl: null
+    photoUrl: [user.photo_url, user.photoUrl, user.avatar_url, user.avatarUrl, user.avatar?.url].find(value => typeof value === "string" && value.trim()) || null
   });
   const current = await getConsent(id);
 
@@ -647,7 +647,7 @@ async function listUserGifts(userId) {
     history.push(gift);
   }
 
-  const profileIds = [...new Set([...received, ...sent, ...history].flatMap(g => [String(g.senderId || ""), String(g.recipientId || "")]).filter(id => /^\\d+$/.test(id)))];
+  const profileIds = [...new Set([...received, ...sent, ...history].flatMap(g => [String(g.senderId || ""), String(g.recipientId || "")]).filter(id => /^\d+$/.test(id)))];
   const profilePairs = await Promise.all(profileIds.map(async id => {
     const raw = await client.get("user:" + id);
     try { const profile = raw ? JSON.parse(raw) : null; return [id, profile ? { photoUrl: profile.photoUrl || profile.photo_url || profile.avatar_url || profile.avatarUrl || null, name: [profile.firstName, profile.lastName].filter(Boolean).join(" ").trim() || profile.username || id } : null]; }
