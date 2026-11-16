@@ -365,11 +365,16 @@ function renderGiftCards(){
     if(gift.status==='claimed'){
       const remaining=Number(gift.opensAt||0)-Date.now();
       const expired=Number(gift.expiresAt||0)>0&&Date.now()>Number(gift.expiresAt);
-      footer.textContent=remaining>0?'Открыть можно через '+formatRemaining(remaining):expired?'Срок открытия истёк':'Подарок можно открыть';
-      if(remaining<=0&&!expired){const open=document.createElement('button');open.className='gift-tile-action';open.textContent='Открыть';open.addEventListener('click',()=>giftAction('/api/gifts/open',gift.id));card.append(open);}
+      if(remaining>0){footer.classList.add('gift-card-timer');footer.dataset.target=String(gift.opensAt);footer.dataset.mode='opens';footer.textContent='Открыть можно через '+formatRemaining(remaining);}
+      else footer.textContent=expired?'Срок выбора истёк':'Подарок можно открыть';
+      if(remaining<=0&&!expired){const open=document.createElement('button');open.className='gift-tile-action';open.textContent='Открыть подарок';open.addEventListener('click',()=>giftAction('/api/gifts/open',gift.id));card.append(open);}
     }else if(gift.status==='expired')footer.textContent='Время выбора истекло. Подарок больше нельзя забрать или передать.';
-    else if(gift.status==='opened'){
-      footer.textContent='Подарок открыт. В течение 12 часов выберите: оставить себе или передать дальше.';
+    else if(gift.status==='opened'&&Number(gift.expiresAt||0)>0&&Date.now()>Number(gift.expiresAt)){
+      footer.textContent='Время выбора истекло. Подарок больше нельзя забрать или передать.';
+    }else if(gift.status==='opened'){
+      const decisionLeft=Number(gift.expiresAt||0)-Date.now();
+      footer.classList.add('gift-card-timer');footer.dataset.target=String(gift.expiresAt||0);footer.dataset.mode='decision';
+      footer.textContent='Выберите: оставить себе или передать дальше. Осталось '+formatRemaining(decisionLeft);
       const keep=document.createElement('button');keep.className='gift-tile-action';keep.textContent='Оставить себе';keep.addEventListener('click',()=>giftAction('/api/gifts/keep',gift.id));card.append(keep);
       if(currentFullyAuthorized){const forward=document.createElement('button');forward.className='gift-tile-action secondary';forward.textContent='Передать дальше';forward.addEventListener('click',()=>shareGift(gift.id));card.append(forward);}
       const deadline=document.createElement('small');deadline.className='gift-tile-meta';deadline.textContent='Выбор до: '+new Date(Number(gift.expiresAt||0)).toLocaleString('ru-RU');card.append(deadline);
