@@ -340,7 +340,7 @@ button.task-link{cursor:pointer}.task-link-primary{border-color:transparent;back
  <div class="admin-panel"><h3>Настройки и дальнейшие инструменты</h3><p class="admin-help">Здесь будем постепенно добавлять управление пользователями, подарками, документами, рассылками и служебными операциями. Каждое действие будет проверяться сервером.</p></div>
  <button class="admin-action secondary" id="adminBack">Вернуться в профиль</button>
 </section>
-<nav class="bottom-nav" aria-label="Основная навигация"><button class="nav-btn active" data-screen="collection"><span class="nav-icon">⌂</span><span>Главная</span></button><button class="nav-btn" data-screen="tasks" type="button" onclick="navigate('tasks')"><span class="nav-icon">✓</span><span>Задания</span></button><button class="nav-btn" data-screen="shop"><span class="nav-icon">▧</span><span>Магазин</span></button><button class="nav-btn" data-screen="profile"><span class="nav-icon">◉</span><span>Профиль</span></button></nav>
+<nav class="bottom-nav" aria-label="Основная навигация"><button class="nav-btn active" data-screen="collection"><span class="nav-icon">⌂</span><span>Главная</span></button><button class="nav-btn" data-screen="tasks" type="button"><span class="nav-icon">✓</span><span>Задания</span></button><button class="nav-btn" data-screen="shop"><span class="nav-icon">▧</span><span>Магазин</span></button><button class="nav-btn" data-screen="profile"><span class="nav-icon">◉</span><span>Профиль</span></button></nav>
 </div>
 <div class="gift-modal-backdrop" id="giftModalBackdrop">
  <div class="gift-modal" role="dialog" aria-modal="true" aria-labelledby="giftModalTitle">
@@ -608,9 +608,11 @@ async function loadGiftData(){
  await loadStarterMilestones();
 }
 
+let starterMilestonesLoading = false;
 async function loadStarterMilestones(){
  const panel=document.getElementById('starterMilestones');
- if(!panel||!window.podarisInitData)return;
+ if(!panel||!window.podarisInitData||starterMilestonesLoading)return;
+ starterMilestonesLoading=true;
  try{
   panel.style.display='grid';
   const loadMessage=document.getElementById('tasksLoadMessage');
@@ -626,13 +628,18 @@ async function loadStarterMilestones(){
    el.classList.toggle('done',done);
   });
   const button=document.getElementById('verifyStarterChannel');
-  button.disabled=!data.channelConfigured||data.milestones.channel;
-  button.textContent=data.milestones.channel?'Подписка подтверждена':'Проверить подписку';
+  if(button){
+   const channelDone=Boolean(data.milestones?.channel);
+   button.disabled=!data.channelConfigured||channelDone;
+   button.textContent=channelDone?'Подписка подтверждена':'Проверить подписку';
+  }
   if(loadMessage)loadMessage.textContent='Статусы заданий обновлены.';
  }catch(error){
   console.warn('[starter milestones]',error);
   const loadMessage=document.getElementById('tasksLoadMessage');
   if(loadMessage)loadMessage.textContent='Не удалось обновить статусы. Проверьте подключение и нажмите «Обновить статусы».';
+ }finally{
+  starterMilestonesLoading=false;
  }
 }
 document.getElementById('refreshTasks')?.addEventListener('click',loadStarterMilestones);
@@ -644,7 +651,7 @@ document.getElementById('verifyStarterChannel')?.addEventListener('click',async(
   const data=await response.json();
   if(!response.ok||!data.ok)throw new Error(data.error||'Не удалось проверить подписку');
   message.textContent=data.subscribed?(data.granted?'Подписка подтверждена! Третий подарок добавлен в «Мои».':'Подписка подтверждена. Подарок уже был начислен.'):'Подписка пока не найдена. Подпишитесь на канал и повторите проверку.';
-  if(data.subscribed)await loadGiftData();else await loadStarterMilestones();
+  if(data.subscribed)await loadGiftData();else{button.disabled=false;await loadStarterMilestones();}
  }catch(error){message.textContent=error.message;button.disabled=false;}
 });
 
