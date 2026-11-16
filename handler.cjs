@@ -723,7 +723,6 @@ async function handleGiftRequest(path, body, user) {
   if (!consentIsCurrent(consent)) return giftError(403, "consent_required");
   const client = await getRedis();
   const fullyAuthorized = await isFullyAuthorized(userId);
-  if (fullyAuthorized) await ensureStarterGiftCredits(userId);
   const balance = await getGiftBalance(userId);
 
   if (path === "/api/gifts/list") {
@@ -1468,7 +1467,11 @@ module.exports.handler = async function (event = {}) {
         const [consent, contact, channelId] = await Promise.all([
           getConsent(user.id), getSavedContact(user.id), (await getRedis()).get("podaris:loviday:channel_id")
         ]);
-        const legacy = Boolean(await (await getRedis()).get("starter-gifts:" + user.id));
+        const redis = await getRedis();
+        const legacy = Boolean(await redis.get("starter-gifts:" + user.id));
+        // Backfill only milestones already demonstrably completed before this release.
+        if (consentIsCurrent(consent)) await grantStarterMilestoneGift(user.id, "consent");
+        if (contact?.phone) await grantStarterMilestoneGift(user.id, "contact");
         const milestones = {};
         for (const name of ["consent","contact","channel"]) {
           const marker = await (await getRedis()).get("starter-milestone:" + user.id + ":" + name);
