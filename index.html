@@ -207,6 +207,14 @@ html,body{background:#edf1ff;color:#17172b;font-family:var(--sans)}
 <div class="profile-sub">Ваши подарки в одном месте</div>
 </div>
 <div class="access-status" id="accessStatus"><div><b>Проверяем уровень доступа</b><small>Статус профиля и доступные подарки загрузятся после авторизации.</small></div><span class="access-pill">Проверка</span><a class="auth-link" id="authorizeButton" href="https://max.ru/se14711525_1_bot" target="_blank" rel="noopener">Авторизоваться</a></div>
+<div id="starterMilestones" style="margin:14px 0;padding:16px;border:1px solid rgba(255,255,255,.12);border-radius:18px;background:rgba(255,255,255,.045);display:none">
+ <div style="font-weight:800;margin-bottom:5px">Три подарка за три шага</div>
+ <div style="font-size:12px;opacity:.7;margin-bottom:12px">Каждый выполненный шаг открывает один подарок «Неон».</div>
+ <div id="starterMilestoneRows" style="display:grid;gap:9px"></div>
+ <a href="https://max.ru/channel_loviday" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:12px;color:#8fc8ff">Подписаться на канал «ЛовиДай»</a>
+ <button type="button" id="verifyStarterChannel" class="primary" style="width:100%;margin-top:10px">Проверить подписку</button>
+ <div id="starterVerifyMessage" style="font-size:12px;text-align:center;margin-top:8px;opacity:.8"></div>
+</div>
 <div class="gift-switcher">
 <button class="switch" data-filter="give">🎁 Подарить</button>
 <button class="switch active" data-filter="mine">Мои</button>
@@ -545,18 +553,49 @@ async function loadGiftData(){
  const authorizeButton=document.getElementById('authorizeButton');
  if(authorizeButton)authorizeButton.classList.toggle('visible',!data.fullyAuthorized);
  const hint=document.getElementById('shopAccessHint');
- if(hint)hint.textContent=data.fullyAuthorized?'Полная регистрация завершена. Три стартовых подарка «Неон» уже доступны в вашей коллекции.':'После полной регистрации вы получите три подарка «Неон» бесплатно. Подтвердите номер телефона через MAX.';
+ if(hint)hint.textContent=data.fullyAuthorized?'Полная регистрация MAX завершена. Стартовые подарки выдаются за три отдельных шага.':'После принятия документов и подтверждения номера можно получить стартовые подарки за отдельные действия.';
  const tier=document.getElementById('profileTierInfo');
- if(tier)tier.textContent=data.fullyAuthorized?'Полная регистрация MAX. Вам выданы три подарка «Неон». Их можно оставить себе или отправить.':'Базовый доступ MAX. После подтверждения номера телефона вы получите три подарка «Неон».';
+ if(tier)tier.textContent=data.fullyAuthorized?'Полная регистрация MAX. Стартовые подарки открываются за три отдельных шага.':'Базовый доступ MAX. Выполните шаги регистрации, чтобы получить стартовые подарки.';
  const profileStatus=document.getElementById('profileCardStatus');
  if(profileStatus)profileStatus.textContent=data.fullyAuthorized?'Полная авторизация MAX':'Ожидается подтверждение номера телефона';
  const sentCount=document.getElementById('profileSentCount'),receivedCount=document.getElementById('profileReceivedCount');
  if(sentCount)sentCount.textContent=String(currentGiftData.sent.length+(currentGiftData.history||[]).length);
  if(receivedCount)receivedCount.textContent=String(currentGiftData.received.length);
  const createButton=document.getElementById('createGiftFromShop');
- if(createButton)createButton.textContent=data.fullyAuthorized?'Создать и отправить · '+currentGiftCredits+' из 3':'Сначала авторизуйтесь';
+ if(createButton)createButton.textContent=data.fullyAuthorized?'Создать и отправить · '+currentGiftCredits:'Сначала авторизуйтесь';
  renderGiftCards();
+ await loadStarterMilestones();
 }
+
+async function loadStarterMilestones(){
+ const panel=document.getElementById('starterMilestones');
+ if(!panel||!window.podarisInitData)return;
+ try{
+  const response=await fetch(window.PODARIS_API_URL('/api/gifts/starter/status'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData:window.podarisInitData})});
+  const data=await response.json();if(!response.ok||!data.ok)return;
+  panel.style.display='block';
+  const rows=[
+   ['consent','1. Принять пользовательское соглашение и политику'],
+   ['contact','2. Подтвердить номер телефона через MAX'],
+   ['channel','3. Подписаться на канал «ЛовиДай»']
+  ];
+  document.getElementById('starterMilestoneRows').innerHTML=rows.map(([key,label])=>'<div style="display:flex;align-items:center;gap:9px;font-size:13px"><span style="width:22px;height:22px;flex:none;border-radius:50%;display:grid;place-items:center;background:'+(data.milestones[key]?'#237c54':'rgba(255,255,255,.1)')+'">'+(data.milestones[key]?'✓':'•')+'</span><span style="opacity:'+(data.milestones[key]?'1':'.78')+'">'+label+'</span><b style="margin-left:auto;color:'+(data.milestones[key]?'#7ee0aa':'#aab4c3')+'">'+(data.milestones[key]?'Готово':'Ожидается')+'</b></div>').join('');
+  const button=document.getElementById('verifyStarterChannel');
+  button.disabled=!data.channelConfigured||data.milestones.channel;
+  button.textContent=data.milestones.channel?'Подписка подтверждена':'Проверить подписку';
+ }catch(error){console.warn('[starter milestones]',error);}
+}
+document.getElementById('verifyStarterChannel')?.addEventListener('click',async()=>{
+ const button=document.getElementById('verifyStarterChannel'),message=document.getElementById('starterVerifyMessage');
+ button.disabled=true;message.textContent='Проверяем подписку в MAX…';
+ try{
+  const response=await fetch(window.PODARIS_API_URL('/api/gifts/starter/verify-subscription'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData:window.podarisInitData})});
+  const data=await response.json();
+  if(!response.ok||!data.ok)throw new Error(data.error||'Не удалось проверить подписку');
+  message.textContent=data.subscribed?(data.granted?'Подписка подтверждена! Третий подарок добавлен в «Мои».':'Подписка подтверждена. Подарок уже был начислен.'):'Подписка пока не найдена. Подпишитесь на канал и повторите проверку.';
+  if(data.subscribed)await loadGiftData();else await loadStarterMilestones();
+ }catch(error){message.textContent=error.message;button.disabled=false;}
+});
 
 async function createShopOrder(sku, button){
  const result=document.getElementById('shopPaymentResult');
