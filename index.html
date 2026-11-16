@@ -178,6 +178,10 @@ html,body{background:#edf1ff;color:#17172b;font-family:var(--sans)}
 .gift-flow-row{width:100%;min-width:0;display:flex;align-items:center;gap:10px;padding:12px 11px;border:1px solid #e5e9ff;border-radius:15px;background:linear-gradient(110deg,#fff 0%,#f8f8ff 100%);box-shadow:0 4px 14px #424b9409}
 .gift-flow{display:flex;align-items:center;justify-content:center;gap:3px;flex:none;white-space:nowrap}
 .gift-flow-person{width:31px;height:31px;display:grid;place-items:center;border-radius:11px;background:#f0efff;font-size:18px}
+.gift-flow-avatar{width:34px;height:34px;flex:none;display:grid;place-items:center;overflow:hidden;border-radius:50%;border:2px solid #e7e5ff;background:#f0efff;font-size:17px;box-sizing:border-box}
+.gift-flow-avatar img{width:100%;height:100%;object-fit:cover;display:block}
+.gift-flow-avatar.gift-flow-received{border-color:#bcebd1;background:#e5f8ef}
+.gift-flow-avatar.gift-flow-waiting{border-color:#ffe2aa;background:#fff4df}
 .gift-flow-arrow{font-size:13px}
 .gift-flow-gift{width:35px;height:35px;display:grid;place-items:center;border-radius:11px;background:linear-gradient(145deg,#e3f8ff,#eee7ff);font-size:23px}
 .gift-flow-received{background:#e5f8ef}
@@ -355,11 +359,17 @@ function renderGiftCards(){
    const received=gift.status!=='sent'&&Boolean(gift.recipientName||gift.claimedAt||gift.eventType==='claimed');
    const row=document.createElement('article');row.className='gift-flow-row sent-flow-row';
    const flow=document.createElement('div');flow.className='gift-flow';
-   const from=document.createElement('span');from.className='gift-flow-person';from.textContent='😀';
+   const makeAvatar=(url,fallback,extra='')=>{
+    const holder=document.createElement('span');holder.className='gift-flow-avatar '+extra;
+    if(url){const img=document.createElement('img');img.src=url;img.alt='';img.loading='lazy';img.referrerPolicy='no-referrer';img.onerror=()=>{holder.textContent=fallback;};holder.append(img);}
+    else holder.textContent=fallback;
+    return holder;
+   };
+   const from=makeAvatar(gift.senderPhotoUrl,'😀');
    const arrow1=document.createElement('span');arrow1.className='gift-flow-arrow';arrow1.textContent='▶️';
    const present=document.createElement('span');present.className='gift-flow-gift';present.textContent='🎁';
    const arrow2=document.createElement('span');arrow2.className='gift-flow-arrow';arrow2.textContent='▶️';
-   const to=document.createElement('span');to.className='gift-flow-person '+(received?'gift-flow-received':'gift-flow-waiting');to.textContent=received?'😁':'❓';
+   const to=received?makeAvatar(gift.recipientPhotoUrl,'😁','gift-flow-received'):makeAvatar(null,'❓','gift-flow-waiting');
    flow.append(from,arrow1,present,arrow2,to);
    const info=document.createElement('div');info.className='gift-flow-info';
    const title=document.createElement('b');title.textContent=received?'Подарок получен':'Ожидает получения';
