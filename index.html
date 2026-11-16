@@ -45,8 +45,20 @@ html,body{background:#edf1ff;color:#17172b;font-family:var(--sans)}
 .app{background:linear-gradient(180deg,#f8f9ff 0%,#f3f6ff 100%)}
 .header{border-bottom:1px solid #e8eaff;background:rgba(255,255,255,.78);color:#17172b;letter-spacing:.25px}
 .header-mark{display:inline-grid;place-items:center;width:23px;height:23px;margin-right:7px;border-radius:8px;color:#fff;font-size:15px;background:linear-gradient(135deg,#00bfff 0%,#471aff 58%,#9500ff 100%)}
-.profile-top{padding-top:29px}
-.avatar{background:linear-gradient(145deg,#dff7ff,#e8ddff);border:3px solid #fff;box-shadow:0 5px 20px #5937e51a;color:#5634f5}
+.profile-top{padding-top:25px;padding-bottom:16px}
+.profile-top .avatar{width:88px;height:88px;font-size:33px;background:linear-gradient(145deg,#dff7ff,#e8ddff);border:3px solid #fff;box-shadow:0 5px 20px #5937e51a;color:#5634f5}
+.profile-auth-inline{margin-top:7px;padding:5px 11px;border-radius:999px;background:#fff;border:1px solid #e6e9fb;color:#8b8eaa;font-size:9px;font-weight:800}
+.profile-auth-inline.full{background:#e5f8ef;border-color:#c8efd9;color:#18774a}
+.gift-switcher{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 0 17px}
+.gift-switcher .switch{height:48px;font-size:11px;border-radius:14px}
+.gift-switcher .switch-main{grid-column:1/-1;width:min(78%,310px);justify-self:center;height:53px;font-size:13px}
+.gift-switcher .switch-give{grid-column:1/-1;width:min(78%,310px);justify-self:center;height:48px;margin-top:2px;background:linear-gradient(105deg,#471aff,#9500ff);color:#fff;border-color:transparent;box-shadow:0 7px 17px #6135ed25}
+.gift-switcher .switch-incoming.has-unread{background:#fff0f4;border:1px solid #ffb8ca;color:#d62f61;box-shadow:0 0 0 2px #ffe0e9,0 6px 16px #d62f6120;animation:incomingPulse 1.8s ease-in-out infinite}
+@keyframes incomingPulse{0%,100%{box-shadow:0 0 0 2px #ffe0e9,0 6px 16px #d62f6118}50%{box-shadow:0 0 0 5px #ffd5e2,0 7px 20px #d62f6130}}
+.gift-switcher .switch-incoming.has-unread::after{content:' ';display:inline-block;width:7px;height:7px;margin-left:6px;border-radius:50%;background:#e52f65;vertical-align:middle}
+.gift-switcher .switch-incoming.active{background:linear-gradient(105deg,#471aff,#9500ff);color:#fff;border-color:transparent}
+.gift-switcher .switch-incoming.active.has-unread{background:linear-gradient(105deg,#471aff,#9500ff);color:#fff}
+@media(max-width:390px){.gift-switcher .switch-main,.gift-switcher .switch-give{width:88%}}
 .profile-name{font-size:12px;color:#17172b}.profile-sub{font-size:9px;color:#8589a5}
 .switcher{gap:9px}.switch{height:45px;border:1px solid #e3e6fa;border-radius:13px;background:#fff;color:#6f7390;font-size:10px;box-shadow:0 2px 8px #25265a08}
 .switch.active{background:linear-gradient(105deg,#471aff 0%,#6e1aff 55%,#9500ff 100%);border-color:transparent;color:#fff;box-shadow:0 7px 17px #6135ed35}
@@ -205,8 +217,8 @@ html,body{background:#edf1ff;color:#17172b;font-family:var(--sans)}
 <div class="avatar" id="avatar"><span class="avatar-fallback" id="avatarFallback">♡</span><img loading="lazy" decoding="async" id="avatarImage" alt="Аватар профиля"></div>
 <div class="profile-name" id="profileName">Мой профиль</div>
 <div class="profile-sub">Ваши подарки в одном месте</div>
+<div class="profile-auth-inline" id="profileAuthInline">Проверяем авторизацию</div>
 </div>
-<div class="access-status" id="accessStatus"><div><b>Проверяем уровень доступа</b><small>Статус профиля и доступные подарки загрузятся после авторизации.</small></div><span class="access-pill">Проверка</span><a class="auth-link" id="authorizeButton" href="https://max.ru/se14711525_1_bot" target="_blank" rel="noopener">Авторизоваться</a></div>
 <div id="starterMilestones" style="margin:14px 0;padding:16px;border:1px solid rgba(255,255,255,.12);border-radius:18px;background:rgba(255,255,255,.045);display:none">
  <div style="font-weight:800;margin-bottom:5px">Три подарка за три шага</div>
  <div style="font-size:12px;opacity:.7;margin-bottom:12px">Каждый выполненный шаг открывает один подарок «Неон».</div>
@@ -216,10 +228,10 @@ html,body{background:#edf1ff;color:#17172b;font-family:var(--sans)}
  <div id="starterVerifyMessage" style="font-size:12px;text-align:center;margin-top:8px;opacity:.8"></div>
 </div>
 <div class="gift-switcher">
-<button class="switch" data-filter="give">🎁 Подарить</button>
-<button class="switch active" data-filter="mine">Мои</button>
-<button class="switch" data-filter="incoming">Мне прислали</button>
+<button class="switch switch-main active" data-filter="mine">Мои подарки</button>
+<button class="switch switch-incoming" data-filter="incoming">Мне прислали</button>
 <button class="switch" data-filter="sent">Отправленные</button>
+<button class="switch switch-give" data-filter="give">🎁 Подарить</button>
 </div>
 <div class="gift-window">
 <div class="window-head"><strong id="windowTitle">Отправленные подарки</strong><span class="window-count" id="giftCount">0 подарков</span></div>
@@ -353,9 +365,15 @@ function giftImageUrl(giftType){
  };
  return images[giftType]||'';
 }
+function updateIncomingNotice(){
+ const incoming=(currentGiftData.received||[]).filter(g=>g.status==='sent');
+ const button=document.querySelector('[data-filter="incoming"]');
+ if(button){button.classList.toggle('has-unread',incoming.length>0);button.setAttribute('aria-label',incoming.length?'Мне прислали, новых подарков: '+incoming.length:'Мне прислали');}
+}
 function renderGiftCards(){
  const list=document.getElementById('giftList'),empty=document.getElementById('emptyState');
  const allReceived=currentGiftData.received||[];
+ updateIncomingNotice();
  const mine=allReceived.filter(g=>['claimed','opened','owned','kept','expired'].includes(g.status));
  const incoming=allReceived.filter(g=>g.status==='sent');
  const sent=[...(currentGiftData.sent||[]),...(currentGiftData.history||[])];
@@ -545,13 +563,9 @@ async function loadGiftData(){
  currentGiftData=data.gifts||{received:[],sent:[],history:[]};
  currentFullyAuthorized=Boolean(data.fullyAuthorized);
  currentGiftCredits=Number(data.giftCredits||0);
- const status=document.getElementById('accessStatus');
- status.querySelector('b').textContent=data.fullyAuthorized?'Полная авторизация':'Базовый доступ';
- status.querySelector('small').textContent=data.fullyAuthorized?'Полная регистрация завершена. В вашей коллекции доступны подарки, которыми можно делиться.':'Можно смотреть магазин и получать подарки. Для полной регистрации подтвердите номер телефона через MAX.';
- status.querySelector('.access-pill').textContent=data.fullyAuthorized?'Полный доступ':'Ограниченный доступ';
- status.querySelector('.access-pill').classList.toggle('full',data.fullyAuthorized);
- const authorizeButton=document.getElementById('authorizeButton');
- if(authorizeButton)authorizeButton.classList.toggle('visible',!data.fullyAuthorized);
+ const authInline=document.getElementById('profileAuthInline');
+ if(authInline){authInline.textContent=data.fullyAuthorized?'Полная авторизация':'Базовая авторизация';authInline.classList.toggle('full',data.fullyAuthorized);}
+ updateIncomingNotice();
  const hint=document.getElementById('shopAccessHint');
  if(hint)hint.textContent=data.fullyAuthorized?'Полная регистрация MAX завершена. Стартовые подарки выдаются за три отдельных шага.':'После принятия документов и подтверждения номера можно получить стартовые подарки за отдельные действия.';
  const tier=document.getElementById('profileTierInfo');
