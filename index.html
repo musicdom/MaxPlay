@@ -176,15 +176,15 @@ html,body{background:#edf1ff;color:#17172b;font-family:var(--sans)}
 /* Wide, horizontal gift transfer history */
 .gift-list-flow{display:grid;grid-template-columns:minmax(0,1fr);gap:9px;padding:12px 0}
 .gift-flow-row{width:100%;min-width:0;display:flex;align-items:center;gap:10px;padding:12px 11px;border:1px solid #e5e9ff;border-radius:15px;background:linear-gradient(110deg,#fff 0%,#f8f8ff 100%);box-shadow:0 4px 14px #424b9409}
-.sent-flow-row{flex-direction:column;align-items:stretch;gap:10px}.sent-flow-row .gift-flow{width:100%;justify-content:space-evenly;gap:clamp(12px,5vw,26px)}.sent-flow-row .gift-flow-arrow{font-size:17px}.sent-flow-info{width:100%;text-align:center;align-items:center}.sent-flow-row .gift-flow-copy{align-self:center}
+.sent-flow-row{flex-direction:column;align-items:stretch;gap:12px}.sent-flow-row .gift-flow{width:100%;justify-content:space-evenly;gap:clamp(18px,7vw,34px);align-items:center}.sent-flow-row .gift-flow-arrow{font-size:20px;margin-top:-12px}.sent-flow-info{width:100%;text-align:center;align-items:center}.sent-flow-row .gift-flow-copy{align-self:center}.gift-flow-item{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:58px}.gift-flow-item>small{font-size:9px;line-height:1.2;color:#8588a1;text-align:center}.sent-flow-row .gift-flow-avatar{width:54px;height:54px}.sent-flow-row .gift-flow-gift{width:58px;height:58px}.sent-flow-row .gift-flow-info b{font-size:12px}.sent-flow-row .gift-flow-info small{font-size:10px}
 .gift-flow{display:flex;align-items:center;justify-content:center;gap:3px;flex:none;white-space:nowrap}.sent-flow-row .gift-flow{gap:clamp(12px,5vw,26px)}
 .gift-flow-person{width:31px;height:31px;display:grid;place-items:center;border-radius:11px;background:#f0efff;font-size:18px}
-.gift-flow-avatar{width:34px;height:34px;flex:none;display:grid;place-items:center;overflow:hidden;border-radius:50%;border:2px solid #e7e5ff;background:#f0efff;font-size:17px;box-sizing:border-box}
+.gift-flow-avatar{width:42px;height:42px;flex:none;display:grid;place-items:center;overflow:hidden;border-radius:50%;border:2px solid #e7e5ff;background:#f0efff;font-size:17px;box-sizing:border-box}
 .gift-flow-avatar img{width:100%;height:100%;object-fit:cover;display:block}
 .gift-flow-avatar.gift-flow-received{border-color:#bcebd1;background:#e5f8ef}
 .gift-flow-avatar.gift-flow-waiting{border-color:#ffe2aa;background:#fff4df}
 .gift-flow-arrow{font-size:13px}
-.gift-flow-gift{width:35px;height:35px;display:grid;place-items:center;border-radius:11px;background:linear-gradient(145deg,#e3f8ff,#eee7ff);font-size:23px}
+.gift-flow-gift{width:44px;height:44px;display:grid;place-items:center;border-radius:11px;background:linear-gradient(145deg,#e3f8ff,#eee7ff);font-size:23px}
 .gift-flow-gift img{width:100%;height:100%;object-fit:contain;display:block;border-radius:9px}
 .gift-flow-received{background:#e5f8ef}
 .gift-flow-waiting{background:#fff4df}
@@ -194,7 +194,7 @@ html,body{background:#edf1ff;color:#17172b;font-family:var(--sans)}
 .gift-flow-timer{color:#5634f5!important;font-weight:750}
 .gift-flow-claim,.gift-flow-copy{flex:none;border:0;border-radius:9px;padding:9px 10px;background:#5634f5;color:#fff;font-size:8px;font-weight:800;white-space:nowrap}
 .gift-flow-copy{background:#f0efff;color:#5634f5}
-@media(max-width:390px){.gift-flow-row{gap:7px;padding:10px 8px}.gift-flow-person{width:27px;height:27px;font-size:16px}.gift-flow-gift{width:30px;height:30px;font-size:20px}.gift-flow-arrow{font-size:11px}.gift-flow-info b{font-size:9px}.gift-flow-claim,.gift-flow-copy{padding:8px 7px;font-size:7px}}
+@media(max-width:390px){.sent-flow-row .gift-flow-avatar{width:46px;height:46px}.sent-flow-row .gift-flow-gift{width:50px;height:50px}.gift-flow-item{min-width:50px}.gift-flow-row{gap:7px;padding:10px 8px}.gift-flow-person{width:27px;height:27px;font-size:16px}.gift-flow-gift{width:30px;height:30px;font-size:20px}.gift-flow-arrow{font-size:11px}.gift-flow-info b{font-size:9px}.gift-flow-claim,.gift-flow-copy{padding:8px 7px;font-size:7px}}
 </style>
 </head>
 <body>
@@ -367,7 +367,7 @@ function renderGiftCards(){
  list.classList.toggle('gift-list-flow',activeGiftFilter==='incoming'||activeGiftFilter==='sent');
 
  if(activeGiftFilter==='sent'){
-  const rows=items.map((gift,index)=>({gift,index})).sort((a,b)=>Number(b.gift.lastSentAt||b.gift.sentAt||b.gift.claimedAt||b.gift.createdAt||0)-Number(a.gift.lastSentAt||a.gift.sentAt||a.gift.claimedAt||a.gift.createdAt||0));
+  const rows=items.map((gift,index)=>({gift,index})).sort((a,b)=>Number(b.gift.lastSentAt||b.gift.sentAt||b.gift.claimedAt||b.gift.createdAt||0)-Number(a.gift.lastSentAt||a.gift.sentAt||a.gift.createdAt||0));
   rows.forEach(({gift})=>{
    const received=gift.status!=='sent'&&Boolean(gift.recipientName||gift.claimedAt||gift.eventType==='claimed');
    const row=document.createElement('article');row.className='gift-flow-row sent-flow-row';
@@ -378,12 +378,21 @@ function renderGiftCards(){
     else holder.textContent=fallback;
     return holder;
    };
-   const from=makeAvatar(gift.senderPhotoUrl,String(gift.senderName||'').trim().slice(0,1).toUpperCase()||'•');
+   const makeItem=(visual,label)=>{
+    const item=document.createElement('div');item.className='gift-flow-item';
+    const caption=document.createElement('small');caption.textContent=label;
+    item.append(visual,caption);return item;
+   };
+   const from=makeItem(makeAvatar(gift.senderPhotoUrl,String(gift.senderName||'').trim().slice(0,1).toUpperCase()||'•'),'Отправитель');
    const arrow1=document.createElement('span');arrow1.className='gift-flow-arrow';arrow1.textContent='→';
-   const present=document.createElement('span');present.className='gift-flow-gift';const giftImage=document.createElement('img');giftImage.src=giftImageUrl(gift.giftType);giftImage.alt='Подарок';giftImage.loading='lazy';giftImage.onerror=()=>{present.textContent='Подарок';};if(giftImage.src&&giftImageUrl(gift.giftType))present.append(giftImage);else present.textContent='Подарок';
+   const present=document.createElement('span');present.className='gift-flow-gift';
+   const imageUrl=giftImageUrl(gift.giftType);
+   if(imageUrl){const giftImage=document.createElement('img');giftImage.src=imageUrl;giftImage.alt='Подарок';giftImage.loading='lazy';giftImage.onerror=()=>{present.textContent='Изображение недоступно';};present.append(giftImage);}
+   else present.textContent='Подарок';
+   const giftItem=makeItem(present,'Подарок');
    const arrow2=document.createElement('span');arrow2.className='gift-flow-arrow';arrow2.textContent='→';
-   const to=received?makeAvatar(gift.recipientPhotoUrl,String(gift.recipientName||'').trim().slice(0,1).toUpperCase()||'•','gift-flow-received'):makeAvatar(null,'?','gift-flow-waiting');
-   flow.append(from,arrow1,present,arrow2,to);
+   const to=makeItem(received?makeAvatar(gift.recipientPhotoUrl,String(gift.recipientName||'').trim().slice(0,1).toUpperCase()||'•','gift-flow-received'):makeAvatar(null,'?','gift-flow-waiting'),received?'Получатель':'Ожидает');
+   flow.append(from,arrow1,giftItem,arrow2,to);
    const info=document.createElement('div');info.className='gift-flow-info sent-flow-info';
    const title=document.createElement('b');title.textContent=received?'Подарок получен':'Ожидает получения';
    const meta=document.createElement('small');meta.textContent=received?'Получатель: '+(gift.recipientName||'Пользователь MAX'):'Получатель ещё не забрал подарок';
