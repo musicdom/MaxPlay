@@ -285,6 +285,35 @@ function consentIsCurrent(consent) {
     consent.privacyVersion === PRIVACY_VERSION);
 }
 
+async function grantStarterMilestoneGift(userId, milestone) {
+  const id = String(userId);
+  const allowed = new Set(["consent", "contact", "channel"]);
+  if (!/^\\d+$/.test(id) || !allowed.has(milestone)) throw new Error("invalid_starter_milestone");
+  const client = await getRedis();
+  // Accounts granted the former three-gift bundle keep those exact gifts; never issue a second bundle.
+  if (await client.get("starter-gifts:" + id)) {
+    await client.set("starter-milestone:" + id + ":" + milestone, "legacy");
+    return { granted: false, legacy: true };
+  }
+  const markerKey = "starter-milestone:" + id + ":" + milestone;
+  if (await client.get(markerKey)) return { granted: false, alreadyGranted: true };
+  const hash = crypto.createHash("sha256").update("podaris-starter:" + id + ":" + milestone).digest("hex");
+  const giftId = [hash.slice(0,8),hash.slice(8,12),hash.slice(12,16),hash.slice(16,20),hash.slice(20,32)].join("-");
+  const gift = {
+    id: giftId, giftType: "joystick_1", senderId: "podaris", senderName: "Подарис",
+    recipientId: id, recipientName: "", ownerId: id, status: "owned",
+    message: "", revealDelaySeconds: 0, createdAt: Date.now(), claimedAt: null,
+    opensAt: null, expiresAt: null, openedAt: null, forwardedFrom: null,
+    shareUrl: null, source: "starter_milestone", milestone
+  };
+  const created = await client.eval(
+    "if redis.call('GET',KEYS[1]) then return 0 end; if redis.call('EXISTS',KEYS[2])==0 then redis.call('SET',KEYS[2],ARGV[1]); end; if not redis.call('LPOS',KEYS[3],ARGV[2]) then redis.call('RPUSH',KEYS[3],ARGV[2]); end; redis.call('SET',KEYS[1],'granted'); return 1",
+    [markerKey, "gift:" + giftId, "gifts:received:" + id],
+    [JSON.stringify(gift), giftId]
+  );
+  return { granted: Number(created) === 1, alreadyGranted: Number(created) !== 1, giftId };
+}
+
 async function saveConsent(userId, source) {
   const client = await getRedis();
   const record = {
@@ -295,6 +324,7 @@ async function saveConsent(userId, source) {
     source
   };
   await client.set("consent:" + userId, JSON.stringify(record));
+  await grantStarterMilestoneGift(userId, "consent");
   return record;
 }
 
@@ -430,7 +460,7 @@ async function saveSharedContact(userId, payload) {
   const client = await getRedis();
   await client.set("contact:" + userId, JSON.stringify(record));
   await saveUser({ id: String(userId), phone: record.phone, fullAuthorizationAt: record.sharedAt });
-  await ensureStarterGiftCredits(String(userId));
+  await grantStarterMilestoneGift(userId, "contact");
   return true;
 }
 
@@ -1382,7 +1412,7 @@ module.exports.handler = async function (event = {}) {
     }
   }
 
-  if (method === "POST" && ["/api/auth", "/api/consent/status", "/api/consent/accept", "/api/gifts/list", "/api/gifts/send", "/api/gifts/claim", "/api/gifts/open", "/api/gifts/keep", "/api/gifts/forward", "/api/shop/order", "/api/admin/status", "/api/admin/diagnostics", "/api/admin/register-webhook", "/api/admin/logs", "/api/admin/users", "/api/admin/user", "/api/admin/user/reset", "/api/admin/user/gift"].includes(path)) {
+  if (method === "POST" && ["/api/auth", "/api/consent/status", "/api/consent/accept", "/api/gifts/list", "/api/gifts/send", "/api/gifts/claim", "/api/gifts/open", "/api/gifts/keep", "/api/gifts/forward", "/api/shop/order", "/api/admin/status", "/api/admin/diagnostics", "/api/admin/register-webhook", "/api/admin/logs", "/api/admin/users", "/api/admin/user", "/api/admin/user/reset", "/api/admin/user/gift", "/api/gifts/starter/status", "/api/gifts/starter/verify-subscription"].includes(path)) {
     if (!process.env.MAX_BOT_TOKEN) return response(503, { error: "max_bot_not_configured" });
     const auth = validateMaxInitData(body?.initData, process.env.MAX_BOT_TOKEN);
     if (!auth.ok) return response(401, { error: "unauthorized", reason: auth.reason });
@@ -1427,12 +1457,48 @@ module.exports.handler = async function (event = {}) {
         const consent = await getConsent(user.id);
         const contact = await getSavedContact(user.id);
         const fullyAuthorized = consentIsCurrent(consent) && Boolean(contact?.phone);
-        const giftCredits = fullyAuthorized ? await ensureStarterGiftCredits(user.id) : await getGiftBalance(user.id);
+        const giftCredits = await getGiftBalance(user.id);
         await recordUserVisit(user.id, { consentAccepted: consentIsCurrent(consent), fullyAuthorized, contactProvided: Boolean(contact?.phone) });
         return response(200, {
           ok: true, user, consentRequired: !consentIsCurrent(consent),
           fullyAuthorized, contactRequired: !contact?.phone, giftCredits
         });
+      }
+      if (path === "/api/gifts/starter/status") {
+        const [consent, contact, channelId] = await Promise.all([
+          getConsent(user.id), getSavedContact(user.id), (await getRedis()).get("podaris:loviday:channel_id")
+        ]);
+        const legacy = Boolean(await (await getRedis()).get("starter-gifts:" + user.id));
+        const milestones = {};
+        for (const name of ["consent","contact","channel"]) {
+          const marker = await (await getRedis()).get("starter-milestone:" + user.id + ":" + name);
+          milestones[name] = Boolean(marker || (legacy && ["consent","contact","channel"].includes(name)));
+        }
+        milestones.consent = milestones.consent || consentIsCurrent(consent);
+        milestones.contact = milestones.contact || Boolean(contact?.phone);
+        return response(200, { ok:true, milestones, channelConfigured:Boolean(channelId), channelUrl:"https://max.ru/channel_loviday", legacyBundle:legacy });
+      }
+      if (path === "/api/gifts/starter/verify-subscription") {
+        const consent = await getConsent(user.id);
+        if (!consentIsCurrent(consent)) return response(403, { ok:false, error:"consent_required" });
+        const client = await getRedis();
+        const [contact, channelId] = await Promise.all([getSavedContact(user.id), client.get("podaris:loviday:channel_id")]);
+        if (!contact?.phone) return response(403, { ok:false, error:"contact_required" });
+        if (!channelId) return response(503, { ok:false, error:"channel_not_configured" });
+        const check = await maxApiFetch("https://platform-api2.max.ru/chats/" + encodeURIComponent(String(channelId)) + "/members?user_ids=" + encodeURIComponent(String(user.id)), {
+          headers: { "Authorization": process.env.MAX_BOT_TOKEN }
+        });
+        const data = await check.json();
+        if (!check.ok) {
+          await recordAdminLog("warning","channel-subscription","Не удалось проверить подписку пользователя MAX",{userId:String(user.id),status:check.status});
+          return response(check.status === 429 ? 429 : 502, { ok:false, error:check.status === 403 ? "channel_members_access_denied" : "subscription_check_failed" });
+        }
+        const members = Array.isArray(data.members) ? data.members : Array.isArray(data) ? data : [];
+        const subscribed = members.some(member => String(member.user_id ?? member.user?.user_id ?? member.user?.id ?? member.id ?? "") === String(user.id));
+        if (!subscribed) return response(200, { ok:true, subscribed:false, granted:false, message:"Подпишитесь на канал и повторите проверку." });
+        const reward = await grantStarterMilestoneGift(user.id, "channel");
+        await recordAdminLog("info","channel-subscription","Подписка пользователя подтверждена; третий подарок начислен или уже был выдан",{userId:String(user.id),granted:reward.granted===true});
+        return response(200, { ok:true, subscribed:true, granted:reward.granted===true, alreadyGranted:reward.alreadyGranted===true || reward.legacy===true });
       }
       if (path === "/api/shop/order") {
         const order = await handleShopOrder(body, user);
