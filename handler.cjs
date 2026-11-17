@@ -661,10 +661,13 @@ async function listUserGifts(userId) {
   ]);
 
   const received = receivedValues.filter(gift =>
-    gift && String(gift.recipientId || "") === String(userId)
+    gift && gift.status !== "sent" && gift.expiredReason !== "pickup_timeout" &&
+    String(gift.recipientId || "") === String(userId)
   );
+  const now = Date.now();
   const pendingLinkGifts = linkIncomingValues
     .filter(gift => gift && gift.status === "sent" &&
+      (!gift.pickupExpiresAt || Number(gift.pickupExpiresAt) > now) &&
       (!gift.recipientId || String(gift.recipientId) === String(userId)))
     .map(gift => ({ ...gift, pendingLink: true }));
   for (const gift of pendingLinkGifts) {
@@ -757,13 +760,14 @@ async function handleGiftRequest(path, body, user) {
     if (gift.recipientId && String(gift.recipientId) !== userId) return giftError(403, "wrong_recipient");
     const now = Date.now();
     const previewResult = await client.eval(
-      "local raw=redis.call('GET',KEYS[1]); if not raw then return 'missing' end; local g=cjson.decode(raw); if g.status~='sent' then return 'unavailable' end; if g.recipientId and g.recipientId~=cjson.null and tostring(g.recipientId)~='' and tostring(g.recipientId)~=ARGV[1] then return 'wrong_recipient' end; if not g.opensAt or g.opensAt==cjson.null or tonumber(g.opensAt)==0 then g.opensAt=tonumber(ARGV[2])+tonumber(g.revealDelaySeconds or 0)*1000; g.expiresAt=g.opensAt+43200000; redis.call('SET',KEYS[1],cjson.encode(g)); end; if not redis.call('LPOS',KEYS[2],ARGV[3]) then redis.call('RPUSH',KEYS[2],ARGV[3]); end; return cjson.encode(g)",
+      "local raw=redis.call('GET',KEYS[1]); if not raw then return 'missing' end; local g=cjson.decode(raw); if g.status~='sent' then return 'unavailable' end; if g.recipientId and g.recipientId~=cjson.null and tostring(g.recipientId)~='' and tostring(g.recipientId)~=ARGV[1] then return 'wrong_recipient' end; local now=tonumber(ARGV[2]); if g.pickupExpiresAt and g.pickupExpiresAt~=cjson.null and tonumber(g.pickupExpiresAt)>0 and tonumber(g.pickupExpiresAt)<now then g.status='expired'; g.expiredReason='pickup_timeout'; g.expiredAt=now; redis.call('SET',KEYS[1],cjson.encode(g)); redis.call('LREM',KEYS[2],0,ARGV[3]); return 'expired' end; if not g.pickupExpiresAt or g.pickupExpiresAt==cjson.null or tonumber(g.pickupExpiresAt)==0 then g.pickupExpiresAt=now+43200000 end; if not g.opensAt or g.opensAt==cjson.null or tonumber(g.opensAt)==0 then g.opensAt=now+tonumber(g.revealDelaySeconds or 0)*1000 end; if not redis.call('LPOS',KEYS[2],ARGV[3]) then redis.call('RPUSH',KEYS[2],ARGV[3]); end; redis.call('SET',KEYS[1],cjson.encode(g)); return cjson.encode(g)",
       ["gift:" + giftId, "gifts:link-incoming:" + userId],
       [userId, now, giftId]
     );
     if (previewResult === "missing") return giftError(404, "gift_not_found");
     if (previewResult === "wrong_recipient") return giftError(403, "wrong_recipient");
     if (previewResult === "unavailable") return giftError(409, "gift_not_available");
+    if (previewResult === "expired") return giftError(409, "gift_expired");
     return { statusCode: 200, body: { ok: true, pending: true, gift: JSON.parse(previewResult) } };
   }
 
@@ -785,7 +789,7 @@ async function handleGiftRequest(path, body, user) {
       recipientId, recipientName: "", ownerId: null, status: "sent",
       message: typeof body.message === "string" ? body.message.slice(0, 500) : "",
       revealDelaySeconds, createdAt: now, lastSentAt: now, transferCount: 1,
-      claimedAt: null, opensAt: null, expiresAt: null, openedAt: null,
+      claimedAt: null, opensAt: null, pickupExpiresAt: null, expiresAt: null, openedAt: null,
       forwardedFrom: null,
       shareUrl: process.env.MAX_MINI_APP_URL
         ? process.env.MAX_MINI_APP_URL + (process.env.MAX_MINI_APP_URL.includes("?") ? "&" : "?") + "gift=" + giftId
@@ -847,13 +851,14 @@ async function handleGiftRequest(path, body, user) {
     const senderId = String(currentGift.senderId || "");
     const recipientName = [user.firstName,user.lastName].filter(Boolean).join(" ").trim() || "Пользователь MAX";
     const result = await client.eval(
-      "local raw=redis.call('GET',KEYS[1]); if not raw then return 'missing' end; local g=cjson.decode(raw); if g.status=='claimed' or g.status=='opened' or g.status=='kept' or g.status=='owned' then if tostring(g.recipientId or '')==ARGV[1] then return 'already:'..cjson.encode(g) end; return 'claimed' end; if g.status~='sent' then return 'not_claimable' end; if g.recipientId and g.recipientId~=cjson.null and tostring(g.recipientId)~='' and tostring(g.recipientId)~=ARGV[1] then return 'wrong_recipient' end; local sender=tostring(g.senderId or ''); if sender==ARGV[1] then return 'self_claim' end; if not g.opensAt or g.opensAt==cjson.null or tonumber(g.opensAt)==0 then g.opensAt=tonumber(ARGV[3])+tonumber(g.revealDelaySeconds or 0)*1000 end; if not g.expiresAt or g.expiresAt==cjson.null or tonumber(g.expiresAt)==0 then g.expiresAt=tonumber(g.opensAt)+43200000 end; if tonumber(g.expiresAt)<tonumber(ARGV[3]) then g.status='expired'; g.expiredAt=tonumber(ARGV[3]); redis.call('SET',KEYS[1],cjson.encode(g)); redis.call('LREM',KEYS[6],0,ARGV[4]); return 'expired' end; g.recipientId=ARGV[1]; g.recipientName=ARGV[2]; g.ownerId=ARGV[1]; g.status='claimed'; g.claimedAt=tonumber(ARGV[3]); redis.call('SET',KEYS[1],cjson.encode(g)); redis.call('RPUSH',KEYS[3],ARGV[4]); redis.call('LREM',KEYS[6],0,ARGV[4]); if sender~='' and sender~='purchase' and sender~='podaris' and sender~=ARGV[1] then redis.call('LREM',KEYS[2],0,ARGV[4]); local ev={id=ARGV[5],gift=g,senderId=sender,recipientId=ARGV[1],sentAt=tonumber(g.lastSentAt or g.createdAt or ARGV[3]),claimedAt=tonumber(ARGV[3]),eventType='claimed'}; redis.call('SET',KEYS[5],cjson.encode(ev)); redis.call('RPUSH',KEYS[4],ARGV[5]); end; return 'ok:'..cjson.encode(g)",
+      "local raw=redis.call('GET',KEYS[1]); if not raw then return 'missing' end; local g=cjson.decode(raw); if g.status=='claimed' or g.status=='opened' or g.status=='kept' or g.status=='owned' then if tostring(g.recipientId or '')==ARGV[1] then return 'already:'..cjson.encode(g) end; return 'claimed' end; if g.status~='sent' then return 'not_claimable' end; if g.recipientId and g.recipientId~=cjson.null and tostring(g.recipientId)~='' and tostring(g.recipientId)~=ARGV[1] then return 'wrong_recipient' end; local sender=tostring(g.senderId or ''); if sender==ARGV[1] then return 'self_claim' end; local pickup=tonumber(g.pickupExpiresAt or 0); if pickup==0 then pickup=tonumber(g.expiresAt or 0) end; if pickup==0 then return 'not_opened' end; if pickup<tonumber(ARGV[3]) then g.status='expired'; g.expiredReason='pickup_timeout'; g.expiredAt=tonumber(ARGV[3]); redis.call('SET',KEYS[1],cjson.encode(g)); redis.call('LREM',KEYS[6],0,ARGV[4]); redis.call('LREM',KEYS[3],0,ARGV[4]); return 'expired' end; if not g.opensAt or g.opensAt==cjson.null or tonumber(g.opensAt)==0 then g.opensAt=tonumber(ARGV[3])+tonumber(g.revealDelaySeconds or 0)*1000 end; g.recipientId=ARGV[1]; g.recipientName=ARGV[2]; g.ownerId=ARGV[1]; g.claimedAt=tonumber(ARGV[3]); g.pickupExpiresAt=cjson.null; if tonumber(g.opensAt)<=tonumber(ARGV[3]) then g.status='opened'; g.openedAt=tonumber(ARGV[3]); g.expiresAt=tonumber(ARGV[3])+43200000 else g.status='claimed'; g.expiresAt=cjson.null end; redis.call('SET',KEYS[1],cjson.encode(g)); if not redis.call('LPOS',KEYS[3],ARGV[4]) then redis.call('RPUSH',KEYS[3],ARGV[4]); end; redis.call('LREM',KEYS[6],0,ARGV[4]); if sender~='' and sender~='purchase' and sender~='podaris' and sender~=ARGV[1] then redis.call('LREM',KEYS[2],0,ARGV[4]); local ev={id=ARGV[5],gift=g,senderId=sender,recipientId=ARGV[1],sentAt=tonumber(g.lastSentAt or g.createdAt or ARGV[3]),claimedAt=tonumber(ARGV[3]),eventType='claimed'}; redis.call('SET',KEYS[5],cjson.encode(ev)); redis.call('RPUSH',KEYS[4],ARGV[5]); end; return 'ok:'..cjson.encode(g)",
       ["gift:" + giftId, "gifts:sent:" + senderId, "gifts:received:" + userId, "gifts:history:" + senderId, "gift-event:" + eventId, "gifts:link-incoming:" + userId],
       [userId, recipientName, now, giftId, eventId]
     );
     if (result === "missing") return giftError(404, "gift_not_found");
     if (result === "claimed") return giftError(409, "gift_already_claimed");
     if (result === "not_claimable") return giftError(409, "gift_not_claimable");
+    if (result === "not_opened") return giftError(409, "gift_link_not_opened");
     if (result === "expired") return giftError(409, "gift_expired");
     if (result === "wrong_recipient") return giftError(403, "not_gift_recipient");
     if (result === "self_claim") return giftError(409, "gift_self_claim_not_allowed");
@@ -878,7 +883,7 @@ async function handleGiftRequest(path, body, user) {
     const wasAlreadyOpened = previousGift?.status === "opened";
     const previousSenderId = String(previousGift?.senderId || "");
     const result = await client.eval(
-      "local raw=redis.call('GET',KEYS[1]); if not raw then return 'missing' end; local g=cjson.decode(raw); if tostring(g.recipientId or '')~=ARGV[1] then return 'not_owner' end; if g.status=='expired' then return 'expired:'..cjson.encode(g) end; if g.status=='opened' then if tonumber(g.expiresAt or 0)>0 and tonumber(g.expiresAt)<tonumber(ARGV[2]) then g.status='expired'; g.expiredAt=tonumber(ARGV[2]); redis.call('SET',KEYS[1],cjson.encode(g)); return 'expired:'..cjson.encode(g) end; return 'already:'..cjson.encode(g) end; if g.status~='claimed' then return 'not_ready' end; if tonumber(g.opensAt or 0)>tonumber(ARGV[2]) then return 'not_ready' end; if g.expiresAt and g.expiresAt~=cjson.null and tonumber(g.expiresAt)>0 and tonumber(g.expiresAt)<tonumber(ARGV[2]) then g.status='expired'; g.expiredAt=tonumber(ARGV[2]); redis.call('SET',KEYS[1],cjson.encode(g)); return 'expired:'..cjson.encode(g) end; g.status='opened'; g.openedAt=tonumber(ARGV[2]); g.ownerId=ARGV[1]; redis.call('SET',KEYS[1],cjson.encode(g)); return cjson.encode(g)",
+      "local raw=redis.call('GET',KEYS[1]); if not raw then return 'missing' end; local g=cjson.decode(raw); if tostring(g.recipientId or '')~=ARGV[1] then return 'not_owner' end; if g.status=='expired' then return 'expired:'..cjson.encode(g) end; if g.status=='opened' then if tonumber(g.expiresAt or 0)>0 and tonumber(g.expiresAt)<tonumber(ARGV[2]) then g.status='expired'; g.expiredAt=tonumber(ARGV[2]); redis.call('SET',KEYS[1],cjson.encode(g)); return 'expired:'..cjson.encode(g) end; return 'already:'..cjson.encode(g) end; if g.status~='claimed' then return 'not_ready' end; if tonumber(g.opensAt or 0)>tonumber(ARGV[2]) then return 'not_ready' end; g.status='opened'; g.openedAt=tonumber(ARGV[2]); g.expiresAt=tonumber(ARGV[2])+43200000; g.ownerId=ARGV[1]; redis.call('SET',KEYS[1],cjson.encode(g)); return cjson.encode(g)",
       ["gift:" + giftId], [userId, now]
     );
     if (result === "missing") return giftError(404, "gift_not_found");
@@ -922,7 +927,7 @@ async function handleGiftRequest(path, body, user) {
         ? process.env.MAX_MINI_APP_URL + (process.env.MAX_MINI_APP_URL.includes("?") ? "&" : "?") + "gift=" + giftId
         : null);
     const result = await client.eval(
-      "local raw=redis.call('GET',KEYS[1]); if not raw then return 'missing' end; local g=cjson.decode(raw); if tostring(g.recipientId or '')~=ARGV[1] then return 'not_owner' end; if g.status=='opened' and tonumber(g.expiresAt or 0)>0 and tonumber(g.expiresAt)<tonumber(ARGV[4]) then g.status='expired'; g.expiredAt=tonumber(ARGV[4]); redis.call('SET',KEYS[1],cjson.encode(g)); return 'expired' end; if g.status~='opened' and g.status~='owned' and g.status~='kept' then return 'not_forwardable' end; g.originSenderId=g.originSenderId or g.senderId or ''; g.originSenderName=g.originSenderName or g.senderName or ''; g.senderId=ARGV[1]; g.senderName=ARGV[2]; g.recipientId=(ARGV[3]=='') and cjson.null or ARGV[3]; g.recipientName=''; g.ownerId=cjson.null; g.status='sent'; g.lastSentAt=tonumber(ARGV[4]); g.transferCount=tonumber(g.transferCount or 0)+1; g.claimedAt=cjson.null; g.opensAt=cjson.null; g.expiresAt=cjson.null; g.openedAt=cjson.null; g.keptAt=cjson.null; g.revealDelaySeconds=tonumber(ARGV[7]); g.shareUrl=(ARGV[5]=='') and cjson.null or ARGV[5]; redis.call('SET',KEYS[1],cjson.encode(g)); redis.call('LREM',KEYS[2],0,ARGV[6]); redis.call('RPUSH',KEYS[3],ARGV[6]); if ARGV[3]~='' then redis.call('RPUSH',KEYS[4],ARGV[6]); end; return cjson.encode(g)",
+      "local raw=redis.call('GET',KEYS[1]); if not raw then return 'missing' end; local g=cjson.decode(raw); if tostring(g.recipientId or '')~=ARGV[1] then return 'not_owner' end; if g.status=='opened' and tonumber(g.expiresAt or 0)>0 and tonumber(g.expiresAt)<tonumber(ARGV[4]) then g.status='expired'; g.expiredAt=tonumber(ARGV[4]); redis.call('SET',KEYS[1],cjson.encode(g)); return 'expired' end; if g.status~='opened' and g.status~='owned' and g.status~='kept' then return 'not_forwardable' end; g.originSenderId=g.originSenderId or g.senderId or ''; g.originSenderName=g.originSenderName or g.senderName or ''; g.senderId=ARGV[1]; g.senderName=ARGV[2]; g.recipientId=(ARGV[3]=='') and cjson.null or ARGV[3]; g.recipientName=''; g.ownerId=cjson.null; g.status='sent'; g.lastSentAt=tonumber(ARGV[4]); g.transferCount=tonumber(g.transferCount or 0)+1; g.claimedAt=cjson.null; g.opensAt=cjson.null; g.pickupExpiresAt=cjson.null; g.expiresAt=cjson.null; g.openedAt=cjson.null; g.keptAt=cjson.null; g.revealDelaySeconds=tonumber(ARGV[7]); g.shareUrl=(ARGV[5]=='') and cjson.null or ARGV[5]; redis.call('SET',KEYS[1],cjson.encode(g)); redis.call('LREM',KEYS[2],0,ARGV[6]); redis.call('RPUSH',KEYS[3],ARGV[6]); if ARGV[3]~='' then redis.call('RPUSH',KEYS[4],ARGV[6]); end; return cjson.encode(g)",
       ["gift:" + giftId, "gifts:received:" + userId, "gifts:sent:" + userId, "gifts:received:" + (newRecipientId || "none")],
       [userId, senderName, newRecipientId, now, shareUrl || "", giftId, revealDelaySeconds]
     );
