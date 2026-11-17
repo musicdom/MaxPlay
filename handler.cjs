@@ -1107,8 +1107,12 @@ async function handleYooMoneyNotification(body) {
   if (!["p2p-incoming", "card-incoming"].includes(notificationType)) {
     return { statusCode: 400, body: { ok: false, error: "unsupported_notification_type" } };
   }
+  if (String(fields?.currency || "") !== "643" || String(fields?.codepro || "").toLowerCase() !== "false" || String(fields?.unaccepted || "false").toLowerCase() === "true" || String(fields?.test_notification || "false").toLowerCase() === "true" || !String(fields?.operation_id || "").trim()) {
+    return { statusCode: 400, body: { ok: false, error: "payment_not_eligible_for_credit" } };
+  }
   const label = String(fields?.label || "");
-  const amount = Number(fields?.withdraw_amount ?? fields?.amount);
+  // `amount` is credited to the receiver; `withdraw_amount` is the payer debit and may include fees.
+  const amount = Number(fields?.amount);
   const hmacSignature = String(fields?.sign || "").toLowerCase();
   const hmacPayload = Object.entries(fields || {})
     .filter(([key]) => key !== "sign")
@@ -1117,20 +1121,7 @@ async function handleYooMoneyNotification(body) {
     .join("&");
   const expectedHmac = crypto.createHmac("sha256", secret).update(hmacPayload).digest("hex");
   const hmacValid = /^[a-f0-9]{64}$/.test(hmacSignature) && safeEqual(expectedHmac, hmacSignature);
-  const signatureParts = [
-    notificationType,
-    String(fields?.operation_id || ""),
-    String(fields?.amount || ""),
-    String(fields?.currency || ""),
-    String(fields?.datetime || ""),
-    String(fields?.sender || ""),
-    String(fields?.codepro || ""),
-    secret,
-    label
-  ];
-  const expectedSha1 = crypto.createHash("sha1").update(signatureParts.join("&"), "utf8").digest("hex");
-  const sha1Valid = safeEqual(expectedSha1.toLowerCase(), String(fields?.sha1_hash || "").toLowerCase());
-  if (!hmacValid && !sha1Valid) {
+  if (!hmacValid) {
     await recordAdminLog("warning", "yoomoney", "Отклонено уведомление с неверной подписью", { label: label.slice(0, 80) });
     return { statusCode: 401, body: { ok: false, error: "invalid_notification_signature" } };
   }
@@ -1528,7 +1519,7 @@ async function handleAdminResetUser(userId, confirmation) {
       }
     };
   } finally {
-    await client.del(lockKey);
+    await client.eval("if redis.call('GET',KEYS[1])==ARGV[1] then return redis.call('DEL',KEYS[1]) end; return 0", [lockKey], [lockToken]);
   }
 }
 
