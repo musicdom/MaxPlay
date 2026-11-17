@@ -433,7 +433,8 @@ function giftImageUrl(giftType){
   joystick_3:'https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D1%81%D1%82%D0%B8%D0%BA%203.png',
   joystick_4:'https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D1%81%D1%82%D0%B8%D0%BA%204.png',
   joystick_5:'https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D1%81%D1%82%D0%B8%D0%BA%205.png',
-  joystick_6:'https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D1%81%D1%82%D0%B8%D0%BA%206.png'
+  joystick_6:'https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D1%81%D1%82%D0%B8%D0%BA%206.png',
+  loviday:'https://musicdom.github.io/MaxPlay/image/%D0%9B%D0%BE%D0%B2%D0%B8%D0%B4%D0%B0%D0%B8%CC%86%32%D0%BB%D0%BE%D0%B2%D0%B8%D0%B4%D0%B0%D0%B8%CC%86.png'
  };
  return images[giftType]||'';
 }
@@ -450,7 +451,7 @@ function openGiftDetails(gift,kind='received'){
  const content=document.getElementById('giftDetailContent');
  if(!backdrop||!content||!gift)return;
  content.replaceChildren();
- const names={joystick_1:'Геймпад «Неон»',joystick_2:'Геймпад «Пульс»',joystick_3:'Геймпад «Аркада»',joystick_4:'Геймпад «Турбо»',joystick_5:'Геймпад «Кибер»',joystick_6:'Геймпад «Легенда»',project:'Подарок проекта',family_heart:'Сердце для родных',friend:'Подарок другу'};
+ const names={joystick_1:'Геймпад «Неон»',joystick_2:'Геймпад «Пульс»',joystick_3:'Геймпад «Аркада»',joystick_4:'Геймпад «Турбо»',joystick_5:'Геймпад «Кибер»',joystick_6:'Геймпад «Легенда»',loviday:'Подарок «ЛовиДай»',project:'Подарок проекта',family_heart:'Сердце для родных',friend:'Подарок другу'};
  const titleText=names[gift.giftType]||'Подарок';
  const hero=document.createElement('div');hero.className='gift-detail-hero';
  const imageUrl=giftImageUrl(gift.giftType);
@@ -631,7 +632,7 @@ function renderGiftCards(){
    })[gift.giftType];
    const names={joystick_1:'Геймпад «Неон»',joystick_2:'Геймпад «Пульс»',joystick_3:'Геймпад «Аркада»',joystick_4:'Геймпад «Турбо»',joystick_5:'Геймпад «Кибер»',joystick_6:'Геймпад «Легенда»'};
    const isSealed=gift.status==='claimed'&&Number(gift.opensAt||0)>Date.now();
-   const visual=isSealed?['🔒','Запечатанный подарок']:(({project:['✳️','Подарок проекта'],family_heart:['💗','Сердце для родных'],friend:['🎁','Подарок другу']})[gift.giftType]||(/^joystick_[1-6]$/.test(gift.giftType||'')?['🎮',names[gift.giftType]]:['🎁','Подарок']));
+   const visual=isSealed?['🔒','Запечатанный подарок']:(({loviday:['🎁','Подарок «ЛовиДай»'],project:['✳️','Подарок проекта'],family_heart:['💗','Сердце для родных'],friend:['🎁','Подарок другу']})[gift.giftType]||(/^joystick_[1-6]$/.test(gift.giftType||'')?['🎮',names[gift.giftType]]:['🎁','Подарок']));
    const icon=document.createElement('div');icon.className='gift-card-icon';
    if(!isSealed&&joystickImage){const image=document.createElement('img');image.src=joystickImage;image.alt=visual[1];icon.append(image);}else icon.textContent=visual[0];
    const title=document.createElement('b');title.className='gift-tile-title';title.textContent=visual[1];
