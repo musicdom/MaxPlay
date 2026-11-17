@@ -420,7 +420,7 @@ button.task-link{cursor:pointer}.task-link-primary{border-color:transparent;back
    <div class="gift-form-field"><label for="giftRecipient">MAX ID получателя</label><input id="giftRecipient" inputmode="numeric" pattern="[0-9]+" required placeholder="Введите MAX ID"></div>
    <div class="gift-form-field"><label for="giftType">Вид подарка</label><select id="giftType"><option value="project">Подарок проекта</option><option value="family_heart">Сердце для родных</option><option value="friend">Подарок другу</option><option value="loviday_love">Тепло любви</option><option value="loviday">ЛовиДай</option><option value="loviday_friend">Верный друг</option><option value="loviday_steel">Стальная воля</option><option value="loviday_cyber">Киберсила</option></select></div>
    <div class="gift-form-field"><label for="giftMessage">Послание получателю</label><textarea id="giftMessage" maxlength="500" placeholder="Напишите несколько тёплых слов…"></textarea></div>
-   <div class="gift-form-field"><label for="giftDelay">Таймер до открытия (часов; 0 — без таймера)</label><input id="giftDelay" type="number" min="0" max="720" step="1" value="0" required><small>От 0 до 720 часов. После получения подарок будет закрыт до конца таймера. Затем у получателя будет 12 часов, чтобы оставить его себе или передать дальше.</small></div>
+   <div class="gift-form-field"><label for="giftDelay">Таймер до открытия (часов; 0 — без таймера)</label><input id="giftDelay" type="number" min="0" max="720" step="1" value="0" required><small>От 0 до 720 часов. После получения подарок будет закрыт до конца таймера. Затем его можно открыть, оставить себе или передать дальше.</small></div>
    <div class="gift-modal-footer"><button type="button" class="gift-action secondary" id="giftCancel">Отмена</button><button type="submit" class="gift-action" id="giftSubmit">Отправить</button></div>
    <div class="consent-error" id="giftFormError" aria-live="polite"></div>
    <div id="giftCreatedResult"></div>
@@ -525,7 +525,6 @@ function openGiftDetails(gift,kind='received'){
  addMeta('Дата отправки',giftDetailDate(gift.sentAt||gift.createdAt||gift.lastSentAt));
  addMeta('Дата получения',giftDetailDate(gift.claimedAt));
  addMeta('Дата открытия',giftDetailDate(gift.openedAt));
- addMeta('Действует до',giftDetailDate(gift.expiresAt));
  if(meta.childElementCount)content.append(meta);
  backdrop.classList.add('open');backdrop.setAttribute('aria-hidden','false');
 }
@@ -644,16 +643,12 @@ function renderGiftCards(){
    const wasClaimed=false;
    const title=document.createElement('b');title.textContent=wasClaimed?'Подарок получен по ссылке':'Вам отправили подарок';
    const meta=document.createElement('small');meta.textContent='От: '+(gift.senderName||'Пользователь MAX');
-   const delay=document.createElement('small');delay.className='gift-flow-timer';
-   const pickupExpiresAt=Number(gift.pickupExpiresAt||0);
-   if(pickupExpiresAt>Date.now()){delay.classList.add('gift-card-timer');delay.dataset.target=String(pickupExpiresAt);delay.dataset.mode='pickup';delay.textContent='Время на получение: '+formatRemaining(pickupExpiresAt-Date.now());}
-   else{delay.textContent='Время на получение истекло';}
    const reveal=document.createElement('small');reveal.className='gift-flow-timer';
    const opensAt=Number(gift.opensAt||0);
    if(opensAt>Date.now()){reveal.classList.add('gift-card-timer');reveal.dataset.target=String(opensAt);reveal.dataset.mode='opens';reveal.textContent='До открытия содержимого: '+formatRemaining(opensAt-Date.now());}
    else if(Number(gift.revealDelaySeconds||0)>0){reveal.textContent='Содержимое уже можно будет открыть после получения';}
    else{reveal.textContent='Без ожидания после получения';}
-   info.append(title,meta,delay,reveal);
+   info.append(title,meta,reveal);
    if(!wasClaimed){const claim=document.createElement('button');claim.type='button';claim.className='gift-flow-claim';claim.textContent='Оставить себе';claim.addEventListener('click',()=>giftAction('/api/gifts/claim',gift.id));row.append(flow,info,claim);}else{row.append(flow,info);}
    row.addEventListener('click',event=>{if(!event.target.closest('button')&&!isSealed)openGiftDetails(gift,'received');});list.append(row);
   });
@@ -676,19 +671,16 @@ function renderGiftCards(){
    const footer=document.createElement('div');footer.className='gift-tile-footer';
    if(gift.status==='claimed'){
     const remaining=Number(gift.opensAt||0)-Date.now();
-    const expired=Number(gift.expiresAt||0)>0&&Date.now()>Number(gift.expiresAt);
     if(remaining>0){footer.classList.add('gift-card-timer');footer.dataset.target=String(gift.opensAt);footer.dataset.mode='opens';footer.textContent='Открыть можно через '+formatRemaining(remaining);}
-    else footer.textContent=expired?'Срок выбора истёк':'Подарок можно открыть';
-    if(remaining<=0&&!expired){const open=document.createElement('button');open.className='gift-tile-action';open.textContent='Открыть подарок';open.addEventListener('click',()=>giftAction('/api/gifts/open',gift.id));card.append(open);}
-   }else if(gift.status==='expired')footer.textContent='Время выбора истекло. Подарок больше нельзя забрать или передать.';
-   else if(gift.status==='opened'&&Number(gift.expiresAt||0)>0&&Date.now()>Number(gift.expiresAt))footer.textContent='Время выбора истекло. Подарок больше нельзя забрать или передать.';
-   else if(gift.status==='opened'){
-    const decisionLeft=Number(gift.expiresAt||0)-Date.now();
-    footer.classList.add('gift-card-timer');footer.dataset.target=String(gift.expiresAt||0);footer.dataset.mode='decision';
-    footer.textContent='Выберите: оставить себе или передать дальше. Осталось '+formatRemaining(decisionLeft);
+    else footer.textContent='Подарок можно открыть';
+    if(remaining<=0){const open=document.createElement('button');open.className='gift-tile-action';open.textContent='Открыть подарок';open.addEventListener('click',()=>giftAction('/api/gifts/open',gift.id));card.append(open);}
+   }else if(gift.status==='expired'){
+    footer.textContent='Подарок снова доступен';
+    const restore=document.createElement('button');restore.className='gift-tile-action';restore.textContent='Продолжить';restore.addEventListener('click',()=>giftAction('/api/gifts/open',gift.id));card.append(restore);
+   }else if(gift.status==='opened'){
+    footer.textContent='Выберите: оставить себе или передать дальше.';
     const keep=document.createElement('button');keep.className='gift-tile-action';keep.textContent='Оставить себе';keep.addEventListener('click',()=>giftAction('/api/gifts/keep',gift.id));card.append(keep);
     if(currentFullyAuthorized){const forward=document.createElement('button');forward.className='gift-tile-action secondary';forward.textContent='Передать дальше';forward.addEventListener('click',()=>shareGift(gift.id));card.append(forward);}
-    const deadline=document.createElement('small');deadline.className='gift-tile-meta';deadline.textContent='Выбор до: '+new Date(Number(gift.expiresAt||0)).toLocaleString('ru-RU');card.append(deadline);
    }else footer.textContent=gift.status==='kept'?'Сохранён в вашей коллекции':'Ваш подарок';
    if(['owned','kept'].includes(gift.status)&&currentFullyAuthorized){const share=document.createElement('button');share.className='gift-tile-action secondary';share.textContent='Поделиться подарком';share.addEventListener('click',()=>shareGift(gift.id));card.append(share);}
    card.append(footer);list.append(card);
@@ -700,13 +692,13 @@ setInterval(()=>{
  let refresh=false;
  document.querySelectorAll('.gift-card-timer[data-target]').forEach(timer=>{
   const left=Number(timer.dataset.target)-Date.now();
-  if(left<=0){timer.removeAttribute('data-target');if(timer.dataset.mode==='pickup'){refresh=true;timer.textContent='Время на получение истекло';}else{timer.textContent='Подарок готов к открытию';refresh=true;}return;}
-  timer.textContent=timer.dataset.mode==='opens'?'Открыть можно через '+formatRemaining(left):timer.dataset.mode==='pickup'?'Забрать подарок в течение: '+formatRemaining(left):'Подарок готов! На открытие осталось '+formatRemaining(left);
+  if(left<=0){timer.removeAttribute('data-target');timer.textContent='Подарок готов к открытию';refresh=true;return;}
+  timer.textContent=timer.dataset.mode==='opens'?'Открыть можно через '+formatRemaining(left):'Подарок готов! На открытие осталось '+formatRemaining(left);
  });
  if(refresh)loadGiftData().catch(()=>{});
 },1000);
 async function giftAction(path,giftId,extra={}){
- try{const response=await fetch(window.PODARIS_API_URL(path),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData:window.podarisInitData,giftId,...extra})});const data=await response.json();if(!response.ok)throw new Error(data.error==='gift_expired'?'Время на получение подарка истекло. Подарок сгорел.':data.error||'Не удалось выполнить действие');await loadGiftData();if(path==='/api/gifts/claim'){activeGiftFilter='mine';document.querySelectorAll('[data-filter]').forEach(x=>x.classList.toggle('active',x.dataset.filter==='mine'));renderGiftCards();}return data;}
+ try{const response=await fetch(window.PODARIS_API_URL(path),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData:window.podarisInitData,giftId,...extra})});const data=await response.json();if(!response.ok)throw new Error(data.error==='gift_expired'?'Ссылка на подарок недоступна.':data.error||'Не удалось выполнить действие');await loadGiftData();if(path==='/api/gifts/claim'){activeGiftFilter='mine';document.querySelectorAll('[data-filter]').forEach(x=>x.classList.toggle('active',x.dataset.filter==='mine'));renderGiftCards();}return data;}
  catch(error){window.alert(error.message);await loadGiftData().catch(()=>{});if(activeGiftFilter==='incoming')renderGiftCards();return null;}
 }
 function showGiftShareDialog(link){
@@ -734,7 +726,7 @@ function shareGift(giftId){
  const title=document.createElement('b');title.textContent='Передать подарок';title.style.cssText='display:block;font-size:17px;color:#24233f';
  const label=document.createElement('label');label.textContent='Таймер до открытия (часов; 0 — без таймера)';label.style.cssText='display:block;margin:14px 0 6px;font-size:12px;color:#555';
  const input=document.createElement('input');input.type='number';input.min='0';input.max='720';input.step='1';input.value='0';input.style.cssText='width:100%;box-sizing:border-box;padding:12px;border:1px solid #ddd;border-radius:10px;font-size:15px';
- const help=document.createElement('p');help.textContent='Таймер до показа начнётся, когда получатель откроет ссылку. После перехода по ссылке у него будет 12 часов, чтобы забрать подарок.';help.style.cssText='font-size:11px;line-height:1.5;color:#777';
+ const help=document.createElement('p');help.textContent='Таймер до показа начнётся, когда получатель откроет ссылку. Забрать подарок можно в любое время.';help.style.cssText='font-size:11px;line-height:1.5;color:#777';
  const send=document.createElement('button');send.textContent='Создать ссылку для передачи';send.style.cssText='width:100%;padding:14px;border:0;border-radius:12px;background:linear-gradient(105deg,#471aff,#9500ff);color:white;font-weight:800';
  const error=document.createElement('p');error.style.cssText='font-size:11px;color:#b42335';
  const cancel=document.createElement('button');cancel.textContent='Отмена';cancel.style.cssText='width:100%;margin-top:8px;padding:10px;border:0;background:transparent;color:#8588a1';
