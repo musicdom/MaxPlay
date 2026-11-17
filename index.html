@@ -656,7 +656,7 @@ function renderGiftCards(){
    const card=document.createElement('article');card.className='gift-card';
    const joystickImage=giftImageUrl(gift.giftType);
    const names={joystick_1:'Геймпад «Неон»',joystick_2:'Геймпад «Пульс»',joystick_3:'Геймпад «Аркада»',joystick_4:'Геймпад «Турбо»',joystick_5:'Геймпад «Кибер»',joystick_6:'Геймпад «Легенда»',loviday:'ЛовиДай',loviday_love:'Тепло любви',loviday_friend:'Верный друг',loviday_steel:'Стальная воля',loviday_cyber:'Киберсила'};
-   const isSealed=gift.status==='claimed'&&Number(gift.opensAt||0)>Date.now();
+   const isSealed=gift.status==='claimed';
    const visual=isSealed?['🔒','Запечатанный подарок']:(({loviday:['🎁','ЛовиДай'],loviday_love:['💗','Тепло любви'],loviday_friend:['🎁','Верный друг'],loviday_steel:['🛡️','Стальная воля'],loviday_cyber:['⚡','Киберсила'],project:['✳️','Подарок проекта'],family_heart:['💗','Сердце для родных'],friend:['🎁','Подарок другу']})[gift.giftType]||(/^joystick_[1-6]$/.test(gift.giftType||'')?['🎮',names[gift.giftType]]:['🎁','Подарок']));
    const icon=document.createElement('div');icon.className='gift-card-icon';
    if(!isSealed&&joystickImage){const image=document.createElement('img');image.src=joystickImage;image.alt=visual[1];icon.append(image);}else icon.textContent=visual[0];
@@ -665,7 +665,7 @@ function renderGiftCards(){
    meta.textContent=gift.source==='starter_registration'?'Ваш стартовый подарок':gift.source==='yoomoney_purchase'?'Ваша покупка':gift.senderName?'От: '+gift.senderName:'В вашей коллекции';
    const info=document.createElement('div');info.className='gift-tile-info';info.append(title,meta);
    const head=document.createElement('div');head.className='gift-tile-head';head.append(icon,info);card.append(head);
-   card.addEventListener('click',event=>{if(!event.target.closest('button'))openGiftDetails(gift,'received');});
+   card.addEventListener('click',event=>{if(!isSealed&&!event.target.closest('button'))openGiftDetails(gift,'received');});
    if(gift.message&&!isSealed){const message=document.createElement('p');message.className='gift-tile-message';message.textContent=gift.message;card.append(message);}
    const footer=document.createElement('div');footer.className='gift-tile-footer';
    if(gift.status==='claimed'){
