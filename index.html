@@ -525,7 +525,6 @@ function openGiftDetails(gift,kind='received'){
  addMeta('Дата отправки',giftDetailDate(gift.sentAt||gift.createdAt||gift.lastSentAt));
  addMeta('Дата получения',giftDetailDate(gift.claimedAt));
  addMeta('Дата открытия',giftDetailDate(gift.openedAt));
- addMeta('Действует до',giftDetailDate(gift.expiresAt));
  if(meta.childElementCount)content.append(meta);
  backdrop.classList.add('open');backdrop.setAttribute('aria-hidden','false');
 }
