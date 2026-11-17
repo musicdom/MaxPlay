@@ -440,7 +440,7 @@ function giftImageUrl(giftType){
 function giftDetailDate(value){
  if(!value)return '';
  let date;
- if(typeof value==='number'||/^\\d+$/.test(String(value))){
+ if(typeof value==='number'||/^\d+$/.test(String(value))){
   let numeric=Number(value);if(numeric>0&&numeric<1e12)numeric*=1000;date=new Date(numeric);
  }else date=new Date(value);
  return Number.isNaN(date.getTime())?'':date.toLocaleString('ru-RU',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
