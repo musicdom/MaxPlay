@@ -926,9 +926,12 @@ function shopCatalogItem(sku) {
     loviday_steel: "loviday_steel",
     loviday_cyber: "loviday_cyber"
   };
-  if (loviday[sku]) return { amount: 200, items: [{ giftType: loviday[sku], quantity: 1 }] };
+  if (loviday[sku]) return { amount: sku === "loviday" ? 50 : 100, items: [{ giftType: loviday[sku], quantity: 1 }] };
+  if (sku === "loviday_collection") {
+    return { amount: 599, items: Object.values(loviday).map(giftType => ({ giftType, quantity: 1 })) };
+  }
   if (sku === "joystick_collection") {
-    return { amount: 1200, items: [1, 2, 3, 4, 5, 6].map(number => ({ giftType: "joystick_" + number, quantity: 1 })) };
+    return { amount: 999, items: [1, 2, 3, 4, 5, 6].map(number => ({ giftType: "joystick_" + number, quantity: 1 })) };
   }
   return null;
 }
