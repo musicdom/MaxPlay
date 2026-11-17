@@ -86,6 +86,8 @@ html,body{background:#edf1ff;color:#17172b;font-family:var(--sans)}
 @media(hover:hover){.primary:hover{filter:brightness(1.07)}.switch:not(.active):hover{background:#f6f5ff;border-color:#d8d4ff}.nav-btn:hover{color:#5634f5}}
 
 /* Tasks page */
+[hidden]{display:none!important}
+
 .tasks-list{display:grid;gap:12px;margin:4px 0 14px}
 .task-card{padding:15px;border:1px solid #e5e9fb;border-radius:17px;background:#fff;box-shadow:0 5px 18px #424b9409}
 .task-card-top{display:flex;align-items:center;gap:11px}
@@ -1101,23 +1103,37 @@ async function checkAdminAccess(){
 }
 
 async function claimGiftFromLaunchLink(apiBase,initData){
- const queryGift=new URLSearchParams(window.location.search).get('gift');
- const startParam=String(window.WebApp?.initDataUnsafe?.start_param||'');
- const giftId=queryGift||(/^gift_[0-9a-f-]{36}$/i.test(startParam)?startParam.slice(5):'');
- if(!giftId)return;
- // Opening a link only opens the incoming inbox; it does not claim the gift.
+ const params=new URLSearchParams(window.location.search);
+ const queryGift=params.get('gift')||'';
+ const rawStart=String(window.WebApp?.initDataUnsafe?.start_param||params.get('startapp')||'');
+ const startMatch=rawStart.match(/(?:^|[_=])gift_([0-9a-f-]{36})(?:$|&)/i);
+ const giftId=queryGift||startMatch?.[1]||'';
+ if(!/^[0-9a-f-]{36}$/i.test(giftId))return;
+ const response=await fetch(window.PODARIS_API_URL('/api/gifts/claim'),{
+  method:'POST',headers:{'Content-Type':'application/json'},
+  body:JSON.stringify({initData,giftId})
+ });
+ const data=await response.json().catch(()=>({}));
  await loadGiftData();
- const gift=(currentGiftData.received||[]).find(item=>String(item.id)===giftId);
  navigate('collection');
- if(gift&&gift.status==='sent'){
-  openGiftSection('incoming');
- }else if(gift&&['claimed','opened','owned','kept','expired'].includes(gift.status)){
-  openGiftSection('mine');
- }else{
-  openGiftSection('incoming');
-  const title=document.getElementById('emptyTitle');
-  const description=document.getElementById('emptyText');
-  if(title&&description){title.textContent='Подарок не найден';description.textContent='Проверьте, что вы открыли ссылку из своего аккаунта MAX и подарок ещё не забрали.';}
+ if(response.ok&&data.ok){
+  activeGiftFilter='mine';
+  renderGiftCards();
+  return;
+ }
+ const existing=(currentGiftData.received||[]).find(item=>String(item.id)===giftId);
+ if(existing&&String(existing.recipientId||'')===String(window.WebApp?.initDataUnsafe?.user?.id||'')){
+  activeGiftFilter=['claimed','opened','owned','kept','expired'].includes(existing.status)?'mine':'incoming';
+  renderGiftCards();
+  return;
+ }
+ activeGiftFilter='incoming';
+ renderGiftCards();
+ const title=document.getElementById('emptyTitle');
+ const description=document.getElementById('emptyText');
+ if(title&&description){
+  title.textContent=data.error==='gift_already_claimed'?'Подарок уже забрали':'Не удалось получить подарок';
+  description.textContent=data.error==='gift_already_claimed'?'Этот подарок уже получил другой пользователь.':'Ссылка недействительна, подарок уже недоступен или вы открыли её не из своего аккаунта MAX.';
  }
 }
 /* Server-verified MAX identity and mandatory, versioned legal consent. */
