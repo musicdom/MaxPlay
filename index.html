@@ -725,7 +725,7 @@ function shareGift(giftId){
  const title=document.createElement('b');title.textContent='Передать подарок';title.style.cssText='display:block;font-size:17px;color:#24233f';
  const label=document.createElement('label');label.textContent='Таймер до открытия (часов; 0 — без таймера)';label.style.cssText='display:block;margin:14px 0 6px;font-size:12px;color:#555';
  const input=document.createElement('input');input.type='number';input.min='0';input.max='720';input.step='1';input.value='0';input.style.cssText='width:100%;box-sizing:border-box;padding:12px;border:1px solid #ddd;border-radius:10px;font-size:15px';
- const help=document.createElement('p');help.textContent='Таймер начнётся, когда следующий получатель заберёт подарок. После его окончания у него будет 12 часов на выбор.';help.style.cssText='font-size:11px;line-height:1.5;color:#777';
+ const help=document.createElement('p');help.textContent='Таймер до показа начнётся, когда получатель откроет ссылку. После перехода по ссылке у него будет 12 часов, чтобы забрать подарок.';help.style.cssText='font-size:11px;line-height:1.5;color:#777';
  const send=document.createElement('button');send.textContent='Создать ссылку для передачи';send.style.cssText='width:100%;padding:14px;border:0;border-radius:12px;background:linear-gradient(105deg,#471aff,#9500ff);color:white;font-weight:800';
  const error=document.createElement('p');error.style.cssText='font-size:11px;color:#b42335';
  const cancel=document.createElement('button');cancel.textContent='Отмена';cancel.style.cssText='width:100%;margin-top:8px;padding:10px;border:0;background:transparent;color:#8588a1';
