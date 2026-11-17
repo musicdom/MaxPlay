@@ -644,22 +644,32 @@ async function saveGift(gift) {
 
 async function listUserGifts(userId) {
   const client = await getRedis();
-  const [receivedRaw, sentRaw, historyRaw] = await Promise.all([
+  const [receivedRaw, sentRaw, historyRaw, linkIncomingRaw] = await Promise.all([
     client.lRange("gifts:received:" + userId, 0, -1),
     client.lRange("gifts:sent:" + userId, 0, -1),
-    client.lRange("gifts:history:" + userId, 0, -1)
+    client.lRange("gifts:history:" + userId, 0, -1),
+    client.lRange("gifts:link-incoming:" + userId, 0, -1)
   ]);
 
   const receivedIds = [...new Set(receivedRaw.map(String))];
   const sentIds = [...new Set(sentRaw.map(String))];
-  const [receivedValues, sentValues] = await Promise.all([
+  const linkIncomingIds = [...new Set(linkIncomingRaw.map(String))];
+  const [receivedValues, sentValues, linkIncomingValues] = await Promise.all([
     Promise.all(receivedIds.map(readGift)),
-    Promise.all(sentIds.map(readGift))
+    Promise.all(sentIds.map(readGift)),
+    Promise.all(linkIncomingIds.map(readGift))
   ]);
 
   const received = receivedValues.filter(gift =>
     gift && String(gift.recipientId || "") === String(userId)
   );
+  const pendingLinkGifts = linkIncomingValues
+    .filter(gift => gift && gift.status === "sent" &&
+      (!gift.recipientId || String(gift.recipientId) === String(userId)))
+    .map(gift => ({ ...gift, pendingLink: true }));
+  for (const gift of pendingLinkGifts) {
+    if (!received.some(item => String(item.id) === String(gift.id))) received.push(gift);
+  }
   const sent = sentValues.filter(gift =>
     gift && gift.status === "sent" && String(gift.senderId || "") === String(userId)
   );
@@ -733,6 +743,23 @@ async function handleGiftRequest(path, body, user) {
       giftCredits: balance,
       gifts: { received: gifts.received, sent: gifts.sent, history: fullyAuthorized ? gifts.history : [] }
     }};
+  }
+
+  if (path === "/api/gifts/link-preview") {
+    const giftId = String(body?.giftId || "");
+    if (!/^[0-9a-f-]{36}$/i.test(giftId)) return giftError(400, "invalid_gift_id");
+    const gift = await readGift(giftId);
+    if (!gift) return giftError(404, "gift_not_found");
+    if (gift.status !== "sent") {
+      if (String(gift.recipientId || "") === userId) return { statusCode: 200, body: { ok: true, alreadyReceived: true } };
+      return giftError(409, "gift_not_available");
+    }
+    if (gift.recipientId && String(gift.recipientId) !== userId) return giftError(403, "wrong_recipient");
+    await client.eval(
+      "if not redis.call('LPOS',KEYS[1],ARGV[1]) then redis.call('RPUSH',KEYS[1],ARGV[1]); end; return 1",
+      ["gifts:link-incoming:" + userId], [giftId]
+    );
+    return { statusCode: 200, body: { ok: true, pending: true } };
   }
 
   if (path === "/api/gifts/send") {
@@ -815,9 +842,9 @@ async function handleGiftRequest(path, body, user) {
     const senderId = String(currentGift.senderId || "");
     const recipientName = [user.firstName,user.lastName].filter(Boolean).join(" ").trim() || "Пользователь MAX";
     const result = await client.eval(
-      "local raw=redis.call('GET',KEYS[1]); if not raw then return 'missing' end; local g=cjson.decode(raw); if g.status=='claimed' or g.status=='opened' or g.status=='kept' or g.status=='owned' then if tostring(g.recipientId or '')==ARGV[1] then return 'already:'..cjson.encode(g) end; return 'claimed' end; if g.status~='sent' then return 'not_claimable' end; if g.recipientId and g.recipientId~=cjson.null and tostring(g.recipientId)~='' and tostring(g.recipientId)~=ARGV[1] then return 'wrong_recipient' end; local sender=tostring(g.senderId or ''); if sender==ARGV[1] then return 'self_claim' end; g.recipientId=ARGV[1]; g.recipientName=ARGV[2]; g.ownerId=ARGV[1]; if ARGV[6]=='1' then g.claimedViaLink=true end; g.status='claimed'; g.claimedAt=tonumber(ARGV[3]); g.opensAt=tonumber(ARGV[3])+tonumber(g.revealDelaySeconds or 0)*1000; g.expiresAt=g.opensAt+43200000; redis.call('SET',KEYS[1],cjson.encode(g)); redis.call('RPUSH',KEYS[3],ARGV[4]); if sender~='' and sender~='purchase' and sender~='podaris' and sender~=ARGV[1] then redis.call('LREM',KEYS[2],0,ARGV[4]); local ev={id=ARGV[5],gift=g,senderId=sender,recipientId=ARGV[1],sentAt=tonumber(g.lastSentAt or g.createdAt or ARGV[3]),claimedAt=tonumber(ARGV[3]),eventType='claimed'}; redis.call('SET',KEYS[5],cjson.encode(ev)); redis.call('RPUSH',KEYS[4],ARGV[5]); end; return 'ok:'..cjson.encode(g)",
-      ["gift:" + giftId, "gifts:sent:" + senderId, "gifts:received:" + userId, "gifts:history:" + senderId, "gift-event:" + eventId],
-      [userId, recipientName, now, giftId, eventId, body?.viaLink === true ? "1" : "0"]
+      "local raw=redis.call('GET',KEYS[1]); if not raw then return 'missing' end; local g=cjson.decode(raw); if g.status=='claimed' or g.status=='opened' or g.status=='kept' or g.status=='owned' then if tostring(g.recipientId or '')==ARGV[1] then return 'already:'..cjson.encode(g) end; return 'claimed' end; if g.status~='sent' then return 'not_claimable' end; if g.recipientId and g.recipientId~=cjson.null and tostring(g.recipientId)~='' and tostring(g.recipientId)~=ARGV[1] then return 'wrong_recipient' end; local sender=tostring(g.senderId or ''); if sender==ARGV[1] then return 'self_claim' end; g.recipientId=ARGV[1]; g.recipientName=ARGV[2]; g.ownerId=ARGV[1]; g.status='claimed'; g.claimedAt=tonumber(ARGV[3]); g.opensAt=tonumber(ARGV[3])+tonumber(g.revealDelaySeconds or 0)*1000; g.expiresAt=g.opensAt+43200000; redis.call('SET',KEYS[1],cjson.encode(g)); redis.call('RPUSH',KEYS[3],ARGV[4]); redis.call('LREM',KEYS[6],0,ARGV[4]); if sender~='' and sender~='purchase' and sender~='podaris' and sender~=ARGV[1] then redis.call('LREM',KEYS[2],0,ARGV[4]); local ev={id=ARGV[5],gift=g,senderId=sender,recipientId=ARGV[1],sentAt=tonumber(g.lastSentAt or g.createdAt or ARGV[3]),claimedAt=tonumber(ARGV[3]),eventType='claimed'}; redis.call('SET',KEYS[5],cjson.encode(ev)); redis.call('RPUSH',KEYS[4],ARGV[5]); end; return 'ok:'..cjson.encode(g)",
+      ["gift:" + giftId, "gifts:sent:" + senderId, "gifts:received:" + userId, "gifts:history:" + senderId, "gift-event:" + eventId, "gifts:link-incoming:" + userId],
+      [userId, recipientName, now, giftId, eventId]
     );
     if (result === "missing") return giftError(404, "gift_not_found");
     if (result === "claimed") return giftError(409, "gift_already_claimed");
