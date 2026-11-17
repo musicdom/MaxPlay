@@ -793,7 +793,7 @@ async function loadStarterMilestones(){
  }catch(error){
   console.warn('[starter milestones]',error);
   const loadMessage=document.getElementById('tasksLoadMessage');
-  if(loadMessage)loadMessage.textContent='Не удалось обновить статусы. Проверьте подключение и нажмите «Обновить статусы».';
+  if(loadMessage)loadMessage.textContent='Не удалось обновить статусы: '+String(error?.message||error).slice(0,180)+'. Нажмите «Обновить статусы» ещё раз.';
  }finally{
   starterMilestonesLoading=false;
  }
