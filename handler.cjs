@@ -1449,7 +1449,7 @@ module.exports.handler = async function (event = {}) {
       const client = await getRedis();
       await client.ping();
       return response(200, {
-        ok: true, service: "podaris-api", runtime: "yandex-cloud-functions",
+        ok: true, service: "podaris-api", runtime: "yandex-cloud-functions", build: "a36be91",
         redis: "ok", maxBotConfigured: Boolean(process.env.MAX_BOT_TOKEN),
         webhookSecretConfigured: Boolean(process.env.MAX_WEBHOOK_SECRET),
         timestamp: new Date().toISOString()
