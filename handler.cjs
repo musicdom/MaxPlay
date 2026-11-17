@@ -1099,6 +1099,131 @@ async function handleShopOrder(body, user) {
   };
 }
 
+
+function purchasedGiftId(label, giftType, index) {
+  const hash = crypto.createHash("sha256").update("yoomoney:" + label + ":" + giftType + ":" + index).digest("hex");
+  return [hash.slice(0, 8), hash.slice(8, 12), hash.slice(12, 16), hash.slice(16, 20), hash.slice(20, 32)].join("-");
+}
+
+async function creditVerifiedShopOrder(client, label, order) {
+  let expected = 0, present = 0, created = 0;
+  for (const item of order.items || []) {
+    const quantity = Math.max(0, Math.min(20, Number(item.quantity) || 0));
+    if (!(/^(joystick_[1-6]|loviday(_love|_friend|_steel|_cyber)?)$/.test(String(item.giftType || ""))) || quantity < 1) {
+      throw new Error("Invalid gift item in paid order");
+    }
+    for (let index = 0; index < quantity; index += 1) {
+      expected += 1;
+      const giftId = purchasedGiftId(label, item.giftType, index);
+      const giftKey = "gift:" + giftId;
+      const listKey = "gifts:received:" + order.userId;
+      const existed = await client.get(giftKey);
+      const gift = {
+        id: giftId, giftType: item.giftType, senderId: "purchase",
+        recipientId: String(order.userId), status: "owned", message: "",
+        revealDelaySeconds: 0, createdAt: Date.now(), claimedAt: null,
+        opensAt: null, expiresAt: null, openedAt: null, forwardedFrom: null,
+        shareUrl: null, source: "yoomoney_purchase", orderLabel: label,
+        ownerId: String(order.userId)
+      };
+      await client.eval(
+        "if redis.call('EXISTS',KEYS[1])==0 then redis.call('SET',KEYS[1],ARGV[1]); end; if not redis.call('LPOS',KEYS[2],ARGV[2]) then redis.call('RPUSH',KEYS[2],ARGV[2]); end; return 1",
+        [giftKey, listKey], [JSON.stringify(gift), giftId]
+      );
+      if (existed) present += 1; else created += 1;
+    }
+  }
+  return { expected, present, created, complete: present + created === expected };
+}
+
+async function handleAdminPayments() {
+  const client = await getRedis();
+  const keys = [];
+  let cursor = "0";
+  do {
+    const result = await client.scan(cursor, "shop-order:*", 500);
+    if (!Array.isArray(result) || result.length < 2) break;
+    cursor = String(result[0]);
+    for (const key of result[1] || []) keys.push(String(key));
+  } while (cursor !== "0" && keys.length < 1000);
+
+  const orders = [];
+  for (const key of keys.slice(-300)) {
+    const raw = await client.get(key);
+    if (!raw) continue;
+    let order;
+    try { order = JSON.parse(raw); } catch { continue; }
+    const label = String(order.label || key.slice("shop-order:".length));
+    let expected = 0, present = 0;
+    for (const item of order.items || []) {
+      const quantity = Math.max(0, Math.min(20, Number(item.quantity) || 0));
+      if (!(/^(joystick_[1-6]|loviday(_love|_friend|_steel|_cyber)?)$/.test(String(item.giftType || ""))) || quantity < 1) continue;
+      for (let index = 0; index < quantity; index += 1) {
+        expected += 1;
+        if (await client.get("gift:" + purchasedGiftId(label, item.giftType, index))) present += 1;
+      }
+    }
+    const [verificationRaw, userRaw] = await Promise.all([
+      client.get("payment-verification:" + label),
+      client.get("user:" + String(order.userId || ""))
+    ]);
+    let verification = null, user = null;
+    try { verification = verificationRaw ? JSON.parse(verificationRaw) : null; } catch {}
+    try { user = userRaw ? JSON.parse(userRaw) : null; } catch {}
+    orders.push({
+      label, status: String(order.status || "unknown"), amount: Number(order.amount) || 0,
+      userId: String(order.userId || ""), userName: [user?.firstName,user?.lastName].filter(Boolean).join(" ") || user?.username || "",
+      createdAt: order.createdAt || null, paidAt: order.paidAt || null,
+      items: (order.items || []).map(item => ({ giftType: String(item.giftType || ""), quantity: Number(item.quantity) || 0 })),
+      expectedGifts: expected, presentGifts: present,
+      missingGifts: Math.max(0, expected - present),
+      verifiedPayment: Boolean(verification), operationId: verification?.operationId || order.operationId || null,
+      verifiedAt: verification?.verifiedAt || null,
+      recoverable: Boolean(verification && order.status !== "paid")
+    });
+  }
+  orders.sort((a,b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+  return { statusCode: 200, body: { ok: true, orders: orders.slice(0, 100), total: orders.length, checkedAt: new Date().toISOString() } };
+}
+
+async function handleAdminRecoverPayment(labelInput) {
+  const label = String(labelInput || "");
+  if (!/^pd_[a-f0-9]{32}$/i.test(label)) return { statusCode: 400, body: { ok: false, error: "invalid_order_label" } };
+  const client = await getRedis();
+  const orderKey = "shop-order:" + label;
+  const [orderRaw, verificationRaw] = await Promise.all([
+    client.get(orderKey), client.get("payment-verification:" + label)
+  ]);
+  if (!orderRaw) return { statusCode: 404, body: { ok: false, error: "order_not_found" } };
+  if (!verificationRaw) return { statusCode: 409, body: { ok: false, error: "verified_payment_not_found", message: "Нет сохранённого подтверждения успешного уведомления YooMoney. Автоматическое начисление запрещено." } };
+  let order, verification;
+  try { order = JSON.parse(orderRaw); verification = JSON.parse(verificationRaw); }
+  catch { return { statusCode: 500, body: { ok: false, error: "invalid_payment_record" } }; }
+  if (Math.abs(Number(order.amount) - Number(verification.amount)) > 0.009 || String(order.userId || "") !== String(verification.userId || "")) {
+    return { statusCode: 409, body: { ok: false, error: "payment_verification_mismatch" } };
+  }
+  const lockKey = "payment-lock:" + label, lockToken = crypto.randomUUID();
+  const lock = await client.set(lockKey, lockToken, { nx: true, px: 60000 });
+  if (lock !== "OK") return { statusCode: 409, body: { ok: false, error: "payment_processing" } };
+  try {
+    const latestRaw = await client.get(orderKey);
+    const latest = latestRaw ? JSON.parse(latestRaw) : null;
+    if (!latest) return { statusCode: 404, body: { ok: false, error: "order_not_found" } };
+    const credit = await creditVerifiedShopOrder(client, label, latest);
+    latest.status = "paid";
+    latest.paidAt = latest.paidAt || new Date().toISOString();
+    latest.operationId = verification.operationId;
+    latest.recoveredAt = new Date().toISOString();
+    await client.set(orderKey, JSON.stringify(latest));
+    await recordAdminLog("warning", "yoomoney-recovery", "Подарки восстановлены по сохранённому проверенному уведомлению YooMoney", {
+      label, userId: latest.userId, operationId: verification.operationId, ...credit
+    });
+    return { statusCode: 200, body: { ok: true, label, userId: latest.userId, ...credit } };
+  } finally {
+    await client.eval("if redis.call('GET',KEYS[1])==ARGV[1] then return redis.call('DEL',KEYS[1]) end; return 0", [lockKey], [lockToken]);
+  }
+}
+
 async function handleYooMoneyNotification(body) {
   const secret = String(process.env.YOOMONEY_NOTIFICATION_SECRET || "");
   if (!secret) return { statusCode: 503, body: { ok: false, error: "yoomoney_not_configured" } };
@@ -1140,6 +1265,12 @@ async function handleYooMoneyNotification(body) {
     await recordAdminLog("warning", "yoomoney", "Сумма уведомления не совпала с заказом", { label, expected: order.amount, received: amount });
     return { statusCode: 400, body: { ok: false, error: "payment_amount_mismatch" } };
   }
+  // Persist proof only after the YooMoney HMAC and order amount have both been verified.
+  await client.set("payment-verification:" + label, JSON.stringify({
+    label, amount, currency: String(fields.currency), notificationType,
+    operationId: String(fields.operation_id), userId: String(order.userId),
+    verifiedAt: new Date().toISOString()
+  }));
 
   const lockKey = "payment-lock:" + label;
   const lockToken = crypto.randomUUID();
@@ -1151,41 +1282,7 @@ async function handleYooMoneyNotification(body) {
     if (!latest) return { statusCode: 404, body: { ok: false, error: "order_not_found" } };
     if (latest.status === "paid") return { statusCode: 200, body: { ok: true, alreadyProcessed: true } };
 
-    for (const item of latest.items || []) {
-      const quantity = Math.max(0, Math.min(20, Number(item.quantity) || 0));
-      if (!(/^(joystick_[1-6]|loviday(_love|_friend|_steel|_cyber)?)$/.test(String(item.giftType || ""))) || quantity < 1) {
-        throw new Error("Invalid gift item in paid order");
-      }
-      for (let index = 0; index < quantity; index += 1) {
-        const now = Date.now();
-        const giftHash = crypto.createHash("sha256").update("yoomoney:" + label + ":" + item.giftType + ":" + index).digest("hex");
-        const giftId = [giftHash.slice(0, 8), giftHash.slice(8, 12), giftHash.slice(12, 16), giftHash.slice(16, 20), giftHash.slice(20, 32)].join("-");
-        const gift = {
-          id: giftId,
-          giftType: item.giftType,
-          senderId: "purchase",
-          recipientId: String(latest.userId),
-          status: "owned",
-          message: "",
-          revealDelaySeconds: 0,
-          createdAt: now,
-          claimedAt: null,
-          opensAt: null,
-          expiresAt: null,
-          openedAt: null,
-          forwardedFrom: null,
-          shareUrl: null,
-          source: "yoomoney_purchase",
-          orderLabel: label
-        };
-        gift.ownerId = String(latest.userId);
-        await client.eval(
-          "if redis.call('EXISTS',KEYS[1])==0 then redis.call('SET',KEYS[1],ARGV[1]); end; if not redis.call('LPOS',KEYS[2],ARGV[2]) then redis.call('RPUSH',KEYS[2],ARGV[2]); end; return 1",
-          ["gift:" + gift.id, "gifts:received:" + latest.userId],
-          [JSON.stringify(gift), gift.id]
-        );
-      }
-    }
+    await creditVerifiedShopOrder(client, label, latest);
     latest.status = "paid";
     latest.paidAt = new Date().toISOString();
     latest.operationId = String(fields?.operation_id || "");
@@ -1568,7 +1665,7 @@ module.exports.handler = async function (event = {}) {
     }
   }
 
-  if (method === "POST" && ["/api/auth", "/api/consent/status", "/api/consent/accept", "/api/gifts/list", "/api/gifts/link-preview", "/api/gifts/send", "/api/gifts/claim", "/api/gifts/open", "/api/gifts/keep", "/api/gifts/forward", "/api/shop/order", "/api/admin/status", "/api/admin/diagnostics", "/api/admin/register-webhook", "/api/admin/logs", "/api/admin/users", "/api/admin/user", "/api/admin/user/reset", "/api/admin/user/gift", "/api/gifts/starter/status", "/api/gifts/starter/verify-subscription"].includes(path)) {
+  if (method === "POST" && ["/api/auth", "/api/consent/status", "/api/consent/accept", "/api/gifts/list", "/api/gifts/link-preview", "/api/gifts/send", "/api/gifts/claim", "/api/gifts/open", "/api/gifts/keep", "/api/gifts/forward", "/api/shop/order", "/api/admin/status", "/api/admin/diagnostics", "/api/admin/register-webhook", "/api/admin/logs", "/api/admin/users", "/api/admin/payments", "/api/admin/payments/recover", "/api/admin/user", "/api/admin/user/reset", "/api/admin/user/gift", "/api/gifts/starter/status", "/api/gifts/starter/verify-subscription"].includes(path)) {
     if (!process.env.MAX_BOT_TOKEN) return response(503, { error: "max_bot_not_configured" });
     const auth = validateMaxInitData(body?.initData, process.env.MAX_BOT_TOKEN);
     if (!auth.ok) return response(401, { error: "unauthorized", reason: auth.reason });
@@ -1594,6 +1691,14 @@ module.exports.handler = async function (event = {}) {
         if (path === "/api/admin/users") {
           const users = await handleAdminUsers();
           return response(users.statusCode, users.body);
+        }
+        if (path === "/api/admin/payments") {
+          const payments = await handleAdminPayments();
+          return response(payments.statusCode, payments.body);
+        }
+        if (path === "/api/admin/payments/recover") {
+          const recovered = await handleAdminRecoverPayment(body?.label);
+          return response(recovered.statusCode, recovered.body);
         }
         if (path === "/api/admin/user") {
           const detail = await handleAdminUserDetail(body?.userId);
