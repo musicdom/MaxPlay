@@ -1107,8 +1107,12 @@ async function handleYooMoneyNotification(body) {
   if (!["p2p-incoming", "card-incoming"].includes(notificationType)) {
     return { statusCode: 400, body: { ok: false, error: "unsupported_notification_type" } };
   }
+  if (String(fields?.currency || "") !== "643" || String(fields?.codepro || "").toLowerCase() !== "false" || String(fields?.unaccepted || "false").toLowerCase() === "true" || String(fields?.test_notification || "false").toLowerCase() === "true" || !String(fields?.operation_id || "").trim()) {
+    return { statusCode: 400, body: { ok: false, error: "payment_not_eligible_for_credit" } };
+  }
   const label = String(fields?.label || "");
-  const amount = Number(fields?.withdraw_amount ?? fields?.amount);
+  // `amount` is credited to the receiver; `withdraw_amount` is the payer debit and may include fees.
+  const amount = Number(fields?.amount);
   const hmacSignature = String(fields?.sign || "").toLowerCase();
   const hmacPayload = Object.entries(fields || {})
     .filter(([key]) => key !== "sign")
@@ -1528,7 +1532,7 @@ async function handleAdminResetUser(userId, confirmation) {
       }
     };
   } finally {
-    await client.del(lockKey);
+    await client.eval("if redis.call('GET',KEYS[1])==ARGV[1] then return redis.call('DEL',KEYS[1]) end; return 0", [lockKey], [lockToken]);
   }
 }
 
