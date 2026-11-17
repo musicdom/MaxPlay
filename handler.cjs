@@ -346,7 +346,7 @@ function safeEqual(a, b) {
 async function sendMaxMessage(userId, text, buttons = []) {
   if (!process.env.MAX_BOT_TOKEN) throw new Error("MAX_BOT_TOKEN is not configured");
   const url = "https://platform-api2.max.ru/messages?user_id=" + encodeURIComponent(String(userId));
-  const result = await fetch(url, {
+  const result = await maxApiFetch(url, {
     method: "POST",
     headers: {
       "Authorization": process.env.MAX_BOT_TOKEN,
