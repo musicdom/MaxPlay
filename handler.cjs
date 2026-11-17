@@ -1224,6 +1224,60 @@ async function handleAdminRecoverPayment(labelInput) {
   }
 }
 
+
+async function handleAdminRecoverFeeMismatchPayment() {
+  // One-time, narrowly scoped recovery for the documented YooMoney fee mismatch.
+  const label = "pd_079aa7346f5346ada763850f3c449419";
+  const expectedUserId = "163701646";
+  const operationId = "328df5b6-0011-5001-8000-157ea797a163";
+  const expectedDebit = 100;
+  const creditedAmount = 97;
+  const client = await getRedis();
+  const orderKey = "shop-order:" + label;
+  const [orderRaw, verificationRaw, rawLogs] = await Promise.all([
+    client.get(orderKey),
+    client.get("payment-verification:" + label),
+    client.lRange("admin:logs", 0, -1)
+  ]);
+  if (!orderRaw) return { statusCode: 404, body: { ok: false, error: "order_not_found" } };
+  let order;
+  try { order = JSON.parse(orderRaw); } catch { return { statusCode: 500, body: { ok: false, error: "invalid_order_record" } }; }
+  if (order.status === "paid") return { statusCode: 200, body: { ok: true, alreadyProcessed: true, label } };
+  if (String(order.userId || "") !== expectedUserId || Math.abs(Number(order.amount) - expectedDebit) > 0.009) {
+    return { statusCode: 409, body: { ok: false, error: "recovery_order_mismatch" } };
+  }
+  if (verificationRaw) return { statusCode: 409, body: { ok: false, error: "payment_verification_already_exists" } };
+
+  const matchingLogs = rawLogs.map(item => {
+    try { return JSON.parse(item); } catch { return null; }
+  }).filter(entry =>
+    entry && entry.source === "yoomoney" &&
+    ["Сумма уведомления не совпала с заказом", "Сумма списания не совпала с заказом"].includes(entry.message) &&
+    String(entry.details?.label || "") === label &&
+    Math.abs(Number(entry.details?.expected) - expectedDebit) < 0.009 &&
+    Math.abs(Number(entry.details?.received) - creditedAmount) < 0.009
+  );
+  if (!matchingLogs.length) {
+    return { statusCode: 409, body: { ok: false, error: "signed_mismatch_log_not_found" } };
+  }
+
+  const verification = {
+    label, amount: expectedDebit, creditedAmount, currency: "643",
+    notificationType: "card-incoming", operationId, userId: expectedUserId,
+    verifiedAt: new Date().toISOString(),
+    verificationSource: "admin_manual_recovery_from_hmac_validated_mismatch_log",
+    evidence: { matchingLogCount: matchingLogs.length, earliestLogAt: matchingLogs[0].at || null }
+  };
+  const saved = await client.set("payment-verification:" + label, JSON.stringify(verification), { nx: true });
+  if (saved !== "OK") return { statusCode: 409, body: { ok: false, error: "payment_verification_already_exists" } };
+
+  await recordAdminLog("warning", "yoomoney-recovery", "Подготовлено ручное подтверждение платежа с комиссией YooMoney", {
+    label, userId: expectedUserId, operationId, orderDebit: expectedDebit,
+    creditedAmount, matchingLogCount: matchingLogs.length, evidenceSource: verification.verificationSource
+  });
+  return await handleAdminRecoverPayment(label);
+}
+
 async function handleYooMoneyNotification(body) {
   const secret = String(process.env.YOOMONEY_NOTIFICATION_SECRET || "");
   if (!secret) return { statusCode: 503, body: { ok: false, error: "yoomoney_not_configured" } };
@@ -1667,7 +1721,7 @@ module.exports.handler = async function (event = {}) {
     }
   }
 
-  if (method === "POST" && ["/api/auth", "/api/consent/status", "/api/consent/accept", "/api/gifts/list", "/api/gifts/link-preview", "/api/gifts/send", "/api/gifts/claim", "/api/gifts/open", "/api/gifts/keep", "/api/gifts/forward", "/api/shop/order", "/api/admin/status", "/api/admin/diagnostics", "/api/admin/register-webhook", "/api/admin/logs", "/api/admin/users", "/api/admin/payments", "/api/admin/payments/recover", "/api/admin/user", "/api/admin/user/reset", "/api/admin/user/gift", "/api/gifts/starter/status", "/api/gifts/starter/verify-subscription"].includes(path)) {
+  if (method === "POST" && ["/api/auth", "/api/consent/status", "/api/consent/accept", "/api/gifts/list", "/api/gifts/link-preview", "/api/gifts/send", "/api/gifts/claim", "/api/gifts/open", "/api/gifts/keep", "/api/gifts/forward", "/api/shop/order", "/api/admin/status", "/api/admin/diagnostics", "/api/admin/register-webhook", "/api/admin/logs", "/api/admin/users", "/api/admin/payments", "/api/admin/payments/recover", "/api/admin/payments/recover-fee-mismatch", "/api/admin/user", "/api/admin/user/reset", "/api/admin/user/gift", "/api/gifts/starter/status", "/api/gifts/starter/verify-subscription"].includes(path)) {
     if (!process.env.MAX_BOT_TOKEN) return response(503, { error: "max_bot_not_configured" });
     const auth = validateMaxInitData(body?.initData, process.env.MAX_BOT_TOKEN);
     if (!auth.ok) return response(401, { error: "unauthorized", reason: auth.reason });
@@ -1700,6 +1754,10 @@ module.exports.handler = async function (event = {}) {
         }
         if (path === "/api/admin/payments/recover") {
           const recovered = await handleAdminRecoverPayment(body?.label);
+          return response(recovered.statusCode, recovered.body);
+        }
+        if (path === "/api/admin/payments/recover-fee-mismatch") {
+          const recovered = await handleAdminRecoverFeeMismatchPayment();
           return response(recovered.statusCode, recovered.body);
         }
         if (path === "/api/admin/user") {
