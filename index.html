@@ -639,10 +639,12 @@ function renderGiftCards(){
    const title=document.createElement('b');title.textContent=wasClaimed?'Подарок получен по ссылке':'Вам отправили подарок';
    const meta=document.createElement('small');meta.textContent='От: '+(gift.senderName||'Пользователь MAX');
    const delay=document.createElement('small');delay.className='gift-flow-timer';
-   const hours=Math.ceil(Number(gift.revealDelaySeconds||0)/3600);
-   delay.textContent=wasClaimed?(Number(gift.opensAt||0)>Date.now()?'Открыть можно через '+formatRemaining(Number(gift.opensAt)-Date.now()):'Подарок можно открыть'):hours>0?'Таймер после получения: '+hours+' ч':'Без таймера';
+   const opensAt=Number(gift.opensAt||0);
+   if(opensAt>Date.now()){delay.classList.add('gift-card-timer');delay.dataset.target=String(opensAt);delay.dataset.mode='incoming';delay.textContent='До открытия: '+formatRemaining(opensAt-Date.now());}
+   else if(opensAt>0){delay.textContent='Таймер завершён — подарок можно оставить себе';}
+   else{delay.textContent='Таймер запустится при открытии подарка';}
    info.append(title,meta,delay);
-   if(!wasClaimed){const claim=document.createElement('button');claim.type='button';claim.className='gift-flow-claim';claim.textContent='Забрать себе';claim.addEventListener('click',()=>giftAction('/api/gifts/claim',gift.id));row.append(flow,info,claim);}else{row.append(flow,info);}
+   if(!wasClaimed){const claim=document.createElement('button');claim.type='button';claim.className='gift-flow-claim';claim.textContent='Оставить себе';claim.addEventListener('click',()=>giftAction('/api/gifts/claim',gift.id));row.append(flow,info,claim);}else{row.append(flow,info);}
    row.addEventListener('click',event=>{if(!event.target.closest('button'))openGiftDetails(gift,'received');});list.append(row);
   });
  }else{
@@ -688,8 +690,8 @@ setInterval(()=>{
  let refresh=false;
  document.querySelectorAll('.gift-card-timer[data-target]').forEach(timer=>{
   const left=Number(timer.dataset.target)-Date.now();
-  if(left<=0){refresh=true;return;}
-  timer.textContent=timer.dataset.mode==='opens'?'Открыть можно через '+formatRemaining(left):'Подарок готов! На открытие осталось '+formatRemaining(left);
+  if(left<=0){timer.removeAttribute('data-target');timer.textContent=timer.dataset.mode==='incoming'?'Таймер завершён — подарок можно оставить себе':'Подарок готов к открытию';refresh=true;return;}
+  timer.textContent=timer.dataset.mode==='opens'?'Открыть можно через '+formatRemaining(left):timer.dataset.mode==='incoming'?'До открытия: '+formatRemaining(left):'Подарок готов! На открытие осталось '+formatRemaining(left);
  });
  if(refresh)loadGiftData().catch(()=>{});
 },1000);
