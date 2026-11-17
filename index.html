@@ -699,7 +699,7 @@ setInterval(()=>{
  if(refresh)loadGiftData().catch(()=>{});
 },1000);
 async function giftAction(path,giftId,extra={}){
- try{const response=await fetch(window.PODARIS_API_URL(path),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData:window.podarisInitData,giftId,...extra})});const data=await response.json();if(!response.ok)throw new Error(data.error==='gift_expired'?'Время на получение подарка истекло. Подарок сгорел.':data.error||'Не удалось выполнить действие');await loadGiftData();if(path==='/api/gifts/claim'){activeGiftFilter='mine';document.querySelectorAll('[data-filter]').forEach(x=>x.classList.toggle('active',x.dataset.filter==='mine'));renderGiftCards();}return data;}
+ try{const response=await fetch(window.PODARIS_API_URL(path),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData:window.podarisInitData,giftId,...extra})});const data=await response.json();if(!response.ok)throw new Error(data.error==='gift_expired'?'Ссылка на подарок недоступна.':data.error||'Не удалось выполнить действие');await loadGiftData();if(path==='/api/gifts/claim'){activeGiftFilter='mine';document.querySelectorAll('[data-filter]').forEach(x=>x.classList.toggle('active',x.dataset.filter==='mine'));renderGiftCards();}return data;}
  catch(error){window.alert(error.message);await loadGiftData().catch(()=>{});if(activeGiftFilter==='incoming')renderGiftCards();return null;}
 }
 function showGiftShareDialog(link){
