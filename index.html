@@ -642,7 +642,6 @@ function renderGiftCards(){
    const meta=document.createElement('small');meta.textContent='От: '+(gift.senderName||'Пользователь MAX');
    const delay=document.createElement('small');delay.className='gift-flow-timer';
    const pickupExpiresAt=Number(gift.pickupExpiresAt||0);
-   const opensAt=Number(gift.opensAt||0);
    if(pickupExpiresAt>Date.now()){delay.classList.add('gift-card-timer');delay.dataset.target=String(pickupExpiresAt);delay.dataset.mode='pickup';delay.textContent='Забрать подарок в течение: '+formatRemaining(pickupExpiresAt-Date.now());}
    else if(opensAt<=Date.now()){delay.textContent='Подарок уже открыт — заберите его в коллекцию';}
    else{delay.textContent='Подарок ждёт получения';}
