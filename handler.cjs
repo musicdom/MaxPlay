@@ -300,7 +300,7 @@ async function grantStarterMilestoneGift(userId, milestone) {
   const hash = crypto.createHash("sha256").update("podaris-starter:" + id + ":" + milestone).digest("hex");
   const giftId = [hash.slice(0,8),hash.slice(8,12),hash.slice(12,16),hash.slice(16,20),hash.slice(20,32)].join("-");
   const gift = {
-    id: giftId, giftType: "joystick_1", senderId: "podaris", senderName: "Подарис",
+    id: giftId, giftType: "loviday", senderId: "podaris", senderName: "Подарис",
     recipientId: id, recipientName: "", ownerId: id, status: "owned",
     message: "", revealDelaySeconds: 0, createdAt: Date.now(), claimedAt: null,
     opensAt: null, expiresAt: null, openedAt: null, forwardedFrom: null,
