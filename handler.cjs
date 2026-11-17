@@ -105,11 +105,11 @@ function createManagedRedisClient() {
   let connecting;
 
   async function ready() {
-    if (native.isOpen) return;
-    if (!connecting) {
+    if (native.isReady) return;
+    if (!native.isOpen && !connecting) {
       connecting = native.connect().finally(() => { connecting = null; });
     }
-    await connecting;
+    if (connecting) await connecting;
   }
 
   return {
