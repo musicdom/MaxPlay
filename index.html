@@ -565,7 +565,7 @@ function renderGiftCards(){
  updateIncomingNotice();
  const mine=allReceived.filter(g=>['claimed','opened','owned','kept','expired'].includes(g.status));
  updateHomeStats();
- const incoming=allReceived.filter(g=>g.status==='sent'&&Boolean(g.pendingLink||g.recipientId===undefined||g.recipientId===null||String(g.recipientId)==='') );
+ const incoming=allReceived.filter(g=>g.status==='sent');
  const sent=[...(currentGiftData.sent||[]),...(currentGiftData.history||[])];
  const items=activeGiftFilter==='mine'?mine:activeGiftFilter==='incoming'?incoming:activeGiftFilter==='sent'?sent:[];
  const titles={mine:'Мои подарки',incoming:'Мне прислали',sent:'Отправленные'};
