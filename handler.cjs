@@ -1116,8 +1116,8 @@ async function handleYooMoneyNotification(body) {
   const hmacSignature = String(fields?.sign || "").toLowerCase();
   const hmacPayload = Object.entries(fields || {})
     .filter(([key]) => key !== "sign")
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([key, value]) => key + "=" + encodeURIComponent(String(value)))
+    .sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)
+    .map(([key, value]) => key + "=" + encodeURIComponent(String(value)).replace(/[!'()*]/g, char => "%" + char.charCodeAt(0).toString(16).toUpperCase()))
     .join("&");
   const expectedHmac = crypto.createHmac("sha256", secret).update(hmacPayload).digest("hex");
   const hmacValid = /^[a-f0-9]{64}$/.test(hmacSignature) && safeEqual(expectedHmac, hmacSignature);
