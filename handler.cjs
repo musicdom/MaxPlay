@@ -762,7 +762,7 @@ async function handleGiftRequest(path, body, user) {
     if (gift.recipientId && String(gift.recipientId) !== userId) return giftError(403, "wrong_recipient");
     const now = Date.now();
     const previewResult = await client.eval(
-      "local raw=redis.call('GET',KEYS[1]); if not raw then return 'missing' end; local g=cjson.decode(raw); if g.status~='sent' then return 'unavailable' end; if g.recipientId and g.recipientId~=cjson.null and tostring(g.recipientId)~='' and tostring(g.recipientId)~=ARGV[1] then return 'wrong_recipient' end; local now=tonumber(ARGV[2]); if g.pickupExpiresAt and g.pickupExpiresAt~=cjson.null and tonumber(g.pickupExpiresAt)>0 and tonumber(g.pickupExpiresAt)<=now then g.status='expired'; g.expiredReason='pickup_timeout'; g.expiredAt=now; redis.call('SET',KEYS[1],cjson.encode(g)); redis.call('LREM',KEYS[2],0,ARGV[3]); return 'expired' end; if not g.pickupExpiresAt or g.pickupExpiresAt==cjson.null or tonumber(g.pickupExpiresAt)==0 then g.pickupExpiresAt=now+43200000 end; g.opensAt=cjson.null; g.expiresAt=cjson.null; if not redis.call('LPOS',KEYS[2],ARGV[3]) then redis.call('RPUSH',KEYS[2],ARGV[3]); end; redis.call('SET',KEYS[1],cjson.encode(g)); return cjson.encode(g)",
+      "local raw=redis.call('GET',KEYS[1]); if not raw then return 'missing' end; local g=cjson.decode(raw); if g.status~='sent' then return 'unavailable' end; if g.recipientId and g.recipientId~=cjson.null and tostring(g.recipientId)~='' and tostring(g.recipientId)~=ARGV[1] then return 'wrong_recipient' end; local now=tonumber(ARGV[2]); if g.pickupExpiresAt and g.pickupExpiresAt~=cjson.null and tonumber(g.pickupExpiresAt)>0 and tonumber(g.pickupExpiresAt)<=now then g.status='expired'; g.expiredReason='pickup_timeout'; g.expiredAt=now; redis.call('SET',KEYS[1],cjson.encode(g)); redis.call('LREM',KEYS[2],0,ARGV[3]); return 'expired' end; if not g.pickupExpiresAt or g.pickupExpiresAt==cjson.null or tonumber(g.pickupExpiresAt)==0 then g.pickupExpiresAt=now+43200000 end; if not g.opensAt or g.opensAt==cjson.null or tonumber(g.opensAt)==0 then g.opensAt=now+(tonumber(g.revealDelaySeconds or 0)*1000) end; g.expiresAt=cjson.null; if not redis.call('LPOS',KEYS[2],ARGV[3]) then redis.call('RPUSH',KEYS[2],ARGV[3]); end; redis.call('SET',KEYS[1],cjson.encode(g)); return cjson.encode(g)",
       ["gift:" + giftId, "gifts:link-incoming:" + userId],
       [userId, now, giftId]
     );
@@ -1082,7 +1082,8 @@ async function handleYooMoneyNotification(body) {
   }
 
   const lockKey = "payment-lock:" + label;
-  const lock = await client.set(lockKey, "1", { nx: true, px: 60000 });
+  const lockToken = crypto.randomUUID();
+  const lock = await client.set(lockKey, lockToken, { nx: true, px: 60000 });
   if (lock !== "OK") return { statusCode: 200, body: { ok: true, processing: true } };
   try {
     const latestRaw = await client.get(orderKey);
