@@ -861,7 +861,7 @@ async function handleGiftRequest(path, body, user) {
       claimedAt: null, opensAt: null, pickupExpiresAt: null, expiresAt: null, openedAt: null,
       forwardedFrom: null,
       shareUrl: process.env.MAX_MINI_APP_URL
-        ? process.env.MAX_MINI_APP_URL + (process.env.MAX_MINI_APP_URL.includes("?") ? "&" : "?") + "gift=" + newGiftId
+        ? process.env.MAX_MINI_APP_URL + (process.env.MAX_MINI_APP_URL.includes("?") ? "&" : "?") + "gift=" + giftId
         : null
     };
     const result = await client.eval(
