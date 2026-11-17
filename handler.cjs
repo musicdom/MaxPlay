@@ -2,6 +2,7 @@ const crypto = require("node:crypto");
 const https = require("node:https");
 const fs = require("node:fs");
 const path = require("node:path");
+const { createClient } = require("redis");
 
 let maxCertificates;
 function getMaxCertificates() {
@@ -93,13 +94,79 @@ function createUpstashClient() {
 }
 
 let redisClient;
+let redisClientPromise;
+
+function createManagedRedisClient() {
+  const url = String(process.env.REDIS_URL || "").trim();
+  if (!url) throw new Error("REDIS_URL is required for Yandex Managed Redis");
+
+  const native = createClient({ url });
+  native.on("error", error => console.error("[redis client]", error?.message || error));
+  let connecting;
+
+  async function ready() {
+    if (native.isOpen) return;
+    if (!connecting) {
+      connecting = native.connect().finally(() => { connecting = null; });
+    }
+    await connecting;
+  }
+
+  return {
+    get: async key => { await ready(); return native.get(key); },
+    set: async (key, value, options = {}) => {
+      await ready();
+      const redisOptions = {};
+      if (options.nx) redisOptions.NX = true;
+      if (options.px) redisOptions.PX = Number(options.px);
+      return native.set(key, value, Object.keys(redisOptions).length ? redisOptions : undefined);
+    },
+    del: async key => { await ready(); return native.del(key); },
+    decr: async key => { await ready(); return native.decr(key); },
+    incr: async key => { await ready(); return native.incr(key); },
+    lRange: async (key, start, stop) => { await ready(); return native.lRange(key, start, stop); },
+    lRem: async (key, count, value) => { await ready(); return native.lRem(key, count, value); },
+    rPush: async (key, value) => { await ready(); return native.rPush(key, value); },
+    lTrim: async (key, start, stop) => { await ready(); return native.lTrim(key, start, stop); },
+    pExpireAt: async (key, timestamp) => { await ready(); return native.pExpireAt(key, timestamp); },
+    ping: async () => { await ready(); return native.ping(); },
+    sAdd: async (key, value) => { await ready(); return native.sAdd(key, value); },
+    sMembers: async key => { await ready(); return native.sMembers(key); },
+    scan: async (cursor, pattern, count = 500) => {
+      await ready();
+      const result = await native.scan(String(cursor), { MATCH: pattern, COUNT: count });
+      return [String(result.cursor), result.keys || []];
+    },
+    eval: async (script, keys = [], args = []) => {
+      await ready();
+      return native.eval(script, { keys, arguments: args.map(value => String(value)) });
+    }
+  };
+}
 
 const AGREEMENT_VERSION = process.env.USER_AGREEMENT_VERSION || "1.0.0";
 const PRIVACY_VERSION = process.env.PRIVACY_POLICY_VERSION || "1.0.0";
 const LEGAL_BASE_URL = process.env.LEGAL_BASE_URL || "https://musicdom.github.io/MaxPlay/legal";
 
 async function getRedis() {
-  if (!redisClient) redisClient = createUpstashClient();
+  if (redisClient) return redisClient;
+  if (!redisClientPromise) {
+    redisClientPromise = (async () => {
+      if (String(process.env.REDIS_URL || "").trim()) {
+        const client = createManagedRedisClient();
+        await client.ping();
+        return client;
+      }
+      if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+        return createUpstashClient();
+      }
+      throw new Error("Configure REDIS_URL or both UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN");
+    })().catch(error => {
+      redisClientPromise = null;
+      throw error;
+    });
+  }
+  redisClient = await redisClientPromise;
   return redisClient;
 }
 
@@ -1502,7 +1569,7 @@ module.exports.handler = async function (event = {}) {
       console.error("[health check]", error.message);
       return response(503, {
         ok: false, service: "podaris-api",
-        redis: process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN ? "unavailable" : "not_configured",
+        redis: process.env.REDIS_URL || (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) ? "unavailable" : "not_configured",
         maxBotConfigured: Boolean(process.env.MAX_BOT_TOKEN)
       });
     }
