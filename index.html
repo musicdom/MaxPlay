@@ -631,7 +631,6 @@ function renderGiftCards(){
    else from.textContent=senderInitial;
    const arrow=document.createElement('span');arrow.className='gift-flow-arrow';arrow.textContent='→';
    const present=document.createElement('span');present.className='gift-flow-gift';
-   const opensAt=Number(gift.opensAt||0);
    const isSealed=true;
    if(isSealed)present.textContent='🔒';else if(giftImageUrl(gift.giftType)){const giftImage=document.createElement('img');giftImage.src=giftImageUrl(gift.giftType);giftImage.alt='Подарок';giftImage.loading='lazy';giftImage.onerror=()=>{present.textContent='Подарок';};present.append(giftImage);}else present.textContent='Подарок';
    flow.append(from,arrow,present);
