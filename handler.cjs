@@ -1603,8 +1603,14 @@ module.exports.handler = async function (event = {}) {
       catch (messageError) { console.error("[contact prompt]", messageError.message); }
       return response(200, { ok: true, accepted: true, consent, contactRequestSent: true, contactRequired: true, fullyAuthorized: false });
     } catch (error) {
-      console.error("[consent]", error.message);
-      return response(503, { error: "storage_unavailable" });
+      const message = String(error?.message || error || "unknown_error");
+      console.error("[api request failed]", { path, userId: String(auth.user?.user_id ?? auth.user?.id ?? ""), message, stack: error?.stack });
+      const adminIds = new Set(String(process.env.ADMIN_MAX_IDS || "").split(",").map(value => value.trim()).filter(Boolean));
+      const isAdmin = adminIds.has(String(auth.user?.user_id ?? auth.user?.id ?? ""));
+      return response(503, {
+        error: "storage_unavailable",
+        ...(isAdmin ? { diagnostic: message.slice(0, 240), route: path } : {})
+      });
     }
   }
 
