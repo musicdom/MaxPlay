@@ -222,6 +222,21 @@ button.task-link{cursor:pointer}.task-link-primary{border-color:transparent;back
 .gift-flow-claim,.gift-flow-copy{flex:none;border:0;border-radius:9px;padding:9px 10px;background:#5634f5;color:#fff;font-size:8px;font-weight:800;white-space:nowrap}
 .gift-flow-copy{background:#f0efff;color:#5634f5}
 @media(max-width:390px){.sent-flow-row .gift-flow-avatar{width:46px;height:46px}.sent-flow-row .gift-flow-gift{width:50px;height:50px}.gift-flow-item{min-width:50px}.gift-flow-row{gap:7px;padding:10px 8px}.gift-flow-person{width:27px;height:27px;font-size:16px}.gift-flow-gift{width:30px;height:30px;font-size:20px}.gift-flow-arrow{font-size:11px}.gift-flow-info b{font-size:9px}.gift-flow-claim,.gift-flow-copy{padding:8px 7px;font-size:7px}}
+
+/* Personal gift profile: compact stats and larger collectible tiles */
+.home-stats{width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:15px;padding:13px 10px;border:1px solid #e7eaff;border-radius:16px;background:rgba(255,255,255,.88);box-shadow:0 5px 16px #3f4b9708}
+.home-stat{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
+.home-stat strong{font-size:20px;line-height:1.1;font-weight:850;letter-spacing:-.6px;color:#5634f5;font-variant-numeric:tabular-nums}
+.home-stat span{font-size:8px;line-height:1.3;font-weight:700;color:#8589a5;text-align:center}
+#collection .gift-list:not(.gift-list-flow){grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;padding:14px 0}
+#collection .gift-list:not(.gift-list-flow) .gift-card{padding:10px;border-radius:17px;gap:8px}
+#collection .gift-list:not(.gift-list-flow) .gift-card-icon{border-radius:13px}
+#collection .gift-list:not(.gift-list-flow) .gift-tile-title{font-size:11px;line-height:1.35}
+#collection .gift-list:not(.gift-list-flow) .gift-tile-meta{font-size:8px}
+#collection .gift-list:not(.gift-list-flow) .gift-tile-footer{font-size:8px}
+#collection .gift-list:not(.gift-list-flow) .gift-tile-action{font-size:9px;padding:9px 6px}
+@media(max-width:360px){.home-stats{gap:4px;padding:11px 6px}.home-stat strong{font-size:18px}.home-stat span{font-size:7px}}
+
 </style>
 </head>
 <body>
@@ -231,8 +246,13 @@ button.task-link{cursor:pointer}.task-link-primary{border-color:transparent;back
 <div class="profile-top">
 <div class="avatar" id="avatar"><span class="avatar-fallback" id="avatarFallback">♡</span><img loading="lazy" decoding="async" id="avatarImage" alt="Аватар профиля"></div>
 <div class="profile-name" id="profileName">Мой профиль</div>
-<div class="profile-sub">Ваши подарки в одном месте</div>
+<div class="profile-sub">Ваша страница подарков</div>
 <div class="profile-auth-inline" id="profileAuthInline">Проверяем авторизацию</div>
+<div class="home-stats" aria-label="Статистика подарков">
+ <div class="home-stat"><strong id="homeReceivedCount">0</strong><span>Получено</span></div>
+ <div class="home-stat"><strong id="homeSentCount">0</strong><span>Отправлено</span></div>
+ <div class="home-stat"><strong id="homeCollectionCount">0</strong><span>В коллекции</span></div>
+</div>
 </div>
 
 <div class="gift-switcher">
@@ -397,11 +417,34 @@ function updateIncomingNotice(){
  const button=document.querySelector('[data-filter="incoming"]');
  if(button){button.classList.toggle('has-unread',incoming.length>0);button.setAttribute('aria-label',incoming.length?'Мне прислали, новых подарков: '+incoming.length:'Мне прислали');}
 }
+function updateHomeStats(){
+ const received=Array.isArray(currentGiftData.received)?currentGiftData.received:[];
+ const mine=received.filter(g=>['claimed','opened','owned','kept','expired'].includes(g.status));
+ const sent=[...(currentGiftData.sent||[]),...(currentGiftData.history||[])];
+ const uniqueCount=items=>{
+  const ids=new Set();
+  items.forEach((item,index)=>{
+   const id=item&&item.id!=null?String(item.id):'fallback:'+String(item?.giftType||'gift')+':'+String(item?.createdAt||item?.sentAt||item?.claimedAt||index);
+   ids.add(id);
+  });
+  return ids.size;
+ };
+ const values={
+  homeReceivedCount:uniqueCount(received),
+  homeSentCount:uniqueCount(sent),
+  homeCollectionCount:uniqueCount(mine)
+ };
+ Object.entries(values).forEach(([id,value])=>{
+  const node=document.getElementById(id);
+  if(node)node.textContent=String(value);
+ });
+}
 function renderGiftCards(){
  const list=document.getElementById('giftList'),empty=document.getElementById('emptyState');
  const allReceived=currentGiftData.received||[];
  updateIncomingNotice();
  const mine=allReceived.filter(g=>['claimed','opened','owned','kept','expired'].includes(g.status));
+ updateHomeStats();
  const incoming=allReceived.filter(g=>g.status==='sent');
  const sent=[...(currentGiftData.sent||[]),...(currentGiftData.history||[])];
  const items=activeGiftFilter==='mine'?mine:activeGiftFilter==='incoming'?incoming:activeGiftFilter==='sent'?sent:[];
