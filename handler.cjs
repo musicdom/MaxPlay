@@ -785,18 +785,20 @@ async function handleGiftRequest(path, body, user) {
     const wasAlreadyKept = previousGift?.status === "kept";
     const previousSenderId = String(previousGift?.senderId || "");
     const result = await client.eval(
-      "local raw=redis.call('GET',KEYS[1]); if not raw then return 'missing' end; local g=cjson.decode(raw); if tostring(g.recipientId or '')~=ARGV[1] then return 'not_owner' end; if g.status=='opened' and tonumber(g.expiresAt or 0)>0 and tonumber(g.expiresAt)<tonumber(ARGV[2]) then g.status='expired'; g.expiredAt=tonumber(ARGV[2]); redis.call('SET',KEYS[1],cjson.encode(g)); return 'expired' end; if g.status~='opened' and g.status~='owned' and g.status~='kept' then return 'not_keepable' end; g.status='kept'; g.keptAt=tonumber(ARGV[2]); g.ownerId=ARGV[1]; redis.call('SET',KEYS[1],cjson.encode(g)); return cjson.encode(g)",
+      "local raw=redis.call('GET',KEYS[1]); if not raw then return 'missing' end; local g=cjson.decode(raw); if tostring(g.recipientId or '')~=ARGV[1] then return 'not_owner' end; if g.status=='opened' and tonumber(g.expiresAt or 0)>0 and tonumber(g.expiresAt)<tonumber(ARGV[2]) then g.status='expired'; g.expiredAt=tonumber(ARGV[2]); redis.call('SET',KEYS[1],cjson.encode(g)); return 'expired' end; if g.status=='kept' then return 'already:'..cjson.encode(g) end; if g.status~='opened' and g.status~='owned' then return 'not_keepable' end; g.status='kept'; g.keptAt=tonumber(ARGV[2]); g.ownerId=ARGV[1]; redis.call('SET',KEYS[1],cjson.encode(g)); return cjson.encode(g)",
       ["gift:" + giftId], [userId, now]
     );
     if (result === "missing") return giftError(404, "gift_not_found");
     if (result === "not_owner") return giftError(403, "not_gift_recipient");
     if (result === "not_keepable") return giftError(409, "gift_not_keepable");
     if (result === "expired") return giftError(409, "gift_decision_window_expired");
-    const gift = JSON.parse(result);
+    const alreadyKept = String(result).startsWith("already:");
+    const gift = JSON.parse(alreadyKept ? String(result).slice(8) : result);
+    const notifySenderId = String(gift.senderId || previousSenderId);
     let senderNotified = false;
-    if (!wasAlreadyKept && /^\d+$/.test(previousSenderId) && previousSenderId !== userId) {
+    if (!alreadyKept && /^\d+$/.test(notifySenderId) && notifySenderId !== userId) {
       try {
-        await sendMaxMessage(previousSenderId, "💚 Ваш подарок в ЛовиДай оставили себе! Получатель решил сохранить его в своей коллекции.");
+        await sendMaxMessage(notifySenderId, "💚 Ваш подарок в ЛовиДай оставили себе! Получатель решил сохранить его в своей коллекции.");
         senderNotified = true;
       } catch (error) { console.warn("[gift kept notification]", error.message); }
     }
@@ -843,7 +845,7 @@ async function handleGiftRequest(path, body, user) {
     const wasAlreadyOpened = previousGift?.status === "opened";
     const previousSenderId = String(previousGift?.senderId || "");
     const result = await client.eval(
-      "local raw=redis.call('GET',KEYS[1]); if not raw then return 'missing' end; local g=cjson.decode(raw); if tostring(g.recipientId or '')~=ARGV[1] then return 'not_owner' end; if g.status=='expired' then return 'expired:'..cjson.encode(g) end; if g.status=='opened' then if tonumber(g.expiresAt or 0)>0 and tonumber(g.expiresAt)<tonumber(ARGV[2]) then g.status='expired'; g.expiredAt=tonumber(ARGV[2]); redis.call('SET',KEYS[1],cjson.encode(g)); return 'expired:'..cjson.encode(g) end; return cjson.encode(g) end; if g.status~='claimed' then return 'not_ready' end; if tonumber(g.opensAt or 0)>tonumber(ARGV[2]) then return 'not_ready' end; if g.expiresAt and g.expiresAt~=cjson.null and tonumber(g.expiresAt)>0 and tonumber(g.expiresAt)<tonumber(ARGV[2]) then g.status='expired'; g.expiredAt=tonumber(ARGV[2]); redis.call('SET',KEYS[1],cjson.encode(g)); return 'expired:'..cjson.encode(g) end; g.status='opened'; g.openedAt=tonumber(ARGV[2]); g.ownerId=ARGV[1]; redis.call('SET',KEYS[1],cjson.encode(g)); return cjson.encode(g)",
+      "local raw=redis.call('GET',KEYS[1]); if not raw then return 'missing' end; local g=cjson.decode(raw); if tostring(g.recipientId or '')~=ARGV[1] then return 'not_owner' end; if g.status=='expired' then return 'expired:'..cjson.encode(g) end; if g.status=='opened' then if tonumber(g.expiresAt or 0)>0 and tonumber(g.expiresAt)<tonumber(ARGV[2]) then g.status='expired'; g.expiredAt=tonumber(ARGV[2]); redis.call('SET',KEYS[1],cjson.encode(g)); return 'expired:'..cjson.encode(g) end; return 'already:'..cjson.encode(g) end; if g.status~='claimed' then return 'not_ready' end; if tonumber(g.opensAt or 0)>tonumber(ARGV[2]) then return 'not_ready' end; if g.expiresAt and g.expiresAt~=cjson.null and tonumber(g.expiresAt)>0 and tonumber(g.expiresAt)<tonumber(ARGV[2]) then g.status='expired'; g.expiredAt=tonumber(ARGV[2]); redis.call('SET',KEYS[1],cjson.encode(g)); return 'expired:'..cjson.encode(g) end; g.status='opened'; g.openedAt=tonumber(ARGV[2]); g.ownerId=ARGV[1]; redis.call('SET',KEYS[1],cjson.encode(g)); return cjson.encode(g)",
       ["gift:" + giftId], [userId, now]
     );
     if (result === "missing") return giftError(404, "gift_not_found");
@@ -855,11 +857,13 @@ async function handleGiftRequest(path, body, user) {
     if (String(result).startsWith("expired:")) {
       return { statusCode: 200, body: { ok: true, expired: true, gift: JSON.parse(String(result).slice(8)) } };
     }
-    const gift = JSON.parse(result);
+    const alreadyOpened = String(result).startsWith("already:");
+    const gift = JSON.parse(alreadyOpened ? String(result).slice(8) : result);
+    const notifySenderId = String(gift.senderId || previousSenderId);
     let senderNotified = false;
-    if (!wasAlreadyOpened && /^\d+$/.test(previousSenderId) && previousSenderId !== userId) {
+    if (!alreadyOpened && /^\d+$/.test(notifySenderId) && notifySenderId !== userId) {
       try {
-        await sendMaxMessage(previousSenderId, "🎉 Ваш подарок в ЛовиДай открыли! Получатель открыл подарок и теперь может принять решение, оставить его себе или передать дальше.");
+        await sendMaxMessage(notifySenderId, "🎉 Ваш подарок в ЛовиДай открыли! Получатель открыл подарок и теперь может принять решение, оставить его себе или передать дальше.");
         senderNotified = true;
       } catch (error) { console.warn("[gift opened notification]", error.message); }
     }
