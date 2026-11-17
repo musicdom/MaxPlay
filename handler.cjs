@@ -870,7 +870,10 @@ async function handleGiftRequest(path, body, user) {
     let senderNotified = false;
     if (!already && senderId && senderId !== userId) {
       try {
-        await sendMaxMessage(senderId, "🎉 Ваш подарок в ЛовиДай забрали! Получатель уже получил его и сможет открыть, когда закончится таймер.");
+        const senderMessage = gift.status === "opened"
+          ? "🎉 Ваш подарок в ЛовиДай забрали — он уже открыт и находится в коллекции получателя."
+          : "🎉 Ваш подарок в ЛовиДай забрали! Он находится в коллекции получателя и откроется, когда закончится установленный вами таймер.";
+        await sendMaxMessage(senderId, senderMessage);
         senderNotified = true;
       } catch (error) { console.warn("[gift claimed notification]", error.message); }
     }
@@ -948,7 +951,7 @@ async function handleGiftRequest(path, body, user) {
     let notificationSent = false;
     if (newRecipientId && gift.shareUrl) {
       try {
-        await sendMaxMessage(newRecipientId, "🎁 Вам отправили подарок в ЛовиДай! Откройте мини-приложение по кнопке ниже, чтобы забрать его.",
+        await sendMaxMessage(newRecipientId, "🎁 Вам отправили подарок в ЛовиДай! Откройте мини-приложение по кнопке ниже. После перехода по ссылке у вас будет 12 часов, чтобы забрать подарок. Таймер до показа, если он установлен, считается отдельно.",
           [[{ type: "open_app", text: "Открыть подарок", web_app: gift.shareUrl }]]);
         notificationSent = true;
       } catch (error) { console.warn("[forward notification]", error.message); }
