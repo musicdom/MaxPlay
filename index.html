@@ -985,11 +985,11 @@ async function claimGiftFromLaunchLink(apiBase,initData){
  const gift=(currentGiftData.received||[]).find(item=>String(item.id)===giftId);
  navigate('collection');
  if(gift&&gift.status==='sent'){
-  document.querySelector('[data-filter="incoming"]')?.click();
+  openGiftSection('incoming');
  }else if(gift&&['claimed','opened','owned','kept','expired'].includes(gift.status)){
-  document.querySelector('[data-filter="mine"]')?.click();
+  openGiftSection('mine');
  }else{
-  document.querySelector('[data-filter="incoming"]')?.click();
+  openGiftSection('incoming');
   const title=document.getElementById('emptyTitle');
   const description=document.getElementById('emptyText');
   if(title&&description){title.textContent='Подарок не найден';description.textContent='Проверьте, что вы открыли ссылку из своего аккаунта MAX и подарок ещё не забрали.';}
