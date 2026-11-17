@@ -769,8 +769,8 @@ async function handleGiftRequest(path, body, user) {
     let notificationSent = false;
     if (gift.shareUrl) {
       try {
-        await sendMaxMessage(recipientId, "Вам отправили подарок в Подарис! Нажмите кнопку, чтобы забрать его. После получения начнётся таймер, а когда он закончится, у вас будет 12 часов, чтобы открыть подарок.",
-          [[{ type: "open_app", text: "Получить подарок", web_app: gift.shareUrl }]]);
+        await sendMaxMessage(recipientId, "🎁 Вам отправили подарок в ЛовиДай! Откройте мини-приложение по кнопке ниже, чтобы посмотреть и забрать его. После получения начнётся таймер подарка.",
+          [[{ type: "open_app", text: "Открыть подарок", web_app: gift.shareUrl }]]);
         notificationSent = true;
       } catch (error) { console.warn("[gift notification]", error.message); }
     }
@@ -814,7 +814,14 @@ async function handleGiftRequest(path, body, user) {
     const already = String(result).startsWith("already:");
     const giftJson = String(result).slice(already ? 8 : 3);
     const gift = JSON.parse(giftJson);
-    return { statusCode: 200, body: { ok: true, gift, alreadyClaimed: already } };
+    let senderNotified = false;
+    if (!already && senderId && senderId !== userId) {
+      try {
+        await sendMaxMessage(senderId, "🎉 Ваш подарок в ЛовиДай забрали! Получатель уже получил его и сможет открыть, когда закончится таймер.");
+        senderNotified = true;
+      } catch (error) { console.warn("[gift claimed notification]", error.message); }
+    }
+    return { statusCode: 200, body: { ok: true, gift, alreadyClaimed: already, senderNotified } };
   }
 
   if (path === "/api/gifts/open") {
@@ -866,8 +873,8 @@ async function handleGiftRequest(path, body, user) {
     let notificationSent = false;
     if (newRecipientId && gift.shareUrl) {
       try {
-        await sendMaxMessage(newRecipientId, "Вам переслали подарок в Подарис! Заберите его по кнопке ниже.",
-          [[{ type: "open_app", text: "Получить подарок", web_app: gift.shareUrl }]]);
+        await sendMaxMessage(newRecipientId, "🎁 Вам отправили подарок в ЛовиДай! Откройте мини-приложение по кнопке ниже, чтобы забрать его.",
+          [[{ type: "open_app", text: "Открыть подарок", web_app: gift.shareUrl }]]);
         notificationSent = true;
       } catch (error) { console.warn("[forward notification]", error.message); }
     }
