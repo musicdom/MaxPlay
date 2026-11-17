@@ -565,7 +565,7 @@ function renderGiftCards(){
  updateIncomingNotice();
  const mine=allReceived.filter(g=>['claimed','opened','owned','kept','expired'].includes(g.status));
  updateHomeStats();
- const incoming=allReceived.filter(g=>g.status==='sent');
+ const incoming=allReceived.filter(g=>g.status==='sent'||(g.status==='claimed'&&g.claimedViaLink===true));
  const sent=[...(currentGiftData.sent||[]),...(currentGiftData.history||[])];
  const items=activeGiftFilter==='mine'?mine:activeGiftFilter==='incoming'?incoming:activeGiftFilter==='sent'?sent:[];
  const titles={mine:'Мои подарки',incoming:'Мне прислали',sent:'Отправленные'};
@@ -635,15 +635,15 @@ function renderGiftCards(){
    if(giftImageUrl(gift.giftType))present.append(giftImage);else present.textContent='Подарок';
    flow.append(from,arrow,present);
    const info=document.createElement('div');info.className='gift-flow-info';
-   const title=document.createElement('b');title.textContent='Вам отправили подарок';
+   const wasClaimed=gift.status==='claimed'&&gift.claimedViaLink===true;
+   const title=document.createElement('b');title.textContent=wasClaimed?'Подарок получен по ссылке':'Вам отправили подарок';
    const meta=document.createElement('small');meta.textContent='От: '+(gift.senderName||'Пользователь MAX');
    const delay=document.createElement('small');delay.className='gift-flow-timer';
    const hours=Math.ceil(Number(gift.revealDelaySeconds||0)/3600);
-   delay.textContent=hours>0?'Таймер после получения: '+hours+' ч':'Без таймера';
+   delay.textContent=wasClaimed?(Number(gift.opensAt||0)>Date.now()?'Открыть можно через '+formatRemaining(Number(gift.opensAt)-Date.now()):'Подарок можно открыть'):hours>0?'Таймер после получения: '+hours+' ч':'Без таймера';
    info.append(title,meta,delay);
-   const claim=document.createElement('button');claim.type='button';claim.className='gift-flow-claim';claim.textContent='Забрать себе';
-   claim.addEventListener('click',()=>giftAction('/api/gifts/claim',gift.id));
-   row.append(flow,info,claim);row.addEventListener('click',event=>{if(!event.target.closest('button'))openGiftDetails(gift,'received');});list.append(row);
+   if(!wasClaimed){const claim=document.createElement('button');claim.type='button';claim.className='gift-flow-claim';claim.textContent='Забрать себе';claim.addEventListener('click',()=>giftAction('/api/gifts/claim',gift.id));row.append(flow,info,claim);}else{row.append(flow,info);}
+   row.addEventListener('click',event=>{if(!event.target.closest('button'))openGiftDetails(gift,'received');});list.append(row);
   });
  }else{
   items.forEach(gift=>{
@@ -1111,7 +1111,7 @@ async function claimGiftFromLaunchLink(apiBase,initData){
  if(!/^[0-9a-f-]{36}$/i.test(giftId))return;
  const response=await fetch(window.PODARIS_API_URL('/api/gifts/claim'),{
   method:'POST',headers:{'Content-Type':'application/json'},
-  body:JSON.stringify({initData,giftId})
+  body:JSON.stringify({initData,giftId,viaLink:true})
  });
  const data=await response.json().catch(()=>({}));
  await loadGiftData();
