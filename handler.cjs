@@ -1236,8 +1236,10 @@ async function handleYooMoneyNotification(body) {
     return { statusCode: 400, body: { ok: false, error: "payment_not_eligible_for_credit" } };
   }
   const label = String(fields?.label || "");
-  // `amount` is credited to the receiver; `withdraw_amount` is the payer debit and may include fees.
-  const amount = Number(fields?.amount);
+  // YooMoney: amount is credited after fee; withdraw_amount is the amount charged to the payer.
+  // Match the order against the payer debit, not the net credited amount.
+  const amount = Number(fields?.withdraw_amount);
+  const creditedAmount = Number(fields?.amount);
   const hmacSignature = String(fields?.sign || "").toLowerCase();
   const hmacPayload = Object.entries(fields || {})
     .filter(([key]) => key !== "sign")
@@ -1250,7 +1252,7 @@ async function handleYooMoneyNotification(body) {
     await recordAdminLog("warning", "yoomoney", "Отклонено уведомление с неверной подписью", { label: label.slice(0, 80) });
     return { statusCode: 401, body: { ok: false, error: "invalid_notification_signature" } };
   }
-  if (!/^pd_[a-f0-9]{32}$/i.test(label) || !Number.isFinite(amount) || amount <= 0) {
+  if (!/^pd_[a-f0-9]{32}$/i.test(label) || !Number.isFinite(amount) || amount <= 0 || !Number.isFinite(creditedAmount) || creditedAmount < 0) {
     return { statusCode: 400, body: { ok: false, error: "invalid_payment_data" } };
   }
 
@@ -1262,12 +1264,12 @@ async function handleYooMoneyNotification(body) {
   try { order = JSON.parse(raw); } catch { return { statusCode: 500, body: { ok: false, error: "invalid_order_record" } }; }
   if (order.status === "paid") return { statusCode: 200, body: { ok: true, alreadyProcessed: true } };
   if (Math.abs(Number(order.amount) - amount) > 0.009) {
-    await recordAdminLog("warning", "yoomoney", "Сумма уведомления не совпала с заказом", { label, expected: order.amount, received: amount });
+    await recordAdminLog("warning", "yoomoney", "Сумма списания не совпала с заказом", { label, expected: order.amount, received: amount, creditedAmount });
     return { statusCode: 400, body: { ok: false, error: "payment_amount_mismatch" } };
   }
   // Persist proof only after the YooMoney HMAC and order amount have both been verified.
   await client.set("payment-verification:" + label, JSON.stringify({
-    label, amount, currency: String(fields.currency), notificationType,
+    label, amount, creditedAmount, currency: String(fields.currency), notificationType,
     operationId: String(fields.operation_id), userId: String(order.userId),
     verifiedAt: new Date().toISOString()
   }));
