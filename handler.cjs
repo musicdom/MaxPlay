@@ -820,7 +820,7 @@ async function handleGiftRequest(path, body, user) {
     if (!/^[0-9a-f-]{36}$/i.test(giftId)) return giftError(400, "invalid_gift_id");
     const gift = await readGift(giftId);
     if (!gift) return giftError(404, "gift_not_found");
-    if (gift.status !== "sent") {
+    if (gift.status !== "sent" && !(gift.status === "expired" && gift.expiredReason === "pickup_timeout")) {
       if (String(gift.recipientId || "") === userId) return { statusCode: 200, body: { ok: true, alreadyReceived: true } };
       return giftError(409, "gift_not_available");
     }
@@ -924,7 +924,6 @@ async function handleGiftRequest(path, body, user) {
     if (result === "claimed") return giftError(409, "gift_already_claimed");
     if (result === "not_claimable") return giftError(409, "gift_not_claimable");
     if (result === "not_opened") return giftError(409, "gift_link_not_opened");
-    if (result === "expired") return giftError(409, "gift_expired");
     if (result === "wrong_recipient") return giftError(403, "not_gift_recipient");
     if (result === "self_claim") return giftError(409, "gift_self_claim_not_allowed");
     const already = String(result).startsWith("already:");
@@ -959,9 +958,6 @@ async function handleGiftRequest(path, body, user) {
     if (result === "not_ready") {
       const gift = await readGift(giftId);
       return giftError(409, "gift_not_ready", { opensAt: gift?.opensAt || null });
-    }
-    if (String(result).startsWith("expired:")) {
-      return { statusCode: 200, body: { ok: true, expired: true, gift: JSON.parse(String(result).slice(8)) } };
     }
     const alreadyOpened = String(result).startsWith("already:");
     const gift = JSON.parse(alreadyOpened ? String(result).slice(8) : result);
@@ -1004,7 +1000,6 @@ async function handleGiftRequest(path, body, user) {
     if (result === "not_owner") return giftError(403, "not_gift_recipient");
     if (result === "not_forwardable") return giftError(409, "gift_not_forwardable");
     if (result === "conflict") return giftError(409, "gift_forward_conflict");
-    if (result === "expired") return giftError(409, "gift_decision_window_expired");
     const gift = JSON.parse(result);
     let previousSenderNotified = false;
     if (/^\d+$/.test(previousSenderId) && previousSenderId !== userId && previousSenderId !== newRecipientId) {
