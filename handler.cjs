@@ -984,6 +984,7 @@ async function handleGiftRequest(path, body, user) {
     if (!fullyAuthorized) return giftError(403, "full_authorization_required");
     const giftId = String(body?.giftId || "");
     if (!/^[0-9a-f-]{36}$/i.test(giftId)) return giftError(400, "invalid_gift_id");
+    const newGiftId = crypto.randomUUID();
     const shareByLink = body?.shareLink === true;
     const newRecipientId = shareByLink ? "" : String(body?.recipientId || "");
     const revealDelaySeconds = Number(body?.revealDelaySeconds ?? 0);
@@ -994,18 +995,19 @@ async function handleGiftRequest(path, body, user) {
     const previousSenderId = String(previousGift?.senderId || "");
     const senderName = [user.firstName,user.lastName].filter(Boolean).join(" ").trim() || "Пользователь MAX";
     const shareUrl = shareByLink
-      ? "https://max.ru/se14711525_1_bot?startapp=gift_" + giftId
+      ? "https://max.ru/se14711525_1_bot?startapp=gift_" + newGiftId
       : (process.env.MAX_MINI_APP_URL
         ? process.env.MAX_MINI_APP_URL + (process.env.MAX_MINI_APP_URL.includes("?") ? "&" : "?") + "gift=" + giftId
         : null);
     const result = await client.eval(
-      "local raw=redis.call('GET',KEYS[1]); if not raw then return 'missing' end; local g=cjson.decode(raw); if tostring(g.recipientId or '')~=ARGV[1] then return 'not_owner' end; if g.status=='opened' and tonumber(g.expiresAt or 0)>0 and tonumber(g.expiresAt)<tonumber(ARGV[4]) then g.status='expired'; g.expiredAt=tonumber(ARGV[4]); redis.call('SET',KEYS[1],cjson.encode(g)); return 'expired' end; if g.status~='opened' and g.status~='owned' and g.status~='kept' then return 'not_forwardable' end; g.originSenderId=g.originSenderId or g.senderId or ''; g.originSenderName=g.originSenderName or g.senderName or ''; g.senderId=ARGV[1]; g.senderName=ARGV[2]; g.recipientId=(ARGV[3]=='') and cjson.null or ARGV[3]; g.recipientName=''; g.ownerId=cjson.null; g.status='sent'; g.lastSentAt=tonumber(ARGV[4]); g.transferCount=tonumber(g.transferCount or 0)+1; g.claimedAt=cjson.null; g.opensAt=cjson.null; g.pickupExpiresAt=cjson.null; g.expiresAt=cjson.null; g.openedAt=cjson.null; g.keptAt=cjson.null; g.revealDelaySeconds=tonumber(ARGV[7]); g.shareUrl=(ARGV[5]=='') and cjson.null or ARGV[5]; redis.call('SET',KEYS[1],cjson.encode(g)); redis.call('LREM',KEYS[2],0,ARGV[6]); redis.call('RPUSH',KEYS[3],ARGV[6]); if ARGV[3]~='' then redis.call('RPUSH',KEYS[4],ARGV[6]); end; return cjson.encode(g)",
-      ["gift:" + giftId, "gifts:received:" + userId, "gifts:sent:" + userId, "gifts:received:" + (newRecipientId || "none")],
-      [userId, senderName, newRecipientId, now, shareUrl || "", giftId, revealDelaySeconds]
+      "local raw=redis.call('GET',KEYS[1]); if not raw then return 'missing' end; local g=cjson.decode(raw); if tostring(g.recipientId or '')~=ARGV[1] then return 'not_owner' end; if g.status=='opened' and tonumber(g.expiresAt or 0)>0 and tonumber(g.expiresAt)<tonumber(ARGV[4]) then g.status='expired'; g.expiredAt=tonumber(ARGV[4]); redis.call('SET',KEYS[1],cjson.encode(g)); return 'expired' end; if g.status~='opened' and g.status~='owned' and g.status~='kept' then return 'not_forwardable' end; if redis.call('EXISTS',KEYS[5])==1 then return 'conflict' end; g.originSenderId=g.originSenderId or g.senderId or ''; g.originSenderName=g.originSenderName or g.senderName or ''; g.forwardedFrom=ARGV[6]; g.id=ARGV[8]; g.senderId=ARGV[1]; g.senderName=ARGV[2]; g.recipientId=(ARGV[3]=='') and cjson.null or ARGV[3]; g.recipientName=''; g.ownerId=cjson.null; g.status='sent'; g.lastSentAt=tonumber(ARGV[4]); g.transferCount=tonumber(g.transferCount or 0)+1; g.claimedAt=cjson.null; g.opensAt=cjson.null; g.pickupExpiresAt=cjson.null; g.expiresAt=cjson.null; g.openedAt=cjson.null; g.keptAt=cjson.null; g.revealDelaySeconds=tonumber(ARGV[7]); g.shareUrl=(ARGV[5]=='') and cjson.null or ARGV[5]; redis.call('SET',KEYS[5],cjson.encode(g)); redis.call('DEL',KEYS[1]); redis.call('LREM',KEYS[2],0,ARGV[6]); redis.call('RPUSH',KEYS[3],ARGV[8]); if ARGV[3]~='' then redis.call('RPUSH',KEYS[4],ARGV[8]); end; return cjson.encode(g)",
+      ["gift:" + giftId, "gifts:received:" + userId, "gifts:sent:" + userId, "gifts:received:" + (newRecipientId || "none"), "gift:" + newGiftId],
+      [userId, senderName, newRecipientId, now, shareUrl || "", giftId, revealDelaySeconds, newGiftId]
     );
     if (result === "missing") return giftError(404, "gift_not_found");
     if (result === "not_owner") return giftError(403, "not_gift_recipient");
     if (result === "not_forwardable") return giftError(409, "gift_not_forwardable");
+    if (result === "conflict") return giftError(409, "gift_forward_conflict");
     if (result === "expired") return giftError(409, "gift_decision_window_expired");
     const gift = JSON.parse(result);
     let previousSenderNotified = false;
