@@ -781,6 +781,9 @@ async function handleGiftRequest(path, body, user) {
     const giftId = String(body?.giftId || "");
     if (!/^[0-9a-f-]{36}$/i.test(giftId)) return giftError(400, "invalid_gift_id");
     const now = Date.now();
+    const previousGift = await readGift(giftId);
+    const wasAlreadyKept = previousGift?.status === "kept";
+    const previousSenderId = String(previousGift?.senderId || "");
     const result = await client.eval(
       "local raw=redis.call('GET',KEYS[1]); if not raw then return 'missing' end; local g=cjson.decode(raw); if tostring(g.recipientId or '')~=ARGV[1] then return 'not_owner' end; if g.status=='opened' and tonumber(g.expiresAt or 0)>0 and tonumber(g.expiresAt)<tonumber(ARGV[2]) then g.status='expired'; g.expiredAt=tonumber(ARGV[2]); redis.call('SET',KEYS[1],cjson.encode(g)); return 'expired' end; if g.status~='opened' and g.status~='owned' and g.status~='kept' then return 'not_keepable' end; g.status='kept'; g.keptAt=tonumber(ARGV[2]); g.ownerId=ARGV[1]; redis.call('SET',KEYS[1],cjson.encode(g)); return cjson.encode(g)",
       ["gift:" + giftId], [userId, now]
@@ -789,7 +792,15 @@ async function handleGiftRequest(path, body, user) {
     if (result === "not_owner") return giftError(403, "not_gift_recipient");
     if (result === "not_keepable") return giftError(409, "gift_not_keepable");
     if (result === "expired") return giftError(409, "gift_decision_window_expired");
-    return { statusCode: 200, body: { ok: true, gift: JSON.parse(result) } };
+    const gift = JSON.parse(result);
+    let senderNotified = false;
+    if (!wasAlreadyKept && /^\d+$/.test(previousSenderId) && previousSenderId !== userId) {
+      try {
+        await sendMaxMessage(previousSenderId, "💚 Ваш подарок в ЛовиДай оставили себе! Получатель решил сохранить его в своей коллекции.");
+        senderNotified = true;
+      } catch (error) { console.warn("[gift kept notification]", error.message); }
+    }
+    return { statusCode: 200, body: { ok: true, gift, senderNotified } };
   }
 
   if (path === "/api/gifts/claim") {
@@ -828,6 +839,9 @@ async function handleGiftRequest(path, body, user) {
     const giftId = String(body?.giftId || "");
     if (!/^[0-9a-f-]{36}$/i.test(giftId)) return giftError(400, "invalid_gift_id");
     const now = Date.now();
+    const previousGift = await readGift(giftId);
+    const wasAlreadyOpened = previousGift?.status === "opened";
+    const previousSenderId = String(previousGift?.senderId || "");
     const result = await client.eval(
       "local raw=redis.call('GET',KEYS[1]); if not raw then return 'missing' end; local g=cjson.decode(raw); if tostring(g.recipientId or '')~=ARGV[1] then return 'not_owner' end; if g.status=='expired' then return 'expired:'..cjson.encode(g) end; if g.status=='opened' then if tonumber(g.expiresAt or 0)>0 and tonumber(g.expiresAt)<tonumber(ARGV[2]) then g.status='expired'; g.expiredAt=tonumber(ARGV[2]); redis.call('SET',KEYS[1],cjson.encode(g)); return 'expired:'..cjson.encode(g) end; return cjson.encode(g) end; if g.status~='claimed' then return 'not_ready' end; if tonumber(g.opensAt or 0)>tonumber(ARGV[2]) then return 'not_ready' end; if g.expiresAt and g.expiresAt~=cjson.null and tonumber(g.expiresAt)>0 and tonumber(g.expiresAt)<tonumber(ARGV[2]) then g.status='expired'; g.expiredAt=tonumber(ARGV[2]); redis.call('SET',KEYS[1],cjson.encode(g)); return 'expired:'..cjson.encode(g) end; g.status='opened'; g.openedAt=tonumber(ARGV[2]); g.ownerId=ARGV[1]; redis.call('SET',KEYS[1],cjson.encode(g)); return cjson.encode(g)",
       ["gift:" + giftId], [userId, now]
@@ -841,7 +855,15 @@ async function handleGiftRequest(path, body, user) {
     if (String(result).startsWith("expired:")) {
       return { statusCode: 200, body: { ok: true, expired: true, gift: JSON.parse(String(result).slice(8)) } };
     }
-    return { statusCode: 200, body: { ok: true, gift: JSON.parse(result) } };
+    const gift = JSON.parse(result);
+    let senderNotified = false;
+    if (!wasAlreadyOpened && /^\d+$/.test(previousSenderId) && previousSenderId !== userId) {
+      try {
+        await sendMaxMessage(previousSenderId, "🎉 Ваш подарок в ЛовиДай открыли! Получатель открыл подарок и теперь может принять решение, оставить его себе или передать дальше.");
+        senderNotified = true;
+      } catch (error) { console.warn("[gift opened notification]", error.message); }
+    }
+    return { statusCode: 200, body: { ok: true, gift, senderNotified } };
   }
 
   if (path === "/api/gifts/forward") {
@@ -854,6 +876,8 @@ async function handleGiftRequest(path, body, user) {
     if (!Number.isInteger(revealDelaySeconds) || revealDelaySeconds < 0 || revealDelaySeconds > 30 * 24 * 60 * 60) return giftError(400, "invalid_reveal_delay");
     if (!shareByLink && (!/^\d+$/.test(newRecipientId) || newRecipientId === userId)) return giftError(400, "invalid_recipient");
     const now = Date.now();
+    const previousGift = await readGift(giftId);
+    const previousSenderId = String(previousGift?.senderId || "");
     const senderName = [user.firstName,user.lastName].filter(Boolean).join(" ").trim() || "Пользователь MAX";
     const shareUrl = shareByLink
       ? "https://max.ru/se14711525_1_bot?startapp=gift_" + giftId
@@ -870,6 +894,13 @@ async function handleGiftRequest(path, body, user) {
     if (result === "not_forwardable") return giftError(409, "gift_not_forwardable");
     if (result === "expired") return giftError(409, "gift_decision_window_expired");
     const gift = JSON.parse(result);
+    let previousSenderNotified = false;
+    if (/^\d+$/.test(previousSenderId) && previousSenderId !== userId && previousSenderId !== newRecipientId) {
+      try {
+        await sendMaxMessage(previousSenderId, "🔁 Ваш подарок в ЛовиДай переслали другому человеку. Подарок продолжил путь к новому получателю.");
+        previousSenderNotified = true;
+      } catch (error) { console.warn("[gift forwarded-to-sender notification]", error.message); }
+    }
     let notificationSent = false;
     if (newRecipientId && gift.shareUrl) {
       try {
@@ -878,7 +909,7 @@ async function handleGiftRequest(path, body, user) {
         notificationSent = true;
       } catch (error) { console.warn("[forward notification]", error.message); }
     }
-    return { statusCode: 201, body: { ok: true, gift, notificationSent, shareByLink } };
+    return { statusCode: 201, body: { ok: true, gift, notificationSent, previousSenderNotified, shareByLink } };
   }
 
   return giftError(404, "gift_route_not_found");
