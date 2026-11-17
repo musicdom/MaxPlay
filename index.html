@@ -237,6 +237,29 @@ button.task-link{cursor:pointer}.task-link-primary{border-color:transparent;back
 #collection .gift-list:not(.gift-list-flow) .gift-tile-action{font-size:9px;padding:9px 6px}
 @media(max-width:360px){.home-stats{gap:4px;padding:11px 6px}.home-stat strong{font-size:18px}.home-stat span{font-size:7px}}
 
+
+/* Gift detail sheet */
+.gift-detail-backdrop{position:fixed;inset:0;z-index:1250;display:none;align-items:flex-end;justify-content:center;padding:12px;background:#17172b88}
+.gift-detail-backdrop.open{display:flex}
+.gift-detail-panel{width:min(520px,100%);max-height:88vh;overflow:auto;border:1px solid #e7eaff;border-radius:25px 25px 18px 18px;background:#fff;padding:20px;box-shadow:0 20px 70px #11152c45}
+.gift-detail-close{display:flex;justify-content:flex-end}
+.gift-detail-close button{width:36px;height:36px;border:0;border-radius:50%;background:#f1efff;color:#5634f5;font-size:21px}
+.gift-detail-hero{width:min(210px,65%);aspect-ratio:1;margin:6px auto 14px;border-radius:24px;background:linear-gradient(145deg,#e2f8ff,#eee5ff);display:grid;place-items:center;overflow:hidden}
+.gift-detail-hero img{width:100%;height:100%;object-fit:contain}
+.gift-detail-title{text-align:center;font-size:20px;font-weight:900;color:#252344}
+.gift-detail-status{text-align:center;margin-top:7px;color:#5634f5;font-size:11px;font-weight:800}
+.gift-detail-people{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
+.gift-detail-person{min-width:0;padding:12px 8px;border:1px solid #e7eaff;border-radius:15px;background:#fbfbff;display:flex;flex-direction:column;align-items:center;gap:7px}
+.gift-detail-avatar{width:54px;height:54px;border-radius:50%;overflow:hidden;display:grid;place-items:center;background:#f0efff;color:#5634f5;font-size:20px;font-weight:800}
+.gift-detail-avatar img{width:100%;height:100%;object-fit:cover}
+.gift-detail-person small{font-size:9px;color:#8588a1}
+.gift-detail-person b{max-width:100%;font-size:11px;color:#292642;text-align:center;overflow-wrap:anywhere}
+.gift-detail-message{margin-top:14px;padding:14px;border-radius:14px;background:#f6f4ff;color:#4c4869;font-size:12px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
+.gift-detail-meta{display:grid;gap:8px;margin-top:14px;padding:13px;border:1px solid #eceeff;border-radius:14px}
+.gift-detail-meta-row{display:flex;justify-content:space-between;gap:12px;font-size:10px;line-height:1.45}
+.gift-detail-meta-row span{color:#8588a1}
+.gift-detail-meta-row b{color:#292642;text-align:right;overflow-wrap:anywhere}
+.gift-card,.gift-flow-row{cursor:pointer}
 </style>
 </head>
 <body>
@@ -356,6 +379,12 @@ button.task-link{cursor:pointer}.task-link-primary{border-color:transparent;back
 </section>
 <nav class="bottom-nav" aria-label="Основная навигация"><button class="nav-btn active" data-screen="collection"><span class="nav-icon">⌂</span><span>Главная</span></button><button class="nav-btn" data-screen="tasks" type="button"><span class="nav-icon">✓</span><span>Задания</span></button><button class="nav-btn" data-screen="shop"><span class="nav-icon">▧</span><span>Магазин</span></button><button class="nav-btn" data-screen="profile"><span class="nav-icon">◉</span><span>Профиль</span></button></nav>
 </div>
+<div class="gift-detail-backdrop" id="giftDetailBackdrop" aria-hidden="true">
+ <section class="gift-detail-panel" role="dialog" aria-modal="true" aria-labelledby="giftDetailTitle">
+  <div class="gift-detail-close"><button type="button" id="giftDetailClose" aria-label="Закрыть">×</button></div>
+  <div id="giftDetailContent"></div>
+ </section>
+</div>
 <div class="gift-modal-backdrop" id="giftModalBackdrop">
  <div class="gift-modal" role="dialog" aria-modal="true" aria-labelledby="giftModalTitle">
   <h2 id="giftModalTitle">Отправить подарок</h2>
@@ -408,6 +437,74 @@ function giftImageUrl(giftType){
  };
  return images[giftType]||'';
 }
+function giftDetailDate(value){
+ if(!value)return '';
+ let date;
+ if(typeof value==='number'||/^\\d+$/.test(String(value))){
+  let numeric=Number(value);if(numeric>0&&numeric<1e12)numeric*=1000;date=new Date(numeric);
+ }else date=new Date(value);
+ return Number.isNaN(date.getTime())?'':date.toLocaleString('ru-RU',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+function openGiftDetails(gift,kind='received'){
+ const backdrop=document.getElementById('giftDetailBackdrop');
+ const content=document.getElementById('giftDetailContent');
+ if(!backdrop||!content||!gift)return;
+ content.replaceChildren();
+ const names={joystick_1:'Геймпад «Неон»',joystick_2:'Геймпад «Пульс»',joystick_3:'Геймпад «Аркада»',joystick_4:'Геймпад «Турбо»',joystick_5:'Геймпад «Кибер»',joystick_6:'Геймпад «Легенда»',project:'Подарок проекта',family_heart:'Сердце для родных',friend:'Подарок другу'};
+ const titleText=names[gift.giftType]||'Подарок';
+ const hero=document.createElement('div');hero.className='gift-detail-hero';
+ const imageUrl=giftImageUrl(gift.giftType);
+ if(imageUrl){const image=document.createElement('img');image.src=imageUrl;image.alt=titleText;image.onerror=()=>{hero.textContent='🎁';};hero.append(image);}else hero.textContent='🎁';
+ const title=document.createElement('div');title.className='gift-detail-title';title.id='giftDetailTitle';title.textContent=titleText;
+ const status=document.createElement('div');status.className='gift-detail-status';
+ const statuses={sent:'Ожидает получения',claimed:'Получен, ожидает открытия',opened:'Открыт',kept:'Сохранён в коллекции',owned:'В вашей коллекции',expired:'Срок получения истёк'};
+ status.textContent=statuses[gift.status]||'Подарок';
+ content.append(hero,title,status);
+ const people=document.createElement('div');people.className='gift-detail-people';
+ const addPerson=(label,name,photo)=>{
+  const box=document.createElement('div');box.className='gift-detail-person';
+  const avatar=document.createElement('div');avatar.className='gift-detail-avatar';
+  const initial=String(name||'').trim().slice(0,1).toUpperCase()||'•';
+  if(photo){const img=document.createElement('img');img.src=photo;img.alt='';img.referrerPolicy='no-referrer';img.onerror=()=>{avatar.textContent=initial;};avatar.append(img);}else avatar.textContent=initial;
+  const caption=document.createElement('small');caption.textContent=label;
+  const person=document.createElement('b');person.textContent=name||'Пользователь MAX';
+  box.append(avatar,caption,person);people.append(box);
+ };
+ if(kind==='sent'){
+  addPerson('Отправитель',gift.senderName||'Вы',gift.senderPhotoUrl||'');
+  addPerson('Получатель',gift.recipientName||'Ожидает получения',gift.recipientPhotoUrl||'');
+ }else{
+  addPerson('Отправитель',gift.senderName||'Пользователь MAX',gift.senderPhotoUrl||'');
+  addPerson('Получатель',gift.recipientName||'Вы',gift.recipientPhotoUrl||'');
+ }
+ content.append(people);
+ if(gift.message){
+  const message=document.createElement('div');message.className='gift-detail-message';message.textContent='«'+gift.message+'»';content.append(message);
+ }
+ const meta=document.createElement('div');meta.className='gift-detail-meta';
+ const addMeta=(label,value)=>{
+  if(value===undefined||value===null||value==='')return;
+  const row=document.createElement('div');row.className='gift-detail-meta-row';
+  const left=document.createElement('span');left.textContent=label;
+  const right=document.createElement('b');right.textContent=String(value);
+  row.append(left,right);meta.append(row);
+ };
+ addMeta('Дата отправки',giftDetailDate(gift.sentAt||gift.createdAt||gift.lastSentAt));
+ addMeta('Дата получения',giftDetailDate(gift.claimedAt));
+ addMeta('Дата открытия',giftDetailDate(gift.openedAt));
+ addMeta('Действует до',giftDetailDate(gift.expiresAt));
+ if(meta.childElementCount)content.append(meta);
+ backdrop.classList.add('open');backdrop.setAttribute('aria-hidden','false');
+}
+document.getElementById('giftDetailClose')?.addEventListener('click',()=>{
+ const backdrop=document.getElementById('giftDetailBackdrop');backdrop?.classList.remove('open');backdrop?.setAttribute('aria-hidden','true');
+});
+document.getElementById('giftDetailBackdrop')?.addEventListener('click',event=>{
+ if(event.target.id==='giftDetailBackdrop'){event.currentTarget.classList.remove('open');event.currentTarget.setAttribute('aria-hidden','true');}
+});
+document.addEventListener('keydown',event=>{
+ if(event.key==='Escape'){const backdrop=document.getElementById('giftDetailBackdrop');backdrop?.classList.remove('open');backdrop?.setAttribute('aria-hidden','true');}
+});
 function updateIncomingNotice(){
  const incoming=(currentGiftData.received||[]).filter(g=>g.status==='sent');
  const button=document.querySelector('[data-filter="incoming"]');
@@ -489,6 +586,7 @@ function renderGiftCards(){
    const title=document.createElement('b');title.textContent=received?'Подарок получен':'Ожидает получения';
    const meta=document.createElement('small');meta.textContent=received?'Получатель: '+(gift.recipientName||'Пользователь MAX'):'Получатель ещё не забрал подарок';
    info.append(title,meta);row.append(flow,info);
+   row.addEventListener('click',event=>{if(!event.target.closest('button'))openGiftDetails(gift,'sent');});
    if(gift.status==='sent'&&gift.shareUrl){
     const copy=document.createElement('button');copy.type='button';copy.className='gift-flow-copy';copy.textContent='Ссылка';
     copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(gift.shareUrl);copy.textContent='Скопировано';}catch{copy.textContent='Не удалось';}});
@@ -518,7 +616,7 @@ function renderGiftCards(){
    info.append(title,meta,delay);
    const claim=document.createElement('button');claim.type='button';claim.className='gift-flow-claim';claim.textContent='Забрать себе';
    claim.addEventListener('click',()=>giftAction('/api/gifts/claim',gift.id));
-   row.append(flow,info,claim);list.append(row);
+   row.append(flow,info,claim);row.addEventListener('click',event=>{if(!event.target.closest('button'))openGiftDetails(gift,'received');});list.append(row);
   });
  }else{
   items.forEach(gift=>{
@@ -541,6 +639,7 @@ function renderGiftCards(){
    meta.textContent=gift.source==='starter_registration'?'Ваш стартовый подарок':gift.source==='yoomoney_purchase'?'Ваша покупка':gift.senderName?'От: '+gift.senderName:'В вашей коллекции';
    const info=document.createElement('div');info.className='gift-tile-info';info.append(title,meta);
    const head=document.createElement('div');head.className='gift-tile-head';head.append(icon,info);card.append(head);
+   card.addEventListener('click',event=>{if(!event.target.closest('button'))openGiftDetails(gift,'received');});
    if(gift.message&&!isSealed){const message=document.createElement('p');message.className='gift-tile-message';message.textContent=gift.message;card.append(message);}
    const footer=document.createElement('div');footer.className='gift-tile-footer';
    if(gift.status==='claimed'){
