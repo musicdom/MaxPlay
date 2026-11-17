@@ -565,7 +565,7 @@ function renderGiftCards(){
  updateIncomingNotice();
  const mine=allReceived.filter(g=>['claimed','opened','owned','kept','expired'].includes(g.status));
  updateHomeStats();
- const incoming=allReceived.filter(g=>g.status==='sent'||(g.status==='claimed'&&g.claimedViaLink===true));
+ const incoming=allReceived.filter(g=>g.status==='sent'&&Boolean(g.pendingLink||g.recipientId===undefined||g.recipientId===null||String(g.recipientId)==='') );
  const sent=[...(currentGiftData.sent||[]),...(currentGiftData.history||[])];
  const items=activeGiftFilter==='mine'?mine:activeGiftFilter==='incoming'?incoming:activeGiftFilter==='sent'?sent:[];
  const titles={mine:'Мои подарки',incoming:'Мне прислали',sent:'Отправленные'};
@@ -635,7 +635,7 @@ function renderGiftCards(){
    if(giftImageUrl(gift.giftType))present.append(giftImage);else present.textContent='Подарок';
    flow.append(from,arrow,present);
    const info=document.createElement('div');info.className='gift-flow-info';
-   const wasClaimed=gift.status==='claimed'&&gift.claimedViaLink===true;
+   const wasClaimed=false;
    const title=document.createElement('b');title.textContent=wasClaimed?'Подарок получен по ссылке':'Вам отправили подарок';
    const meta=document.createElement('small');meta.textContent='От: '+(gift.senderName||'Пользователь MAX');
    const delay=document.createElement('small');delay.className='gift-flow-timer';
@@ -1109,31 +1109,22 @@ async function claimGiftFromLaunchLink(apiBase,initData){
  const startMatch=rawStart.match(/(?:^|[_=])gift_([0-9a-f-]{36})(?:$|&)/i);
  const giftId=queryGift||startMatch?.[1]||'';
  if(!/^[0-9a-f-]{36}$/i.test(giftId))return;
- const response=await fetch(window.PODARIS_API_URL('/api/gifts/claim'),{
+ const response=await fetch(window.PODARIS_API_URL('/api/gifts/link-preview'),{
   method:'POST',headers:{'Content-Type':'application/json'},
-  body:JSON.stringify({initData,giftId,viaLink:true})
+  body:JSON.stringify({initData,giftId})
  });
  const data=await response.json().catch(()=>({}));
  await loadGiftData();
  navigate('collection');
- if(response.ok&&data.ok){
-  activeGiftFilter='mine';
-  renderGiftCards();
-  return;
- }
- const existing=(currentGiftData.received||[]).find(item=>String(item.id)===giftId);
- if(existing&&String(existing.recipientId||'')===String(window.WebApp?.initDataUnsafe?.user?.id||'')){
-  activeGiftFilter=['claimed','opened','owned','kept','expired'].includes(existing.status)?'mine':'incoming';
-  renderGiftCards();
-  return;
- }
  activeGiftFilter='incoming';
  renderGiftCards();
- const title=document.getElementById('emptyTitle');
- const description=document.getElementById('emptyText');
- if(title&&description){
-  title.textContent=data.error==='gift_already_claimed'?'Подарок уже забрали':'Не удалось получить подарок';
-  description.textContent=data.error==='gift_already_claimed'?'Этот подарок уже получил другой пользователь.':'Ссылка недействительна, подарок уже недоступен или вы открыли её не из своего аккаунта MAX.';
+ if(!response.ok||!data.ok){
+  const title=document.getElementById('emptyTitle');
+  const description=document.getElementById('emptyText');
+  if(title&&description){
+   title.textContent='Не удалось открыть подарок';
+   description.textContent=data.error==='gift_not_available'?'Этот подарок уже забрали или он больше недоступен.':'Ссылка недействительна или подарок предназначен другому пользователю MAX.';
+  }
  }
 }
 /* Server-verified MAX identity and mandatory, versioned legal consent. */
