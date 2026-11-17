@@ -642,7 +642,12 @@ function renderGiftCards(){
    const pickupExpiresAt=Number(gift.pickupExpiresAt||0);
    if(pickupExpiresAt>Date.now()){delay.classList.add('gift-card-timer');delay.dataset.target=String(pickupExpiresAt);delay.dataset.mode='pickup';delay.textContent='Время на получение: '+formatRemaining(pickupExpiresAt-Date.now());}
    else{delay.textContent='Время на получение истекло';}
-   info.append(title,meta,delay);
+   const reveal=document.createElement('small');reveal.className='gift-flow-timer';
+   const opensAt=Number(gift.opensAt||0);
+   if(opensAt>Date.now()){reveal.classList.add('gift-card-timer');reveal.dataset.target=String(opensAt);reveal.dataset.mode='opens';reveal.textContent='До открытия содержимого: '+formatRemaining(opensAt-Date.now());}
+   else if(Number(gift.revealDelaySeconds||0)>0){reveal.textContent='Содержимое уже можно будет открыть после получения';}
+   else{reveal.textContent='Без ожидания после получения';}
+   info.append(title,meta,delay,reveal);
    if(!wasClaimed){const claim=document.createElement('button');claim.type='button';claim.className='gift-flow-claim';claim.textContent='Оставить себе';claim.addEventListener('click',()=>giftAction('/api/gifts/claim',gift.id));row.append(flow,info,claim);}else{row.append(flow,info);}
    row.addEventListener('click',event=>{if(!event.target.closest('button')&&!isSealed)openGiftDetails(gift,'received');});list.append(row);
   });
