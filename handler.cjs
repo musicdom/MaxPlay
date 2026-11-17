@@ -741,7 +741,7 @@ async function handleGiftRequest(path, body, user) {
     const giftType = String(body?.giftType || "");
     const revealDelaySeconds = Number(body?.revealDelaySeconds ?? 0);
     if (!/^\d+$/.test(recipientId) || recipientId === userId) return giftError(400, "invalid_recipient");
-    if (!["project", "family_heart", "friend"].includes(giftType)) return giftError(400, "invalid_gift_type");
+    if (!["project", "family_heart", "friend", "loviday", "loviday_love", "loviday_friend", "loviday_steel", "loviday_cyber"].includes(giftType) && !/^joystick_[1-6]$/.test(giftType)) return giftError(400, "invalid_gift_type");
     if (!Number.isInteger(revealDelaySeconds) || revealDelaySeconds < 0 || revealDelaySeconds > 30 * 24 * 60 * 60) {
       return giftError(400, "invalid_reveal_delay");
     }
@@ -919,6 +919,14 @@ async function handleGiftRequest(path, body, user) {
 function shopCatalogItem(sku) {
   const single = /^joystick_([1-6])$/.exec(String(sku || ""));
   if (single) return { amount: 200, items: [{ giftType: "joystick_" + single[1], quantity: 1 }] };
+  const loviday = {
+    loviday_love: "loviday_love",
+    loviday: "loviday",
+    loviday_friend: "loviday_friend",
+    loviday_steel: "loviday_steel",
+    loviday_cyber: "loviday_cyber"
+  };
+  if (loviday[sku]) return { amount: 200, items: [{ giftType: loviday[sku], quantity: 1 }] };
   if (sku === "joystick_collection") {
     return { amount: 1200, items: [1, 2, 3, 4, 5, 6].map(number => ({ giftType: "joystick_" + number, quantity: 1 })) };
   }
@@ -954,7 +962,7 @@ async function handleShopOrder(body, user) {
     const params = new URLSearchParams({
       receiver,
       "quickpay-form": "button",
-      targets: "Подарис — коллекция Джойстик",
+      targets: "Подарис — подарок",
       paymentType,
       sum: Number(item.amount).toFixed(2),
       label,
@@ -1034,7 +1042,7 @@ async function handleYooMoneyNotification(body) {
 
     for (const item of latest.items || []) {
       const quantity = Math.max(0, Math.min(20, Number(item.quantity) || 0));
-      if (!/^joystick_[1-6]$/.test(String(item.giftType || "")) || quantity < 1) {
+      if (!(/^(joystick_[1-6]|loviday(_love|_friend|_steel|_cyber)?)$/.test(String(item.giftType || ""))) || quantity < 1) {
         throw new Error("Invalid gift item in paid order");
       }
       for (let index = 0; index < quantity; index += 1) {
@@ -1327,7 +1335,7 @@ async function handleAdminGrantGift(userId, giftType, adminUser) {
   const id = String(userId || "");
   const type = String(giftType || "");
   if (!/^[0-9]+$/.test(id)) return { statusCode: 400, body: { ok: false, error: "invalid_user_id" } };
-  if (!/^joystick_[1-6]$/.test(type)) return { statusCode: 400, body: { ok: false, error: "invalid_gift_type" } };
+  if (!/^(joystick_[1-6]|loviday(_love|_friend|_steel|_cyber)?)$/.test(type)) return { statusCode: 400, body: { ok: false, error: "invalid_gift_type" } };
   const client = await getRedis();
   if (!(await client.get("user:" + id))) return { statusCode: 404, body: { ok: false, error: "user_not_found" } };
   const now = Date.now();
