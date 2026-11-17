@@ -375,6 +375,11 @@ button.task-link{cursor:pointer}.task-link-primary{border-color:transparent;back
   <div class="admin-result" id="adminUsersResult">Загружаем пользователей…</div>
   <div id="adminUserDetail" hidden></div>
  </div>
+ <div class="admin-panel"><h3>Проверка платежей</h3>
+  <p class="admin-help">Последние заказы магазина, подтверждение YooMoney и наличие подарков в аккаунте. Восстановление доступно только для платежей с сохранённым серверным подтверждением.</p>
+  <button class="admin-action secondary" id="adminPaymentsRefresh" type="button">Проверить платежи</button>
+  <div class="admin-result" id="adminPaymentsResult">Нажмите «Проверить платежи».</div>
+ </div>
  <div class="admin-panel"><h3>Состояние системы</h3>
   <div class="admin-row"><span>Yandex Cloud Function</span><b class="admin-status" id="adminFunction">Проверка…</b></div>
   <div class="admin-row"><span>Redis (Upstash)</span><b class="admin-status" id="adminRedis">Проверка…</b></div>
@@ -435,6 +440,7 @@ document.getElementById('adminRefresh')?.addEventListener('click',loadAdminStatu
 document.getElementById('adminWebhookCheck')?.addEventListener('click',loadAdminWebhookDiagnostics);
 document.getElementById('adminWebhookRegister')?.addEventListener('click',registerAdminWebhook);
 document.getElementById('adminLogsRefresh')?.addEventListener('click',loadAdminLogs);
+document.getElementById('adminPaymentsRefresh')?.addEventListener('click',loadAdminPayments);
 document.getElementById('adminUsersRefresh')?.addEventListener('click',loadAdminUsers);
 const profileActions=document.querySelectorAll('.profile-menu button');
 function openGiftSection(filter){navigate('collection');activeGiftFilter=filter;renderGiftCards();}
@@ -1071,6 +1077,40 @@ async function registerAdminWebhook(){
   button.disabled=false;button.textContent='Восстановить webhook';
  }
 }
+
+async function loadAdminPayments(){
+ const box=document.getElementById('adminPaymentsResult');
+ box.textContent='Проверяем заказы и наличие подарков…';
+ try{
+  const data=await adminPost('/api/admin/payments');
+  if(!data.orders.length){box.textContent='Заказы не найдены.';return;}
+  box.innerHTML='';
+  const summary=document.createElement('div');summary.className='admin-help';
+  summary.textContent='Заказов проверено: '+data.total+' · '+adminDate(data.checkedAt);box.append(summary);
+  data.orders.forEach(order=>{
+   const card=document.createElement('div');card.style.cssText='padding:12px 0;border-top:1px solid var(--line)';
+   const title=document.createElement('b');title.textContent=(order.status==='paid'?'Оплачен':order.status==='pending'?'Ожидает оплаты':order.status)+' · '+(Number(order.amount).toFixed(2))+' ₽';title.style.cssText='display:block;font-size:13px';
+   const details=document.createElement('div');details.className='admin-help';
+   details.style.cssText='margin-top:6px;overflow-wrap:anywhere';
+   details.textContent='Создан: '+adminDate(order.createdAt)+'\nПокупатель: '+(order.userName||'MAX ID '+order.userId)+' ('+order.userId+')\nЗаказ: '+order.label+'\nПодарков в заказе: '+order.expectedGifts+' · найдено: '+order.presentGifts+' · отсутствует: '+order.missingGifts+'\nПодтверждение YooMoney: '+(order.verifiedPayment?'есть':'нет')+(order.operationId?' · операция '+order.operationId:'');
+   card.append(title,details);
+   if(order.recoverable){
+    const button=document.createElement('button');button.type='button';button.className='admin-action';button.textContent='Восстановить подарки';
+    button.addEventListener('click',async()=>{
+     if(!window.confirm('Восстановить подарки по подтверждённому платежу '+order.label+' на '+Number(order.amount).toFixed(2)+' ₽ для MAX ID '+order.userId+'?'))return;
+     button.disabled=true;button.textContent='Восстанавливаем…';
+     try{const result=await adminPost('/api/admin/payments/recover',{label:order.label});button.textContent='Восстановлено: '+result.created+' новых подарков';await loadAdminPayments();}
+     catch(error){button.disabled=false;button.textContent='Ошибка: '+error.message;}
+    });
+    card.append(button);
+   }else if(order.status==='pending'&&!order.verifiedPayment){
+    const note=document.createElement('div');note.className='admin-help';note.style.marginTop='7px';note.textContent='Нет сохранённого подтверждения YooMoney. Система не будет начислять подарки автоматически без доказательства платежа.';card.append(note);
+   }
+   box.append(card);
+  });
+ }catch(error){box.textContent='Не удалось проверить платежи: '+error.message;}
+}
+
 async function loadAdminLogs(){
  const box=document.getElementById('adminLogsResult');
  box.textContent='Загружаем журнал…';
