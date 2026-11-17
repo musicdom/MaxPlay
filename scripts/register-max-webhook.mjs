@@ -25,7 +25,7 @@ const response = await fetch("https://platform-api2.max.ru/subscriptions", {
   },
   body: JSON.stringify({
     url,
-    update_types: ["bot_started", "message_created", "message_callback"],
+    update_types: ["bot_started", "message_created", "message_callback", "bot_added", "bot_removed"],
     secret
   })
 });
@@ -38,4 +38,4 @@ if (!response.ok || result.success === false) {
 
 console.log("MAX webhook subscription updated successfully.");
 console.log("Endpoint:", url);
-console.log("Events: bot_started, message_created, message_callback");
+console.log("Events: bot_started, message_created, message_callback, bot_added, bot_removed");
