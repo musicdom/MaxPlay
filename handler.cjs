@@ -674,7 +674,9 @@ async function listUserGifts(userId) {
     if (!received.some(item => String(item.id) === String(gift.id))) received.push(gift);
   }
   const sent = sentValues.filter(gift =>
-    gift && gift.status === "sent" && String(gift.senderId || "") === String(userId)
+    gift && gift.status === "sent" &&
+    (!gift.pickupExpiresAt || Number(gift.pickupExpiresAt) > now) &&
+    String(gift.senderId || "") === String(userId)
   );
 
   // New history entries are immutable snapshots stored under gift-event:<eventId>.
@@ -805,7 +807,7 @@ async function handleGiftRequest(path, body, user) {
     let notificationSent = false;
     if (gift.shareUrl) {
       try {
-        await sendMaxMessage(recipientId, "🎁 Вам отправили подарок в ЛовиДай! Откройте мини-приложение по кнопке ниже, чтобы посмотреть и забрать его. После получения начнётся таймер подарка.",
+        await sendMaxMessage(recipientId, "🎁 Вам отправили подарок в ЛовиДай! Откройте мини-приложение по кнопке ниже. После перехода по ссылке у вас будет 12 часов, чтобы забрать подарок. Если отправитель установил таймер, он отдельно определяет, когда можно будет увидеть содержимое.",
           [[{ type: "open_app", text: "Открыть подарок", web_app: gift.shareUrl }]]);
         notificationSent = true;
       } catch (error) { console.warn("[gift notification]", error.message); }
