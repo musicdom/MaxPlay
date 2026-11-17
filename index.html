@@ -631,8 +631,10 @@ function renderGiftCards(){
    else from.textContent=senderInitial;
    const arrow=document.createElement('span');arrow.className='gift-flow-arrow';arrow.textContent='→';
    const present=document.createElement('span');present.className='gift-flow-gift';
+   const opensAt=Number(gift.opensAt||0);
+   const isSealed=opensAt>Date.now();
    const giftImage=document.createElement('img');giftImage.src=giftImageUrl(gift.giftType);giftImage.alt='Подарок';giftImage.loading='lazy';giftImage.onerror=()=>{present.textContent='Подарок';};
-   if(giftImageUrl(gift.giftType))present.append(giftImage);else present.textContent='Подарок';
+   if(isSealed)present.textContent='🔒';else if(giftImageUrl(gift.giftType))present.append(giftImage);else present.textContent='Подарок';
    flow.append(from,arrow,present);
    const info=document.createElement('div');info.className='gift-flow-info';
    const wasClaimed=false;
@@ -646,7 +648,7 @@ function renderGiftCards(){
    else{delay.textContent='Подарок ждёт получения';}
    info.append(title,meta,delay);
    if(!wasClaimed){const claim=document.createElement('button');claim.type='button';claim.className='gift-flow-claim';claim.textContent='Оставить себе';claim.addEventListener('click',()=>giftAction('/api/gifts/claim',gift.id));row.append(flow,info,claim);}else{row.append(flow,info);}
-   row.addEventListener('click',event=>{if(!event.target.closest('button'))openGiftDetails(gift,'received');});list.append(row);
+   row.addEventListener('click',event=>{if(!event.target.closest('button')&&!isSealed)openGiftDetails(gift,'received');});list.append(row);
   });
  }else{
   items.forEach(gift=>{
