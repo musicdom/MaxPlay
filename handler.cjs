@@ -300,7 +300,7 @@ async function grantStarterMilestoneGift(userId, milestone) {
   const hash = crypto.createHash("sha256").update("podaris-starter:" + id + ":" + milestone).digest("hex");
   const giftId = [hash.slice(0,8),hash.slice(8,12),hash.slice(12,16),hash.slice(16,20),hash.slice(20,32)].join("-");
   const gift = {
-    id: giftId, giftType: "loviday", senderId: "podaris", senderName: "Подарис",
+    id: giftId, giftType: "loviday", senderId: "podaris", senderName: "ЛовиДай",
     recipientId: id, recipientName: "", ownerId: id, status: "owned",
     message: "", revealDelaySeconds: 0, createdAt: Date.now(), claimedAt: null,
     opensAt: null, expiresAt: null, openedAt: null, forwardedFrom: null,
@@ -374,7 +374,7 @@ function legalButtons() {
     [{ type: "callback", text: "Принимаю оба документа", payload: consentCallbackPayload() }]
   ];
   if (process.env.MAX_MINI_APP_URL) {
-    rows.push([{ type: "open_app", text: "Открыть Подарис и принять", web_app: process.env.MAX_MINI_APP_URL }]);
+    rows.push([{ type: "open_app", text: "Открыть ЛовиДай и принять", web_app: process.env.MAX_MINI_APP_URL }]);
   }
   return rows;
 }
@@ -394,14 +394,14 @@ async function sendContactPrompt(userId) {
   const existing = await getSavedContact(userId);
   if (existing?.phone) {
     const buttons = process.env.MAX_MINI_APP_URL
-      ? [[{ type: "open_app", text: "Открыть Подарис", web_app: process.env.MAX_MINI_APP_URL }]]
+      ? [[{ type: "open_app", text: "Открыть ЛовиДай", web_app: process.env.MAX_MINI_APP_URL }]]
       : [];
     await sendMaxMessage(userId, "Ваш номер телефона подтверждён. Полная авторизация завершена.", buttons);
     return;
   }
   const buttons = contactRequestButtons();
   if (process.env.MAX_MINI_APP_URL) {
-    buttons.push([{ type: "open_app", text: "Открыть Подарис", web_app: process.env.MAX_MINI_APP_URL }]);
+    buttons.push([{ type: "open_app", text: "Открыть ЛовиДай", web_app: process.env.MAX_MINI_APP_URL }]);
   }
   await sendMaxMessage(
     userId,
@@ -467,7 +467,7 @@ async function saveSharedContact(userId, payload) {
 async function sendConsentPrompt(userId) {
   await sendMaxMessage(
     userId,
-    "Добро пожаловать в Подарис! Для работы приложения MAX передаёт доступные данные профиля: MAX ID, имя, фамилию, username, язык и фотографию профиля (если они доступны). Номер телефона и другие контактные сведения мы запросим отдельно — только если вы нажмёте «Поделиться контактом». Ознакомьтесь с документами и подтвердите согласие.",
+    "Добро пожаловать в ЛовиДай! Для работы приложения MAX передаёт доступные данные профиля: MAX ID, имя, фамилию, username, язык и фотографию профиля (если они доступны). Номер телефона и другие контактные сведения мы запросим отдельно — только если вы нажмёте «Поделиться контактом». Ознакомьтесь с документами и подтвердите согласие.",
     legalButtons()
   );
 }
@@ -526,9 +526,9 @@ async function handleMaxUpdate(update) {
         if (saved) {
           await recordAdminLog("info", "contact", "Номер телефона успешно подтверждён и сохранён", { userId: id });
           const buttons = process.env.MAX_MINI_APP_URL
-            ? [[{ type: "open_app", text: "Открыть Подарис", web_app: process.env.MAX_MINI_APP_URL }]]
+            ? [[{ type: "open_app", text: "Открыть ЛовиДай", web_app: process.env.MAX_MINI_APP_URL }]]
             : [];
-          await sendMaxMessage(id, "Номер телефона подтверждён! Полная авторизация завершена. Теперь можно пользоваться всеми возможностями Подариса.", buttons);
+          await sendMaxMessage(id, "Номер телефона подтверждён! Полная авторизация завершена. Теперь можно пользоваться всеми возможностями ЛовиДай.", buttons);
         } else {
           await recordAdminLog("warning", "contact", "MAX contact signature validation failed", { userId: id, hasVcf: typeof payload.vcf_info === "string", hasHash: typeof payload.hash === "string" });
           await sendMaxMessage(id, "MAX не смог подтвердить подпись контакта. Вернитесь к кнопке «Поделиться контактом» и отправьте контакт ещё раз. Не отправляйте номер обычным текстом.");
@@ -540,10 +540,10 @@ async function handleMaxUpdate(update) {
   if (type === "bot_started") {
     if (consentIsCurrent(current)) {
       const buttons = process.env.MAX_MINI_APP_URL
-        ? [[{ type: "open_app", text: "Открыть Подарис", web_app: process.env.MAX_MINI_APP_URL }]]
+        ? [[{ type: "open_app", text: "Открыть ЛовиДай", web_app: process.env.MAX_MINI_APP_URL }]]
         : [];
       await sendContactPrompt(id);
-      if (buttons.length) await sendMaxMessage(id, "Вы уже приняли действующие документы. Можно открыть Подарис.", buttons);
+      if (buttons.length) await sendMaxMessage(id, "Вы уже приняли действующие документы. Можно открыть ЛовиДай.", buttons);
     } else {
       await sendConsentPrompt(id);
     }
@@ -555,10 +555,10 @@ async function handleMaxUpdate(update) {
     if (/^\/start(?:@\w+)?(?:\s|$)/i.test(text)) {
       if (consentIsCurrent(current)) {
         const buttons = process.env.MAX_MINI_APP_URL
-          ? [[{ type: "open_app", text: "Открыть Подарис", web_app: process.env.MAX_MINI_APP_URL }]]
+          ? [[{ type: "open_app", text: "Открыть ЛовиДай", web_app: process.env.MAX_MINI_APP_URL }]]
           : [];
         await sendContactPrompt(id);
-        if (buttons.length) await sendMaxMessage(id, "Вы уже приняли действующие документы. Можно открыть Подарис.", buttons);
+        if (buttons.length) await sendMaxMessage(id, "Вы уже приняли действующие документы. Можно открыть ЛовиДай.", buttons);
       } else {
         await sendConsentPrompt(id);
       }
@@ -575,9 +575,9 @@ async function handleMaxUpdate(update) {
     await saveConsent(id, "bot");
     await sendContactPrompt(id);
     const buttons = process.env.MAX_MINI_APP_URL
-      ? [[{ type: "open_app", text: "Открыть Подарис", web_app: process.env.MAX_MINI_APP_URL }]]
+      ? [[{ type: "open_app", text: "Открыть ЛовиДай", web_app: process.env.MAX_MINI_APP_URL }]]
       : [];
-    if (buttons.length) await sendMaxMessage(id, "Теперь вам доступно приложение Подарис.", buttons);
+    if (buttons.length) await sendMaxMessage(id, "Теперь вам доступно приложение ЛовиДай.", buttons);
   }
 }
 
@@ -1002,7 +1002,7 @@ async function handleShopOrder(body, user) {
     const params = new URLSearchParams({
       receiver,
       "quickpay-form": "button",
-      targets: "Подарис — подарок",
+      targets: "ЛовиДай — подарок",
       paymentType,
       sum: Number(item.amount).toFixed(2),
       label,
@@ -1218,7 +1218,7 @@ async function handleAdminRegisterWebhook() {
       return { statusCode: 502, body: { ok: false, error: "webhook_registration_not_verified", subscriptionCount: verifiedSubscriptions.length } };
     }
 
-    await recordAdminLog("info", "max-subscriptions", "Webhook Подариса успешно зарегистрирован в MAX", {
+    await recordAdminLog("info", "max-subscriptions", "Webhook ЛовиДай успешно зарегистрирован в MAX", {
       updateTypes: Array.isArray(matching.update_types) ? matching.update_types : []
     });
     return {
@@ -1348,7 +1348,7 @@ async function handleAdminUserDetail(userId) {
       if (/^\d+$/.test(String(gift.senderId || ""))) {
         const senderRaw = await client.get("user:" + gift.senderId);
         try { const senderUser = senderRaw ? JSON.parse(senderRaw) : null; sender = senderUser ? ([senderUser.firstName,senderUser.lastName].filter(Boolean).join(" ") || senderUser.username || gift.senderId) : gift.senderId; } catch { sender = gift.senderId; }
-      } else sender = gift.senderId === "podaris" ? "Подарис (стартовый)" : gift.senderId === "purchase" ? "Покупка в магазине" : gift.senderId || "Неизвестно";
+      } else sender = gift.senderId === "podaris" ? "ЛовиДай (стартовый)" : gift.senderId === "purchase" ? "Покупка в магазине" : gift.senderId || "Неизвестно";
       gifts.push({ id: gift.id, giftType: gift.giftType, status: gift.status, sender, senderId: gift.senderId || null, recipientId: gift.recipientId || null, createdAt: gift.createdAt || null, source: gift.source || null });
     } catch {}
   }
@@ -1383,7 +1383,7 @@ async function handleAdminGrantGift(userId, giftType, adminUser) {
   const gift = {
     id: giftId, giftType: type, senderId: String(adminUser.id),
     senderName: "Администратор", recipientId: id, recipientName: "",
-    ownerId: id, status: "owned", message: "Подарок от администрации Подариса",
+    ownerId: id, status: "owned", message: "Подарок от администрации ЛовиДай",
     revealDelaySeconds: 0, createdAt: now, claimedAt: null, opensAt: null,
     expiresAt: null, openedAt: null, forwardedFrom: null, shareUrl: null,
     source: "admin_grant", grantedBy: String(adminUser.id)
@@ -1465,7 +1465,7 @@ module.exports.handler = async function (event = {}) {
 
   if (method === "GET" && path === "/api/config") {
     return response(200, {
-      appName: "Подарис",
+      appName: "ЛовиДай",
       platform: "MAX",
       apiBase: "/api",
       legal: {
