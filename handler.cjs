@@ -288,7 +288,7 @@ function consentIsCurrent(consent) {
 async function grantStarterMilestoneGift(userId, milestone) {
   const id = String(userId);
   const allowed = new Set(["consent", "contact", "channel"]);
-  if (!/^\\d+$/.test(id) || !allowed.has(milestone)) throw new Error("invalid_starter_milestone");
+  if (!/^\d+$/.test(id) || !allowed.has(milestone)) throw new Error("invalid_starter_milestone");
   const client = await getRedis();
   // Accounts granted the former three-gift bundle keep those exact gifts; never issue a second bundle.
   if (await client.get("starter-gifts:" + id)) {
