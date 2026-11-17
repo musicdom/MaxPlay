@@ -1122,7 +1122,8 @@ async function claimGiftFromLaunchLink(apiBase,initData){
  const data=await response.json().catch(()=>({}));
  await loadGiftData();
  navigate('collection');
- activeGiftFilter='incoming';
+ activeGiftFilter=data.alreadyReceived?'mine':'incoming';
+ document.querySelectorAll('[data-filter]').forEach(button=>button.classList.toggle('active',button.dataset.filter===activeGiftFilter));
  renderGiftCards();
  if(!response.ok||!data.ok){
   const title=document.getElementById('emptyTitle');
