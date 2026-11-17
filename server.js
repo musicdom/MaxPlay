@@ -45,5 +45,5 @@ app.use((error, _req, res, _next) => {
 });
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log("Подарис server listening on :" + PORT);
+  console.log("ЛовиДай server listening on :" + PORT);
 });
