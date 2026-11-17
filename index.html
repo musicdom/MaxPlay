@@ -1107,11 +1107,18 @@ async function loadAdminPayments(){
     const note=document.createElement('div');note.className='admin-help';note.style.marginTop='7px';note.textContent='Нет сохранённого подтверждения YooMoney. Система не будет начислять подарки автоматически без доказательства платежа.';card.append(note);
     if(order.label==='pd_079aa7346f5346ada763850f3c449419'&&Number(order.amount)===100&&String(order.userId)==='163701646'){
      const recovery=document.createElement('button');recovery.type='button';recovery.className='admin-action';recovery.textContent='Восстановить оплату с комиссией (100 ₽)';
+     recovery.dataset.confirmed='no';
+     recovery.style.touchAction='manipulation';
      recovery.addEventListener('click',async()=>{
-      if(!window.confirm('Подтвердить восстановление заказа на 100 ₽ для MAX ID 163701646? Основание: три записи YooMoney о сумме 97 ₽ после комиссии и операция 328df5b6-0011-5001-8000-157ea797a163. Будет начислен только подарок из этого заказа.'))return;
+      if(recovery.dataset.confirmed!=='yes'){
+       recovery.dataset.confirmed='yes';
+       recovery.textContent='Нажмите ещё раз для подтверждения восстановления';
+       recovery.style.background='#a83242';
+       return;
+      }
       recovery.disabled=true;recovery.textContent='Проверяем журнал и восстанавливаем…';
       try{const result=await adminPost('/api/admin/payments/recover-fee-mismatch');recovery.textContent=result.alreadyProcessed?'Заказ уже восстановлен':'Восстановлено: '+(result.created||0)+' новых подарков';await loadAdminPayments();}
-      catch(error){recovery.disabled=false;recovery.textContent='Ошибка: '+error.message;}
+      catch(error){recovery.disabled=false;recovery.dataset.confirmed='no';recovery.textContent='Ошибка: '+error.message+' · Нажмите для повтора';}
      });
      card.append(recovery);
     }
