@@ -295,7 +295,7 @@ button.task-link{cursor:pointer}.task-link-primary{border-color:transparent;back
 <div id="starterMilestones" class="tasks-list">
  <article class="task-card">
   <div class="task-card-top"><span class="task-number">1</span><div class="task-copy"><b>Примите документы</b><small>Пользовательское соглашение и Политика конфиденциальности</small></div><span class="task-state" id="taskConsentState">Проверяем</span></div>
-  <div class="task-actions"><a class="task-link" href="https://musicdom.github.io/MaxPlay/legal/user-agreement.html" target="_blank" rel="noopener">Соглашение</a><a class="task-link" href="https://musicdom.github.io/MaxPlay/legal/privacy-policy.html" target="_blank" rel="noopener">Политика</a><a class="task-link task-link-primary" href="https://max.ru/se14711525_1_bot" target="_blank" rel="noopener">Открыть бота и принять</a></div>
+  <div class="task-actions"><a class="task-link task-link-primary" href="https://max.ru/se14711525_1_bot" target="_blank" rel="noopener">Открыть бота и принять</a></div>
  </article>
  <article class="task-card">
   <div class="task-card-top"><span class="task-number">2</span><div class="task-copy"><b>Подтвердите номер телефона</b><small>Передайте номер через MAX в чате с ботом Подарис</small></div><span class="task-state" id="taskContactState">Проверяем</span></div>
@@ -782,14 +782,22 @@ async function loadStarterMilestones(){
    const done=Boolean(data.milestones?.[key]);
    el.textContent=done?'Выполнено':'Не выполнено';
    el.classList.toggle('done',done);
+   const card=el.closest('.task-card');
+   const actions=card?.querySelector('.task-actions');
+   if(actions)actions.hidden=done;
+   const message=card?.querySelector('.task-message');
+   if(message&&done)message.hidden=true;
   });
   const button=document.getElementById('verifyStarterChannel');
   if(button){
    const channelDone=Boolean(data.milestones?.channel);
    button.disabled=!data.channelConfigured||channelDone;
-   button.textContent=channelDone?'Подписка подтверждена':'Проверить подписку';
+   button.textContent='Проверить подписку';
   }
-  if(loadMessage)loadMessage.textContent='Статусы заданий обновлены.';
+  const allDone=Object.keys(states).every(key=>Boolean(data.milestones?.[key]));
+  const refreshButton=document.getElementById('refreshTasks');
+  if(refreshButton)refreshButton.hidden=allDone;
+  if(loadMessage)loadMessage.textContent=allDone?'Все задания выполнены. Спасибо!':'Статусы заданий обновлены.';
  }catch(error){
   console.warn('[starter milestones]',error);
   const loadMessage=document.getElementById('tasksLoadMessage');
