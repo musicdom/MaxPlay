@@ -255,14 +255,8 @@ button.task-link{cursor:pointer}.task-link-primary{border-color:transparent;back
 </div>
 </div>
 
-<div class="gift-switcher">
-<button class="switch switch-main active" data-filter="mine">Мои подарки</button>
-<button class="switch switch-incoming" data-filter="incoming">Мне прислали</button>
-<button class="switch" data-filter="sent">Отправленные</button>
-<button class="switch switch-give" data-filter="give">🎁 Подарить</button>
-</div>
 <div class="gift-window">
-<div class="window-head"><strong id="windowTitle">Отправленные подарки</strong><span class="window-count" id="giftCount">0 подарков</span></div>
+<div class="window-head"><strong id="windowTitle">Мои подарки</strong><span class="window-count" id="giftCount">0 подарков</span></div>
 <div class="empty" id="emptyState">
 <div class="empty-illustration"><span class="gift-icon" id="emptyIcon">🎁</span></div>
 <h2 id="emptyTitle">Пока здесь пусто</h2>
@@ -325,7 +319,7 @@ button.task-link{cursor:pointer}.task-link-primary{border-color:transparent;back
 <div class="profile-card"><div class="avatar"><span>♡</span><img loading="lazy" decoding="async" id="profileCardAvatar" alt="Аватар профиля" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:50%"></div><div><b id="profileCardName">Мой профиль</b><small id="profileCardStatus">Проверяем уровень авторизации…</small></div></div>
 <div class="gift-profile-tier" id="profileTierInfo">Загрузка данных аккаунта…</div>
 <div class="profile-stats"><div class="profile-stat"><strong id="profileSentCount">0</strong><small>Отправлено подарков</small></div><div class="profile-stat"><strong id="profileReceivedCount">0</strong><small>Получено подарков</small></div></div>
-<div class="profile-menu"><button type="button"><span class="menu-icon">♡</span><span><b>Мои подарки</b><small>Подарки, которые вы получили</small></span><span class="arrow">›</span></button><button type="button"><span class="menu-icon">↗</span><span><b>Отправленные</b><small>Подарки, которыми вы поделились</small></span><span class="arrow">›</span></button><button type="button"><span class="menu-icon">?</span><span><b>Помощь и поддержка</b><small>Ответы на вопросы о сервисе</small></span><span class="arrow">›</span></button><button type="button" class="admin-entry" id="adminEntry"><span class="menu-icon">⚙</span><span><b>Админ-панель</b><small>Управление и диагностика Подариса</small></span><span class="arrow">›</span></button></div>
+<div class="profile-menu"><button type="button"><span class="menu-icon">♡</span><span><b>Мои подарки</b><small>Подарки в вашей коллекции</small></span><span class="arrow">›</span></button><button type="button"><span class="menu-icon">🎁</span><span><b>Мне прислали</b><small>Подарки, которые ждут получения</small></span><span class="arrow">›</span></button><button type="button"><span class="menu-icon">↗</span><span><b>Отправленные</b><small>Подарки, которыми вы поделились</small></span><span class="arrow">›</span></button><button type="button"><span class="menu-icon">?</span><span><b>Помощь и поддержка</b><small>Ответы на вопросы о сервисе</small></span><span class="arrow">›</span></button><button type="button" class="admin-entry" id="adminEntry"><span class="menu-icon">⚙</span><span><b>Админ-панель</b><small>Управление и диагностика Подариса</small></span><span class="arrow">›</span></button></div>
 </section>
 <section class="screen admin-screen" id="admin">
  <div class="page-title"><div class="eyebrow">УПРАВЛЕНИЕ ПРОЕКТОМ</div><h1>Админ-панель</h1><p>Состояние сервисов и инструменты диагностики.</p></div>
@@ -392,9 +386,11 @@ document.getElementById('adminWebhookRegister')?.addEventListener('click',regist
 document.getElementById('adminLogsRefresh')?.addEventListener('click',loadAdminLogs);
 document.getElementById('adminUsersRefresh')?.addEventListener('click',loadAdminUsers);
 const profileActions=document.querySelectorAll('.profile-menu button');
-profileActions[0]?.addEventListener('click',()=>{navigate('collection');document.querySelector('[data-filter="mine"]')?.click();});
-profileActions[1]?.addEventListener('click',()=>{navigate('collection');document.querySelector('[data-filter="sent"]')?.click();});
-profileActions[2]?.addEventListener('click',()=>{window.alert('Если нужна помощь, напишите боту Подарис в MAX.');});
+function openGiftSection(filter){navigate('collection');activeGiftFilter=filter;renderGiftCards();}
+profileActions[0]?.addEventListener('click',()=>openGiftSection('mine'));
+profileActions[1]?.addEventListener('click',()=>openGiftSection('incoming'));
+profileActions[2]?.addEventListener('click',()=>openGiftSection('sent'));
+profileActions[3]?.addEventListener('click',()=>{window.alert('Если нужна помощь, напишите боту Подарис в MAX.');});
 const states={sent:{title:'Отправленные подарки',count:'0 подарков',icon:'🎁',heading:'Пока здесь пусто',text:'Здесь будут отображаться подарки, которые вы отправили другим людям.'},mine:{title:'Мои подарки',count:'0 подарков',icon:'💝',heading:'Пока нет подарков',text:'Здесь появятся подарки, которые вам отправили или которые вы приобрели для себя.'}};
 let activeGiftFilter='mine';
 let currentGiftData={received:[],sent:[],history:[]};
