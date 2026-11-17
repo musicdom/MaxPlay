@@ -692,8 +692,8 @@ setInterval(()=>{
  let refresh=false;
  document.querySelectorAll('.gift-card-timer[data-target]').forEach(timer=>{
   const left=Number(timer.dataset.target)-Date.now();
-  if(left<=0){timer.removeAttribute('data-target');if(timer.dataset.mode==='pickup'){refresh=true;timer.textContent='Время на получение истекло';}else{timer.textContent='Подарок готов к открытию';refresh=true;}return;}
-  timer.textContent=timer.dataset.mode==='opens'?'Открыть можно через '+formatRemaining(left):timer.dataset.mode==='pickup'?'Забрать подарок в течение: '+formatRemaining(left):'Подарок готов! На открытие осталось '+formatRemaining(left);
+  if(left<=0){timer.removeAttribute('data-target');timer.textContent='Подарок готов к открытию';refresh=true;return;}
+  timer.textContent=timer.dataset.mode==='opens'?'Открыть можно через '+formatRemaining(left):'Подарок готов! На открытие осталось '+formatRemaining(left);
  });
  if(refresh)loadGiftData().catch(()=>{});
 },1000);
