@@ -482,7 +482,7 @@ select:focus-visible,
 <script src="./api-config.js"></script>
 <script>
 const screens={collection:document.getElementById('collection'),tasks:document.getElementById('tasks'),shop:document.getElementById('shop'),profile:document.getElementById('profile'),admin:document.getElementById('admin')};
-function navigate(name){Object.values(screens).filter(Boolean).forEach(x=>x.classList.remove('active'));const target=screens[name]||screens.collection;if(!target)return;target.classList.add('active');document.querySelectorAll('[data-screen]').forEach(b=>b.classList.toggle('active',b.dataset.screen===name));window.scrollTo({top:0,behavior:'smooth'});if(name==='tasks')loadStarterMilestones();}
+function navigate(name){Object.values(screens).filter(Boolean).forEach(x=>x.classList.remove('active'));const target=screens[name]||screens.collection;if(!target)return;target.classList.add('active');document.querySelectorAll('[data-screen]').forEach(b=>b.classList.toggle('active',b.dataset.screen===name));window.scrollTo({top:0,behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});if(name==='tasks')loadStarterMilestones();}
 document.querySelectorAll('[data-screen]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.screen)));
 document.getElementById('buyGift').addEventListener('click',()=>navigate('shop'));
 document.getElementById('adminEntry')?.addEventListener('click',()=>{navigate('admin');loadAdminStatus();});
