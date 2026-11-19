@@ -281,6 +281,17 @@ select:focus-visible,
   scroll-behavior:auto!important;
  }
 }
+
+/* Shop category navigation */
+.shop-tabs{position:sticky;top:0;z-index:5;display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:0 0 14px;padding:7px;border:1px solid #e6e9fb;border-radius:15px;background:rgba(255,255,255,.94);backdrop-filter:blur(14px);box-shadow:0 5px 18px #3f4b9709}
+.shop-tab{min-height:47px;padding:8px 10px;border:1px solid transparent;border-radius:11px;background:transparent;color:#747895;font-size:12px;font-weight:850;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;transition:background .16s,border-color .16s,color .16s}
+.shop-tab span{font-size:8px;font-weight:650;opacity:.75}
+.shop-tab.active{background:linear-gradient(110deg,#471aff,#7b19ed 65%,#9500ff);color:#fff;box-shadow:0 5px 13px #6135ed28}
+.shop-panel-intro{margin:0 2px 12px;color:#8185a0;font-size:10px;line-height:1.5}
+.shop-tab-panel[hidden]{display:none!important}
+.shop-tab-panel .section-head{margin-top:17px}
+.shop-tab-panel .section-head:first-of-type{margin-top:4px}
+@media(prefers-reduced-motion:reduce){.shop-tab{transition:none}}
 </style>
 </head>
 <body>
@@ -333,6 +344,12 @@ select:focus-visible,
 <section class="screen" id="shop">
 <div class="page-title"><div class="eyebrow">ВЫБИРАЙТЕ С УДОВОЛЬСТВИЕМ</div><h1>Магазин подарков</h1><p>Найдите подарок, который захочется открыть.</p></div>
 <div class="shop-banner"><span class="shop-banner-icon">🎁</span><div><b>Подарки с настроением</b><small>Выбирайте понравившийся вариант — его можно будет купить себе или отправить близкому человеку.</small></div></div>
+<div class="shop-tabs" role="tablist" aria-label="Категории магазина">
+ <button type="button" class="shop-tab active" id="shopTabBundles" role="tab" aria-selected="true" aria-controls="shopBundles" data-shop-tab="bundles">Наборы <span>2 коллекции</span></button>
+ <button type="button" class="shop-tab" id="shopTabSingles" role="tab" aria-selected="false" aria-controls="shopSingles" data-shop-tab="singles">Подарки <span>11 вариантов</span></button>
+</div>
+<div class="shop-tab-panel" id="shopBundles" role="tabpanel" aria-labelledby="shopTabBundles">
+ <p class="shop-panel-intro">Готовые коллекции — все подарки серии одной покупкой.</p>
 <div class="section-head"><strong>Коллекция «Геймпад»</strong><text>6 подарков</text></div>
 <div class="shop-collection-card">
  <div class="shop-collection-top"><div><b>Полная коллекция «Геймпад»</b><small>Все шесть подарков одной покупкой</small></div><span class="shop-price">999 ₽</span></div>
@@ -346,15 +363,6 @@ select:focus-visible,
  </div>
  <button class="shop-buy" data-buy-sku="joystick_collection">Купить коллекцию · 999 ₽</button>
 </div>
-<div class="section-head"><strong>Подарки по отдельности</strong><text>200 ₽ за штуку</text></div>
-<div class="shop-grid">
- <article class="shop-item"><img loading="lazy" decoding="async" src="https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D0%B8%CC%86%D1%81%D1%82%D0%B8%D0%BA%201.png" alt="Геймпад «Неон»"><div class="shop-item-info"><b>Геймпад «Неон»</b><small>200 ₽</small><button class="shop-buy" data-buy-sku="joystick_1">Купить подарок</button></div></article>
- <article class="shop-item"><img loading="lazy" decoding="async" src="https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D1%81%D1%82%D0%B8%D0%BA%202.png" alt="Геймпад «Пульс»"><div class="shop-item-info"><b>Геймпад «Пульс»</b><small>200 ₽</small><button class="shop-buy" data-buy-sku="joystick_2">Купить подарок</button></div></article>
- <article class="shop-item"><img loading="lazy" decoding="async" src="https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D1%81%D1%82%D0%B8%D0%BA%203.png" alt="Геймпад «Аркада»"><div class="shop-item-info"><b>Геймпад «Аркада»</b><small>200 ₽</small><button class="shop-buy" data-buy-sku="joystick_3">Купить подарок</button></div></article>
- <article class="shop-item"><img loading="lazy" decoding="async" src="https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D1%81%D1%82%D0%B8%D0%BA%204.png" alt="Геймпад «Турбо»"><div class="shop-item-info"><b>Геймпад «Турбо»</b><small>200 ₽</small><button class="shop-buy" data-buy-sku="joystick_4">Купить подарок</button></div></article>
- <article class="shop-item"><img loading="lazy" decoding="async" src="https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D1%81%D1%82%D0%B8%D0%BA%205.png" alt="Геймпад «Кибер»"><div class="shop-item-info"><b>Геймпад «Кибер»</b><small>200 ₽</small><button class="shop-buy" data-buy-sku="joystick_5">Купить подарок</button></div></article>
- <article class="shop-item"><img loading="lazy" decoding="async" src="https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D1%81%D1%82%D0%B8%D0%BA%206.png" alt="Геймпад «Легенда»"><div class="shop-item-info"><b>Геймпад «Легенда»</b><small>200 ₽</small><button class="shop-buy" data-buy-sku="joystick_6">Купить подарок</button></div></article>
-</div>
 <div class="section-head"><strong>Коллекция «ЛовиДай»</strong><text>5 подарков</text></div>
 <div class="shop-collection-card">
  <div class="shop-collection-top"><div><b>Полная коллекция «ЛовиДай»</b><small>Все пять подарков одной покупкой</small></div><span class="shop-price">599 ₽</span></div>
@@ -367,6 +375,18 @@ select:focus-visible,
  </div>
  <button class="shop-buy" data-buy-sku="loviday_collection">Купить коллекцию · 599 ₽</button>
 </div>
+</div>
+<div class="shop-tab-panel" id="shopSingles" role="tabpanel" aria-labelledby="shopTabSingles" hidden>
+ <p class="shop-panel-intro">Выбирайте отдельные подарки и собирайте свою коллекцию.</p>
+<div class="section-head"><strong>Подарки по отдельности</strong><text>200 ₽ за штуку</text></div>
+<div class="shop-grid">
+ <article class="shop-item"><img loading="lazy" decoding="async" src="https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D0%B8%CC%86%D1%81%D1%82%D0%B8%D0%BA%201.png" alt="Геймпад «Неон»"><div class="shop-item-info"><b>Геймпад «Неон»</b><small>200 ₽</small><button class="shop-buy" data-buy-sku="joystick_1">Купить подарок</button></div></article>
+ <article class="shop-item"><img loading="lazy" decoding="async" src="https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D1%81%D1%82%D0%B8%D0%BA%202.png" alt="Геймпад «Пульс»"><div class="shop-item-info"><b>Геймпад «Пульс»</b><small>200 ₽</small><button class="shop-buy" data-buy-sku="joystick_2">Купить подарок</button></div></article>
+ <article class="shop-item"><img loading="lazy" decoding="async" src="https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D1%81%D1%82%D0%B8%D0%BA%203.png" alt="Геймпад «Аркада»"><div class="shop-item-info"><b>Геймпад «Аркада»</b><small>200 ₽</small><button class="shop-buy" data-buy-sku="joystick_3">Купить подарок</button></div></article>
+ <article class="shop-item"><img loading="lazy" decoding="async" src="https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D1%81%D1%82%D0%B8%D0%BA%204.png" alt="Геймпад «Турбо»"><div class="shop-item-info"><b>Геймпад «Турбо»</b><small>200 ₽</small><button class="shop-buy" data-buy-sku="joystick_4">Купить подарок</button></div></article>
+ <article class="shop-item"><img loading="lazy" decoding="async" src="https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D1%81%D1%82%D0%B8%D0%BA%205.png" alt="Геймпад «Кибер»"><div class="shop-item-info"><b>Геймпад «Кибер»</b><small>200 ₽</small><button class="shop-buy" data-buy-sku="joystick_5">Купить подарок</button></div></article>
+ <article class="shop-item"><img loading="lazy" decoding="async" src="https://musicdom.github.io/MaxPlay/image/%D0%94%D0%B6%D0%BE%D1%81%D1%82%D0%B8%D0%BA%206.png" alt="Геймпад «Легенда»"><div class="shop-item-info"><b>Геймпад «Легенда»</b><small>200 ₽</small><button class="shop-buy" data-buy-sku="joystick_6">Купить подарок</button></div></article>
+</div>
 <div class="section-head"><strong>Подарки по отдельности</strong><text>От 50 ₽ до 100 ₽</text></div>
 <div class="shop-grid">
  <article class="shop-item"><img loading="lazy" decoding="async" src="https://musicdom.github.io/MaxPlay/image/%D0%9B%D0%BE%D0%B2%D0%B8%D0%B4%D0%B0%D0%B8%CC%861%D0%BB%D1%8E%D0%B1%D0%BE%D0%B2%D1%8C.png" alt="Тепло любви"><div class="shop-item-info"><b>Тепло любви</b><small>100 ₽</small><button class="shop-buy" data-buy-sku="loviday_love">Купить подарок</button></div></article>
@@ -374,6 +394,7 @@ select:focus-visible,
  <article class="shop-item"><img loading="lazy" decoding="async" src="https://musicdom.github.io/MaxPlay/image/%D0%9B%D0%BE%D0%B2%D0%B8%D0%B4%D0%B0%D0%B8%CC%863%D0%B4%D1%80%D1%83%D0%B3.png" alt="Верный друг"><div class="shop-item-info"><b>Верный друг</b><small>100 ₽</small><button class="shop-buy" data-buy-sku="loviday_friend">Купить подарок</button></div></article>
  <article class="shop-item"><img loading="lazy" decoding="async" src="https://musicdom.github.io/MaxPlay/image/%D0%9B%D0%BE%D0%B2%D0%B8%D0%B4%D0%B0%D0%B8%CC%864%D1%81%D1%82%D0%B0%D0%BB%D1%8C.png" alt="Стальная воля"><div class="shop-item-info"><b>Стальная воля</b><small>100 ₽</small><button class="shop-buy" data-buy-sku="loviday_steel">Купить подарок</button></div></article>
  <article class="shop-item"><img loading="lazy" decoding="async" src="https://musicdom.github.io/MaxPlay/image/%D0%9B%D0%BE%D0%B2%D0%B8%D0%94%D0%B0%D0%B8%CC%865%D0%BA%D0%B8%D0%B1%D0%B5%D1%80.png" alt="Киберсила"><div class="shop-item-info"><b>Киберсила</b><small>100 ₽</small><button class="shop-buy" data-buy-sku="loviday_cyber">Купить подарок</button></div></article>
+</div>
 </div>
 <div class="shop-payment-result" id="shopPaymentResult" aria-live="polite"></div>
 <div class="auth-hint" id="shopAccessHint">После выполнения трёх заданий вы получите три подарка «ЛовиДай» бесплатно. Их можно оставить себе или отправить другому пользователю.</div>
@@ -875,6 +896,26 @@ async function createShopOrder(sku, button){
  }
 }
 document.querySelectorAll('[data-buy-sku]').forEach(button=>button.addEventListener('click',()=>createShopOrder(button.dataset.buySku,button)));
+const shopTabs=[...document.querySelectorAll('[data-shop-tab]')];
+function activateShopTab(tab){
+ const selected=tab.dataset.shopTab;
+ shopTabs.forEach(item=>{
+  const active=item===tab;item.classList.toggle('active',active);item.setAttribute('aria-selected',String(active));item.tabIndex=active?0:-1;
+ });
+ document.getElementById('shopBundles').hidden=selected!=='bundles';
+ document.getElementById('shopSingles').hidden=selected!=='singles';
+}
+shopTabs.forEach((tab,index)=>{
+ tab.tabIndex=index===0?0:-1;
+ tab.addEventListener('click',()=>activateShopTab(tab));
+ tab.addEventListener('keydown',event=>{
+  if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
+  event.preventDefault();
+  const next=event.key==='Home'?0:event.key==='End'?shopTabs.length-1:(index+(event.key==='ArrowRight'?1:-1)+shopTabs.length)%shopTabs.length;
+  activateShopTab(shopTabs[next]);shopTabs[next].focus();
+ });
+});
+
 document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>{
  document.querySelectorAll('[data-filter]').forEach(x=>x.classList.toggle('active',x===b));
  activeGiftFilter=b.dataset.filter;
