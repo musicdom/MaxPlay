@@ -136,6 +136,16 @@ button.task-link{cursor:pointer}.task-link-primary{border-color:transparent;back
 .consent-loading{font-size:13px;color:#777b96;text-align:center;padding:30px 10px}
 
 
+/* Incoming gift callout on the home screen */
+.incoming-gift-notices{display:grid;gap:9px;margin:12px 0}
+.incoming-gift-notice{display:flex;align-items:center;gap:10px;padding:12px;border:1px solid #dcd5ff;border-radius:15px;background:linear-gradient(110deg,#f0edff,#f7f3ff 58%,#fff)}
+.incoming-gift-notice-icon{width:42px;height:42px;flex:none;display:grid;place-items:center;border-radius:13px;background:#fff;font-size:22px;box-shadow:0 4px 12px #5634f514}
+.incoming-gift-notice-copy{min-width:0;flex:1}
+.incoming-gift-notice-copy b{display:block;color:#292548;font-size:11px;font-weight:850}
+.incoming-gift-notice-copy small{display:block;margin-top:4px;color:#777b96;font-size:9px;overflow-wrap:anywhere}
+.incoming-gift-claim{flex:none;min-height:38px;padding:0 12px;border:0;border-radius:10px;background:linear-gradient(105deg,#471aff,#9500ff);color:#fff;font-size:9px;font-weight:850;box-shadow:0 5px 13px #6135ed22}
+.incoming-gift-claim:disabled{opacity:.6}
+@media(max-width:370px){.incoming-gift-notice{flex-wrap:wrap}.incoming-gift-claim{width:100%}}
 /* Gift cabinet and lifecycle */
 .gift-list{display:grid;gap:10px;margin-top:12px}
 .gift-card{padding:14px;border:1px solid #e7eaff;border-radius:15px;background:#fff;box-shadow:0 5px 18px #424b9410}
@@ -312,6 +322,7 @@ select:focus-visible,
 
 <div class="gift-window">
 <div class="window-head"><strong id="windowTitle">Мои подарки</strong><span class="window-count" id="giftCount">0 подарков</span></div>
+<div class="incoming-gift-notices" id="incomingGiftNotices" hidden aria-live="polite"></div>
 <div class="empty" id="emptyState">
 <div class="empty-illustration"><span class="gift-icon" id="emptyIcon">🎁</span></div>
 <h2 id="emptyTitle">Пока здесь пусто</h2>
@@ -581,6 +592,24 @@ function updateIncomingNotice(){
  const incoming=(currentGiftData.received||[]).filter(g=>g.status==='sent');
  const button=document.querySelector('[data-filter="incoming"]');
  if(button){button.classList.toggle('has-unread',incoming.length>0);button.setAttribute('aria-label',incoming.length?'Мне прислали, новых подарков: '+incoming.length:'Мне прислали');}
+ const container=document.getElementById('incomingGiftNotices');
+ if(!container)return;
+ container.replaceChildren();
+ container.hidden=incoming.length===0||activeGiftFilter!=='mine';
+ incoming.forEach(gift=>{
+  const card=document.createElement('article');card.className='incoming-gift-notice';
+  const icon=document.createElement('div');icon.className='incoming-gift-notice-icon';icon.textContent='🎁';
+  const copy=document.createElement('div');copy.className='incoming-gift-notice-copy';
+  const title=document.createElement('b');title.textContent='Вам прислали подарок';
+  const sender=document.createElement('small');sender.textContent='От: '+(gift.senderName||'Пользователь MAX');
+  const button=document.createElement('button');button.type='button';button.className='incoming-gift-claim';button.textContent='Забрать подарок';
+  button.addEventListener('click',async()=>{
+   button.disabled=true;button.textContent='Забираем…';
+   const result=await giftAction('/api/gifts/claim',gift.id);
+   if(!result){button.disabled=false;button.textContent='Повторить';}
+  });
+  copy.append(title,sender);card.append(icon,copy,button);container.append(card);
+ });
 }
 function updateHomeStats(){
  const received=Array.isArray(currentGiftData.received)?currentGiftData.received:[];
@@ -1231,8 +1260,8 @@ async function claimGiftFromLaunchLink(apiBase,initData){
  const data=await response.json().catch(()=>({}));
  await loadGiftData();
  navigate('collection');
- activeGiftFilter=data.alreadyReceived?'mine':'incoming';
- document.querySelectorAll('[data-filter]').forEach(button=>button.classList.toggle('active',button.dataset.filter===activeGiftFilter));
+ activeGiftFilter='mine';
+ document.querySelectorAll('[data-filter]').forEach(button=>button.classList.toggle('active',button.dataset.filter==='mine'));
  renderGiftCards();
  if(!response.ok||!data.ok){
   const title=document.getElementById('emptyTitle');
