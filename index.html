@@ -262,6 +262,25 @@ button.task-link{cursor:pointer}.task-link-primary{border-color:transparent;back
 .gift-detail-meta-row span{color:#8588a1}
 .gift-detail-meta-row b{color:#292642;text-align:right;overflow-wrap:anywhere}
 .gift-card,.gift-flow-row{cursor:pointer}
+
+/* Keyboard accessibility and reduced-motion preference */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[role="button"]:focus-visible,
+[tabindex]:focus-visible{
+ outline:3px solid #4b35e8;
+ outline-offset:3px;
+}
+@media(prefers-reduced-motion:reduce){
+ *,*::before,*::after{
+  animation:none!important;
+  transition:none!important;
+  scroll-behavior:auto!important;
+ }
+}
 </style>
 </head>
 <body>
