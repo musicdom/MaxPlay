@@ -896,14 +896,25 @@ async function createShopOrder(sku, button){
  }
 }
 document.querySelectorAll('[data-buy-sku]').forEach(button=>button.addEventListener('click',()=>createShopOrder(button.dataset.buySku,button)));
-document.querySelectorAll('[data-shop-tab]').forEach(tab=>tab.addEventListener('click',()=>{
+const shopTabs=[...document.querySelectorAll('[data-shop-tab]')];
+function activateShopTab(tab){
  const selected=tab.dataset.shopTab;
- document.querySelectorAll('[data-shop-tab]').forEach(item=>{
-  const active=item===tab;item.classList.toggle('active',active);item.setAttribute('aria-selected',String(active));
+ shopTabs.forEach(item=>{
+  const active=item===tab;item.classList.toggle('active',active);item.setAttribute('aria-selected',String(active));item.tabIndex=active?0:-1;
  });
  document.getElementById('shopBundles').hidden=selected!=='bundles';
  document.getElementById('shopSingles').hidden=selected!=='singles';
-}));
+}
+shopTabs.forEach((tab,index)=>{
+ tab.tabIndex=index===0?0:-1;
+ tab.addEventListener('click',()=>activateShopTab(tab));
+ tab.addEventListener('keydown',event=>{
+  if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
+  event.preventDefault();
+  const next=event.key==='Home'?0:event.key==='End'?shopTabs.length-1:(index+(event.key==='ArrowRight'?1:-1)+shopTabs.length)%shopTabs.length;
+  activateShopTab(shopTabs[next]);shopTabs[next].focus();
+ });
+});
 
 document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>{
  document.querySelectorAll('[data-filter]').forEach(x=>x.classList.toggle('active',x===b));
