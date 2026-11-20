@@ -1289,7 +1289,7 @@ async function claimGiftFromLaunchLink(apiBase,initData){
  const initData=window.WebApp&&typeof window.WebApp.initData==="string"?window.WebApp.initData:"";
  window.podarisInitData=initData;window.podarisConsentAccepted=null;
  const banner=document.getElementById("consentBanner"),bannerTitle=document.getElementById("consentBannerTitle"),bannerText=document.getElementById("consentBannerText"),bannerAction=document.getElementById("consentBannerAction");
- let latestStatus=null,promptOpen=false;
+ let latestStatus=null,promptOpen=false,promptCleanup=null;
  function applyUserProfile(user){
   if(!user)return;const name=[user.firstName,user.lastName].filter(Boolean).join(" ").trim();
   if(name){document.getElementById("profileName").textContent=name;const card=document.getElementById("profileCardName");if(card)card.textContent=name;}
@@ -1311,14 +1311,28 @@ async function claimGiftFromLaunchLink(apiBase,initData){
   else showBanner(false);
   return result;
  }
- function closePrompt(overlay){overlay?.remove();promptOpen=false;}
+ function closePrompt(overlay){overlay?.remove();promptOpen=false;const cleanup=promptCleanup;promptCleanup=null;cleanup?.();}
  async function openConsentPrompt(){
   if(window.podarisConsentAccepted===true)return true;if(promptOpen)return false;promptOpen=true;
   let result;try{result=await fetchConsentStatus();}catch(error){showBanner(true);promptOpen=false;window.alert(error.message+" Просмотр приложения остаётся доступен.");return false;}
   if(result.accepted){promptOpen=false;await loadGiftData();return true;}
   const overlay=document.createElement("div");overlay.className="consent-backdrop";
-  overlay.innerHTML='<div class="consent-panel" role="dialog" aria-modal="true" aria-labelledby="consentTitle"><div class="consent-mark">✳</div><h2 id="consentTitle">Откройте все возможности</h2><p>Ознакомьтесь с документами и подтвердите согласие. До этого вы можете свободно смотреть COLLECT, но действия с подарками и покупки будут недоступны.</p><div id="consentBody"></div><button type="button" class="consent-accept" id="consentAccept" disabled>Принимаю и продолжить</button><button type="button" id="consentLater" style="width:100%;margin-top:8px;padding:10px;border:0;background:transparent;color:#8588a1">Пока просто посмотреть</button><div class="consent-error" id="consentError" aria-live="polite"></div></div>';
-  document.body.appendChild(overlay);const body=document.getElementById("consentBody");
+  overlay.innerHTML='<div class="consent-panel" role="dialog" aria-modal="true" aria-labelledby="consentTitle" tabindex="-1"><div class="consent-mark">✳</div><h2 id="consentTitle">Откройте все возможности</h2><p>Ознакомьтесь с документами и подтвердите согласие. До этого вы можете свободно смотреть COLLECT, но действия с подарками и покупки будут недоступны.</p><div id="consentBody"></div><button type="button" class="consent-accept" id="consentAccept" disabled>Принимаю и продолжить</button><button type="button" id="consentLater" style="width:100%;margin-top:8px;padding:10px;border:0;background:transparent;color:#8588a1">Пока просто посмотреть</button><div class="consent-error" id="consentError" aria-live="polite"></div></div>';
+  document.body.appendChild(overlay);
+  const dialog=overlay.querySelector(".consent-panel"),previousFocus=document.activeElement;
+  const focusable=()=>[...dialog.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),[tabindex]:not([tabindex="-1"])')];
+  const onDialogKeydown=event=>{
+   if(event.key==="Escape"){event.preventDefault();closePrompt(overlay);return;}
+   if(event.key!=="Tab")return;
+   const items=focusable();if(!items.length){event.preventDefault();dialog.focus();return;}
+   const first=items[0],last=items[items.length-1];
+   if(!dialog.contains(document.activeElement)){event.preventDefault();(event.shiftKey?last:first).focus();return;}
+   if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
+   else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+  };
+  document.addEventListener("keydown",onDialogKeydown);
+  promptCleanup=()=>{document.removeEventListener("keydown",onDialogKeydown);if(previousFocus&&previousFocus.isConnected&&typeof previousFocus.focus==="function")previousFocus.focus();};
+  const body=document.getElementById("consentBody");
   [["Пользовательское соглашение",result.legal?.agreementUrl],["Политика конфиденциальности",result.legal?.privacyUrl]].forEach(([label,href])=>{
    const link=document.createElement("a");link.className="consent-doc";link.target="_blank";link.rel="noopener";link.textContent=label;
    const safe=(()=>{try{const u=new URL(href);return u.protocol==="https:"?u.href:"";}catch{return "";}})();if(safe)link.href=safe;
@@ -1328,6 +1342,7 @@ async function claimGiftFromLaunchLink(apiBase,initData){
   const agreement=document.getElementById("agreementCheck"),privacy=document.getElementById("privacyCheck"),accept=document.getElementById("consentAccept"),sync=()=>{accept.disabled=!(agreement.checked&&privacy.checked);};
   agreement.addEventListener("change",sync);privacy.addEventListener("change",sync);
   document.getElementById("consentLater").addEventListener("click",()=>closePrompt(overlay));overlay.addEventListener("click",e=>{if(e.target===overlay)closePrompt(overlay);});
+  (body.querySelector("a[href]")||agreement).focus();
   accept.addEventListener("click",async()=>{
    accept.disabled=true;accept.textContent="Сохраняем согласие…";document.getElementById("consentError").textContent="";
    try{
