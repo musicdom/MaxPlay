@@ -344,7 +344,7 @@ select:focus-visible,
 <div id="starterMilestones" class="tasks-list">
  <article class="task-card">
   <div class="task-card-top"><span class="task-number">1</span><div class="task-copy"><b>Примите документы</b><small>Пользовательское соглашение и Политика конфиденциальности</small></div><span class="task-state" id="taskConsentState">Проверяем</span></div>
-  <div class="task-actions"><a class="task-link task-link-primary" href="https://max.ru/se14711525_1_bot" target="_blank" rel="noopener">Открыть бота и принять</a></div>
+  <div class="task-actions"><button type="button" class="task-link task-link-primary" id="openConsentFromTasks">Ознакомиться и принять</button></div>
  </article>
  <article class="task-card">
   <div class="task-card-top"><span class="task-number">2</span><div class="task-copy"><b>Подтвердите номер телефона</b><small>Передайте номер через MAX в чате с ботом ЛовиДай</small></div><span class="task-state" id="taskContactState">Проверяем</span></div>
@@ -829,14 +829,14 @@ async function loadGiftData(){
  currentFullyAuthorized=Boolean(data.fullyAuthorized);
  currentGiftCredits=Number(data.giftCredits||0);
  const authInline=document.getElementById('profileAuthInline');
- if(authInline){authInline.textContent=data.fullyAuthorized?'Полная авторизация':'Базовая авторизация';authInline.classList.toggle('full',data.fullyAuthorized);}
+ if(authInline){authInline.textContent=!data.consentAccepted?'Режим просмотра':data.fullyAuthorized?'Полная авторизация':'Базовая авторизация';authInline.classList.toggle('full',data.fullyAuthorized);}
  updateIncomingNotice();
  const hint=document.getElementById('shopAccessHint');
- if(hint)hint.textContent=data.fullyAuthorized?'Полная регистрация MAX завершена. Стартовые подарки выдаются за три отдельных шага.':'После принятия документов и подтверждения номера можно получить стартовые подарки за отдельные действия.';
+ if(hint)hint.textContent=!data.consentAccepted?'Просмотр магазина открыт. Для покупок, отправки и получения подарков сначала примите пользовательское соглашение и политику конфиденциальности.':data.fullyAuthorized?'Полная регистрация MAX завершена. Стартовые подарки выдаются за три отдельных шага.':'После подтверждения номера можно получить стартовые подарки за отдельные действия.';
  const tier=document.getElementById('profileTierInfo');
- if(tier)tier.textContent=data.fullyAuthorized?'Полная регистрация MAX. Стартовые подарки открываются за три отдельных шага.':'Базовый доступ MAX. Выполните шаги регистрации, чтобы получить стартовые подарки.';
+ if(tier)tier.textContent=!data.consentAccepted?'Режим просмотра. Примите документы, чтобы включить действия с подарками и покупки.':data.fullyAuthorized?'Полная регистрация MAX. Стартовые подарки открываются за три отдельных шага.':'Базовый доступ MAX. Подтвердите номер телефона, чтобы завершить регистрацию.';
  const profileStatus=document.getElementById('profileCardStatus');
- if(profileStatus)profileStatus.textContent=data.fullyAuthorized?'Полная авторизация MAX':'Ожидается подтверждение номера телефона';
+ if(profileStatus)profileStatus.textContent=!data.consentAccepted?'Режим просмотра — документы не приняты':data.fullyAuthorized?'Полная авторизация MAX':'Ожидается подтверждение номера телефона';
  const sentCount=document.getElementById('profileSentCount'),receivedCount=document.getElementById('profileReceivedCount');
  if(sentCount)sentCount.textContent=String(currentGiftData.sent.length+(currentGiftData.history||[]).length);
  if(receivedCount)receivedCount.textContent=String(currentGiftData.received.length);
@@ -889,6 +889,7 @@ async function loadStarterMilestones(){
  }
 }
 document.getElementById('refreshTasks')?.addEventListener('click',loadStarterMilestones);
+document.getElementById('openConsentFromTasks')?.addEventListener('click',()=>window.requirePodarisConsent?.());
 document.getElementById('verifyStarterChannel')?.addEventListener('click',async()=>{
  if(window.podarisConsentAccepted!==true){await window.requirePodarisConsent?.();return;}
  const button=document.getElementById('verifyStarterChannel'),message=document.getElementById('starterVerifyMessage');
