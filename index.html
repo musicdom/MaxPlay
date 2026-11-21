@@ -608,8 +608,13 @@ function updateIncomingNotice(){
   const copy=document.createElement('div');copy.className='incoming-gift-notice-copy';
   const title=document.createElement('b');title.textContent='Вам прислали подарок';
   const sender=document.createElement('small');sender.textContent='От: '+(gift.senderName||'Пользователь MAX');
-  const button=document.createElement('button');button.type='button';button.className='incoming-gift-claim';button.textContent='Забрать подарок';
+  const button=document.createElement('button');button.type='button';button.className='incoming-gift-claim';button.textContent=window.podarisConsentAccepted===true?'Забрать подарок':'Принять условия и забрать';
   button.addEventListener('click',async()=>{
+   if(window.podarisConsentAccepted!==true){
+    await window.requirePodarisConsent?.();
+    button.disabled=false;button.textContent=window.podarisConsentAccepted===true?'Забрать подарок':'Принять условия и забрать';
+    return;
+   }
    button.disabled=true;button.textContent='Забираем…';
    const result=await giftAction('/api/gifts/claim',gift.id);
    if(!result){button.disabled=false;button.textContent='Повторить';}
@@ -1270,6 +1275,10 @@ async function claimGiftFromLaunchLink(apiBase,initData){
  });
  const data=await response.json().catch(()=>({}));
  await loadGiftData();
+ if(response.ok&&data.ok&&data.previewOnly&&data.gift?.id){
+  const received=Array.isArray(currentGiftData.received)?currentGiftData.received:[];
+  if(!received.some(gift=>String(gift.id)===String(data.gift.id)))currentGiftData={...currentGiftData,received:[...received,data.gift]};
+ }
  navigate('collection');
  activeGiftFilter='mine';
  document.querySelectorAll('[data-filter]').forEach(button=>button.classList.toggle('active',button.dataset.filter==='mine'));
