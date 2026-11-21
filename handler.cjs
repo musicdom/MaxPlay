@@ -3,6 +3,7 @@ const https = require("node:https");
 const fs = require("node:fs");
 const path = require("node:path");
 const { createClient } = require("redis");
+const { buildReadOnlyGiftLinkPreview } = require("./gift-link-preview.cjs");
 
 let maxCertificates;
 function getMaxCertificates() {
@@ -822,6 +823,7 @@ async function handleGiftRequest(path, body, user) {
     const giftId = String(body?.giftId || "");
     if (!/^[0-9a-f-]{36}$/i.test(giftId)) return giftError(400, "invalid_gift_id");
     const gift = await readGift(giftId);
+    if (!consentAccepted) return buildReadOnlyGiftLinkPreview(gift, giftId, userId);
     if (!gift) return giftError(404, "gift_not_found");
     if (gift.status !== "sent" && !(gift.status === "expired" && gift.expiredReason === "pickup_timeout")) {
       if (String(gift.recipientId || "") === userId) return { statusCode: 200, body: { ok: true, alreadyReceived: true } };
