@@ -3,6 +3,7 @@ const https = require("node:https");
 const fs = require("node:fs");
 const path = require("node:path");
 const { createClient } = require("redis");
+const { buildReadOnlyGiftLinkPreview } = require("./gift-link-preview.cjs");
 
 let maxCertificates;
 function getMaxCertificates() {
@@ -800,7 +801,8 @@ function giftError(statusCode, error, extra = {}) {
 async function handleGiftRequest(path, body, user) {
   const userId = String(user.id);
   const consent = await getConsent(userId);
-  if (!consentIsCurrent(consent)) return giftError(403, "consent_required");
+  const consentAccepted = consentIsCurrent(consent);
+  if (!consentAccepted && !["/api/gifts/list", "/api/gifts/link-preview"].includes(path)) return giftError(403, "consent_required");
   const client = await getRedis();
   const fullyAuthorized = await isFullyAuthorized(userId);
   const balance = await getGiftBalance(userId);
@@ -808,10 +810,12 @@ async function handleGiftRequest(path, body, user) {
   if (path === "/api/gifts/list") {
     const gifts = await listUserGifts(userId);
     return { statusCode: 200, body: {
-      ok: true, fullyAuthorized, canSend: fullyAuthorized && gifts.received.some(g => ["owned","opened","kept"].includes(g.status)),
-      canBuy: true, canViewReceived: true, canForward: fullyAuthorized,
+      ok: true, consentAccepted, fullyAuthorized,
+      canSend: consentAccepted && fullyAuthorized && gifts.received.some(g => ["owned","opened","kept"].includes(g.status)),
+      canBuy: consentAccepted, canClaim: consentAccepted, canViewReceived: true,
+      canForward: consentAccepted && fullyAuthorized,
       giftCredits: balance,
-      gifts: { received: gifts.received, sent: gifts.sent, history: fullyAuthorized ? gifts.history : [] }
+      gifts: { received: gifts.received, sent: gifts.sent, history: consentAccepted && fullyAuthorized ? gifts.history : [] }
     }};
   }
 
@@ -819,6 +823,7 @@ async function handleGiftRequest(path, body, user) {
     const giftId = String(body?.giftId || "");
     if (!/^[0-9a-f-]{36}$/i.test(giftId)) return giftError(400, "invalid_gift_id");
     const gift = await readGift(giftId);
+    if (!consentAccepted) return buildReadOnlyGiftLinkPreview(gift, giftId, userId);
     if (!gift) return giftError(404, "gift_not_found");
     if (gift.status !== "sent" && !(gift.status === "expired" && gift.expiredReason === "pickup_timeout")) {
       if (String(gift.recipientId || "") === userId) return { statusCode: 200, body: { ok: true, alreadyReceived: true } };
@@ -1784,14 +1789,14 @@ module.exports.handler = async function (event = {}) {
         const legacy = Boolean(await redis.get("starter-gifts:" + user.id));
         // Backfill only milestones already demonstrably completed before this release.
         if (consentIsCurrent(consent)) await grantStarterMilestoneGift(user.id, "consent");
-        if (contact?.phone) await grantStarterMilestoneGift(user.id, "contact");
+        if (consentIsCurrent(consent) && contact?.phone) await grantStarterMilestoneGift(user.id, "contact");
         const milestones = {};
         for (const name of ["consent","contact","channel"]) {
           const marker = await (await getRedis()).get("starter-milestone:" + user.id + ":" + name);
           milestones[name] = Boolean(marker || (legacy && ["consent","contact","channel"].includes(name)));
         }
         milestones.consent = milestones.consent || consentIsCurrent(consent);
-        milestones.contact = milestones.contact || Boolean(contact?.phone);
+        milestones.contact = milestones.contact || (consentIsCurrent(consent) && Boolean(contact?.phone));
         return response(200, { ok:true, milestones, channelConfigured:Boolean(channelId), channelUrl:"https://max.ru/channel_loviday", legacyBundle:legacy });
       }
       if (path === "/api/gifts/starter/verify-subscription") {
@@ -1822,7 +1827,8 @@ module.exports.handler = async function (event = {}) {
       }
       if (path.startsWith("/api/gifts/")) {
         const consent = await getConsent(user.id);
-        if (!consentIsCurrent(consent)) return response(403, { error: "consent_required" });
+        const readOnlyBeforeConsent = ["/api/gifts/list", "/api/gifts/link-preview"].includes(path);
+        if (!consentIsCurrent(consent) && !readOnlyBeforeConsent) return response(403, { error: "consent_required" });
         const result = await handleGiftRequest(path, body, user);
         return response(result.statusCode, result.body);
       }

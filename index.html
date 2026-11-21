@@ -134,6 +134,11 @@ button.task-link{cursor:pointer}.task-link-primary{border-color:transparent;back
 .consent-accept:disabled{opacity:.4;cursor:not-allowed}
 .consent-error{min-height:18px;margin-top:10px;color:#c03958;font-size:11px;line-height:1.5}
 .consent-loading{font-size:13px;color:#777b96;text-align:center;padding:30px 10px}
+.consent-banner{display:flex;align-items:center;gap:12px;margin:12px 0 16px;padding:14px;border:1px solid #dedbff;border-radius:16px;background:linear-gradient(120deg,#f0efff,#f7f3ff);box-shadow:0 5px 16px #5634f510}
+.consent-banner[hidden]{display:none!important}.consent-banner-icon{width:38px;height:38px;flex:none;display:grid;place-items:center;border-radius:12px;background:#fff;color:#5634f5;font-size:19px}
+.consent-banner-copy{min-width:0;flex:1}.consent-banner-copy b{display:block;color:#292744;font-size:11px}.consent-banner-copy small{display:block;margin-top:4px;color:#707492;font-size:9px;line-height:1.5}
+.consent-banner button{flex:none;border:0;border-radius:10px;padding:10px 11px;background:linear-gradient(105deg,#471aff,#9500ff);color:#fff;font-size:9px;font-weight:800}
+@media(max-width:390px){.consent-banner{align-items:flex-start;flex-wrap:wrap}.consent-banner-copy{flex:1 1 calc(100% - 52px)}.consent-banner button{margin-left:50px}}
 
 
 /* Incoming gift callout on the home screen */
@@ -307,6 +312,7 @@ select:focus-visible,
 <body>
 <div class="app">
 <header class="header"><span class="header-mark">✳</span>ЛОВИДАЙ</header>
+<aside class="consent-banner" id="consentBanner" hidden aria-live="polite"><span class="consent-banner-icon" aria-hidden="true">✳</span><div class="consent-banner-copy"><b id="consentBannerTitle">Откройте все возможности COLLECT</b><small id="consentBannerText">Чтобы забирать, отправлять и покупать подарки, примите пользовательское соглашение и политику конфиденциальности.</small></div><button type="button" id="consentBannerAction">Принять условия</button></aside>
 <section class="screen active" id="collection">
 <div class="profile-top">
 <div class="avatar" id="avatar"><span class="avatar-fallback" id="avatarFallback">♡</span><img loading="lazy" decoding="async" id="avatarImage" alt="Аватар профиля"></div>
@@ -338,7 +344,7 @@ select:focus-visible,
 <div id="starterMilestones" class="tasks-list">
  <article class="task-card">
   <div class="task-card-top"><span class="task-number">1</span><div class="task-copy"><b>Примите документы</b><small>Пользовательское соглашение и Политика конфиденциальности</small></div><span class="task-state" id="taskConsentState">Проверяем</span></div>
-  <div class="task-actions"><a class="task-link task-link-primary" href="https://max.ru/se14711525_1_bot" target="_blank" rel="noopener">Открыть бота и принять</a></div>
+  <div class="task-actions"><button type="button" class="task-link task-link-primary" id="openConsentFromTasks">Ознакомиться и принять</button></div>
  </article>
  <article class="task-card">
   <div class="task-card-top"><span class="task-number">2</span><div class="task-copy"><b>Подтвердите номер телефона</b><small>Передайте номер через MAX в чате с ботом ЛовиДай</small></div><span class="task-state" id="taskContactState">Проверяем</span></div>
@@ -602,8 +608,13 @@ function updateIncomingNotice(){
   const copy=document.createElement('div');copy.className='incoming-gift-notice-copy';
   const title=document.createElement('b');title.textContent='Вам прислали подарок';
   const sender=document.createElement('small');sender.textContent='От: '+(gift.senderName||'Пользователь MAX');
-  const button=document.createElement('button');button.type='button';button.className='incoming-gift-claim';button.textContent='Забрать подарок';
+  const button=document.createElement('button');button.type='button';button.className='incoming-gift-claim';button.textContent=window.podarisConsentAccepted===true?'Забрать подарок':'Принять условия и забрать';
   button.addEventListener('click',async()=>{
+   if(window.podarisConsentAccepted!==true){
+    await window.requirePodarisConsent?.();
+    button.disabled=false;button.textContent=window.podarisConsentAccepted===true?'Забрать подарок':'Принять условия и забрать';
+    return;
+   }
    button.disabled=true;button.textContent='Забираем…';
    const result=await giftAction('/api/gifts/claim',gift.id);
    if(!result){button.disabled=false;button.textContent='Повторить';}
@@ -767,6 +778,7 @@ setInterval(()=>{
  if(refresh)loadGiftData().catch(()=>{});
 },1000);
 async function giftAction(path,giftId,extra={}){
+ if(window.podarisConsentAccepted!==true){await window.requirePodarisConsent?.();return null;}
  try{const response=await fetch(window.PODARIS_API_URL(path),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData:window.podarisInitData,giftId,...extra})});const data=await response.json();if(!response.ok)throw new Error(data.error==='gift_expired'?'Ссылка на подарок недоступна.':data.error||'Не удалось выполнить действие');await loadGiftData();if(path==='/api/gifts/claim'){activeGiftFilter='mine';document.querySelectorAll('[data-filter]').forEach(x=>x.classList.toggle('active',x.dataset.filter==='mine'));renderGiftCards();}return data;}
  catch(error){window.alert(error.message);await loadGiftData().catch(()=>{});if(activeGiftFilter==='incoming')renderGiftCards();return null;}
 }
@@ -822,14 +834,14 @@ async function loadGiftData(){
  currentFullyAuthorized=Boolean(data.fullyAuthorized);
  currentGiftCredits=Number(data.giftCredits||0);
  const authInline=document.getElementById('profileAuthInline');
- if(authInline){authInline.textContent=data.fullyAuthorized?'Полная авторизация':'Базовая авторизация';authInline.classList.toggle('full',data.fullyAuthorized);}
+ if(authInline){authInline.textContent=!data.consentAccepted?'Режим просмотра':data.fullyAuthorized?'Полная авторизация':'Базовая авторизация';authInline.classList.toggle('full',data.fullyAuthorized);}
  updateIncomingNotice();
  const hint=document.getElementById('shopAccessHint');
- if(hint)hint.textContent=data.fullyAuthorized?'Полная регистрация MAX завершена. Стартовые подарки выдаются за три отдельных шага.':'После принятия документов и подтверждения номера можно получить стартовые подарки за отдельные действия.';
+ if(hint)hint.textContent=!data.consentAccepted?'Просмотр магазина открыт. Для покупок, отправки и получения подарков сначала примите пользовательское соглашение и политику конфиденциальности.':data.fullyAuthorized?'Полная регистрация MAX завершена. Стартовые подарки выдаются за три отдельных шага.':'После подтверждения номера можно получить стартовые подарки за отдельные действия.';
  const tier=document.getElementById('profileTierInfo');
- if(tier)tier.textContent=data.fullyAuthorized?'Полная регистрация MAX. Стартовые подарки открываются за три отдельных шага.':'Базовый доступ MAX. Выполните шаги регистрации, чтобы получить стартовые подарки.';
+ if(tier)tier.textContent=!data.consentAccepted?'Режим просмотра. Примите документы, чтобы включить действия с подарками и покупки.':data.fullyAuthorized?'Полная регистрация MAX. Стартовые подарки открываются за три отдельных шага.':'Базовый доступ MAX. Подтвердите номер телефона, чтобы завершить регистрацию.';
  const profileStatus=document.getElementById('profileCardStatus');
- if(profileStatus)profileStatus.textContent=data.fullyAuthorized?'Полная авторизация MAX':'Ожидается подтверждение номера телефона';
+ if(profileStatus)profileStatus.textContent=!data.consentAccepted?'Режим просмотра — документы не приняты':data.fullyAuthorized?'Полная авторизация MAX':'Ожидается подтверждение номера телефона';
  const sentCount=document.getElementById('profileSentCount'),receivedCount=document.getElementById('profileReceivedCount');
  if(sentCount)sentCount.textContent=String(currentGiftData.sent.length+(currentGiftData.history||[]).length);
  if(receivedCount)receivedCount.textContent=String(currentGiftData.received.length);
@@ -882,7 +894,9 @@ async function loadStarterMilestones(){
  }
 }
 document.getElementById('refreshTasks')?.addEventListener('click',loadStarterMilestones);
+document.getElementById('openConsentFromTasks')?.addEventListener('click',()=>window.requirePodarisConsent?.());
 document.getElementById('verifyStarterChannel')?.addEventListener('click',async()=>{
+ if(window.podarisConsentAccepted!==true){await window.requirePodarisConsent?.();return;}
  const button=document.getElementById('verifyStarterChannel'),message=document.getElementById('starterVerifyMessage');
  button.disabled=true;message.textContent='Проверяем подписку в MAX…';
  try{
@@ -895,6 +909,7 @@ document.getElementById('verifyStarterChannel')?.addEventListener('click',async(
 });
 
 async function createShopOrder(sku, button){
+ if(window.podarisConsentAccepted!==true){await window.requirePodarisConsent?.();return;}
  const result=document.getElementById('shopPaymentResult');
  const buttons=[...document.querySelectorAll('[data-buy-sku]')];
  buttons.forEach(item=>item.disabled=true);
@@ -952,6 +967,7 @@ document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click'
  renderGiftCards();
 }));
 function showGiftModal(){
+ if(window.podarisConsentAccepted!==true){window.requirePodarisConsent?.();return;}
  if(!currentFullyAuthorized){window.open('https://max.ru/se14711525_1_bot','_blank','noopener');return;}
  if(currentGiftCredits<1){alert('Три бесплатные отправки уже использованы. Вы можете выбрать подарок в магазине.');navigate('shop');return;}
  document.getElementById('giftCreatedResult').replaceChildren();
@@ -1259,6 +1275,10 @@ async function claimGiftFromLaunchLink(apiBase,initData){
  });
  const data=await response.json().catch(()=>({}));
  await loadGiftData();
+ if(response.ok&&data.ok&&data.previewOnly&&data.gift?.id){
+  const received=Array.isArray(currentGiftData.received)?currentGiftData.received:[];
+  if(!received.some(gift=>String(gift.id)===String(data.gift.id)))currentGiftData={...currentGiftData,received:[...received,data.gift]};
+ }
  navigate('collection');
  activeGiftFilter='mine';
  document.querySelectorAll('[data-filter]').forEach(button=>button.classList.toggle('active',button.dataset.filter==='mine'));
@@ -1272,143 +1292,83 @@ async function claimGiftFromLaunchLink(apiBase,initData){
   }
  }
 }
-/* Server-verified MAX identity and mandatory, versioned legal consent. */
+/* MAX identity is verified in the background; legal consent gates actions, not browsing. */
 (async function initializePodarisAccess(){
-  const apiBase = String(window.PODARIS_API_BASE || "").replace(/\/+$/, "");
-  const initData = window.WebApp && typeof window.WebApp.initData === "string"
-    ? window.WebApp.initData
-    : "";
-  window.podarisInitData = initData;
-
-  const overlay = document.createElement("div");
-  overlay.className = "consent-backdrop";
-  overlay.innerHTML = '<div class="consent-panel" role="dialog" aria-modal="true" aria-labelledby="consentTitle"><div class="consent-mark">✳</div><h2 id="consentTitle">Проверяем доступ</h2><p id="consentIntro">Подключаемся к ЛовиДай и проверяем статус вашего согласия.</p><div id="consentBody" class="consent-loading">Пожалуйста, подождите…</div></div>';
+ const apiBase=String(window.PODARIS_API_BASE||"").replace(/\/+$/,"");
+ const initData=window.WebApp&&typeof window.WebApp.initData==="string"?window.WebApp.initData:"";
+ window.podarisInitData=initData;window.podarisConsentAccepted=null;
+ const banner=document.getElementById("consentBanner"),bannerTitle=document.getElementById("consentBannerTitle"),bannerText=document.getElementById("consentBannerText"),bannerAction=document.getElementById("consentBannerAction");
+ let latestStatus=null,promptOpen=false,promptCleanup=null;
+ function applyUserProfile(user){
+  if(!user)return;const name=[user.firstName,user.lastName].filter(Boolean).join(" ").trim();
+  if(name){document.getElementById("profileName").textContent=name;const card=document.getElementById("profileCardName");if(card)card.textContent=name;}
+  if(user.photoUrl){const avatar=document.getElementById("avatarImage");avatar.src=user.photoUrl;avatar.style.display="block";document.getElementById("avatarFallback").style.display="none";const cardAvatar=document.getElementById("profileCardAvatar");if(cardAvatar){cardAvatar.src=user.photoUrl;cardAvatar.style.display="block";}}
+ }
+ function showBanner(retry=false){
+  if(!banner)return;banner.hidden=false;
+  bannerTitle.textContent=retry?"Не удалось проверить согласие":"Откройте все возможности COLLECT";
+  bannerText.textContent=retry?"Просмотр приложения доступен. Повторите проверку, чтобы включить действия с подарками и покупки.":"Смотреть приложение можно свободно. Чтобы получать, отправлять и покупать подарки, примите пользовательское соглашение и политику конфиденциальности.";
+  bannerAction.textContent=retry?"Повторить":"Принять условия";
+ }
+ async function fetchConsentStatus(){
+  if(!apiBase)throw new Error("Сервер приложения пока не подключён.");
+  if(!initData)throw new Error("Откройте COLLECT через MAX, чтобы подтвердить аккаунт.");
+  const response=await fetch(window.PODARIS_API_URL("/api/consent/status"),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({initData})});
+  const result=await response.json().catch(()=>({}));if(!response.ok||!result.ok)throw new Error(result.reason||result.error||"Не удалось проверить согласие.");
+  latestStatus=result;window.podarisConsentAccepted=Boolean(result.accepted);applyUserProfile(result.user);
+  if(result.accepted){banner.hidden=true;if(result.isAdmin){document.getElementById("adminEntry")?.classList.add("visible");document.getElementById("adminMaxId").textContent=result.user?.id||"—";}}
+  else showBanner(false);
+  return result;
+ }
+ function closePrompt(overlay){overlay?.remove();promptOpen=false;const cleanup=promptCleanup;promptCleanup=null;cleanup?.();}
+ async function openConsentPrompt(){
+  if(window.podarisConsentAccepted===true)return true;if(promptOpen)return false;promptOpen=true;
+  let result;try{result=await fetchConsentStatus();}catch(error){showBanner(true);promptOpen=false;window.alert(error.message+" Просмотр приложения остаётся доступен.");return false;}
+  if(result.accepted){promptOpen=false;await loadGiftData();return true;}
+  const overlay=document.createElement("div");overlay.className="consent-backdrop";
+  overlay.innerHTML='<div class="consent-panel" role="dialog" aria-modal="true" aria-labelledby="consentTitle" tabindex="-1"><div class="consent-mark">✳</div><h2 id="consentTitle">Откройте все возможности</h2><p>Ознакомьтесь с документами и подтвердите согласие. До этого вы можете свободно смотреть COLLECT, но действия с подарками и покупки будут недоступны.</p><div id="consentBody"></div><button type="button" class="consent-accept" id="consentAccept" disabled>Принимаю и продолжить</button><button type="button" id="consentLater" style="width:100%;margin-top:8px;padding:10px;border:0;background:transparent;color:#8588a1">Пока просто посмотреть</button><div class="consent-error" id="consentError" aria-live="polite"></div></div>';
   document.body.appendChild(overlay);
-
-  function showError(message){
-    document.getElementById("consentTitle").textContent = "Не удалось открыть ЛовиДай";
-    document.getElementById("consentIntro").textContent = message;
-    document.getElementById("consentBody").innerHTML = '<button class="consent-accept" id="consentRetry">Повторить проверку</button>';
-    document.getElementById("consentRetry").addEventListener("click", () => window.location.reload());
-  }
-
-  if (!apiBase || apiBase.includes("YOUR-YANDEX-CLOUD-FUNCTION-URL")) {
-    showError("Сервер приложения ещё не подключён. После настройки адреса Yandex Cloud Functions доступ появится здесь.");
-    return;
-  }
-  if (!initData) {
-    showError("Откройте ЛовиДай из MAX. Не удалось получить подписанные данные запуска MAX.");
-    return;
-  }
-
-  try {
-    const response = await fetch(window.PODARIS_API_URL("/api/consent/status"), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ initData })
-    });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok || !result.ok) {
-      throw new Error(result.reason || result.error || "Не удалось подтвердить ваш аккаунт MAX.");
-    }
-
-    if (result.accepted) {
-      overlay.remove();
-      await loadGiftData();
-      if (result.isAdmin) {
-        document.getElementById("adminEntry")?.classList.add("visible");
-        document.getElementById("adminMaxId").textContent = result.user?.id || "—";
-      }
-      try { await claimGiftFromLaunchLink(apiBase, initData); } catch (error) { window.alert(error.message); }
-      const user = result.user || {};
-      const displayName = [user.firstName,user.lastName].filter(Boolean).join(" ").trim();
-      if (displayName) {
-        document.getElementById("profileName").textContent = displayName;
-        const profileCardName = document.getElementById("profileCardName");
-        if (profileCardName) profileCardName.textContent = displayName;
-      }
-      if (user.photoUrl) {
-        const avatar = document.getElementById("avatarImage");
-        avatar.src = user.photoUrl;
-        avatar.style.display = "block";
-        document.getElementById("avatarFallback").style.display = "none";
-        const profileAvatar = document.getElementById("profileCardAvatar");
-        if (profileAvatar) { profileAvatar.src = user.photoUrl; profileAvatar.style.display = "block"; }
-      }
-      return;
-    }
-
-    const agreementUrl = result.legal?.agreementUrl || "https://musicdom.github.io/MaxPlay/legal/user-agreement.html";
-    const privacyUrl = result.legal?.privacyUrl || "https://musicdom.github.io/MaxPlay/legal/privacy-policy.html";
-    document.getElementById("consentTitle").textContent = "Перед началом";
-    document.getElementById("consentIntro").textContent = "Для использования ЛовиДай необходимо принять оба документа. MAX передаёт доступные данные профиля: MAX ID, имя, фамилию, username, язык и фото профиля. Телефон и дополнительные контактные сведения запрашиваются отдельно и только по вашему желанию.";
-    document.getElementById("consentBody").className = "";
-    document.getElementById("consentBody").innerHTML =
-      '<a class="consent-doc" href="' + agreementUrl + '" target="_blank" rel="noopener">Пользовательское соглашение <span>Открыть ↗</span></a>' +
-      '<a class="consent-doc" href="' + privacyUrl + '" target="_blank" rel="noopener">Политика конфиденциальности <span>Открыть ↗</span></a>' +
-      '<label class="consent-check"><input type="checkbox" id="agreementCheck"><span>Я прочитал(а) и принимаю Пользовательское соглашение.</span></label>' +
-      '<label class="consent-check"><input type="checkbox" id="privacyCheck"><span>Я прочитал(а) и принимаю Политику конфиденциальности.</span></label>' +
-      '<button class="consent-accept" id="consentAccept" disabled>Принимаю и продолжить</button>' +
-      '<div class="consent-error" id="consentError" aria-live="polite"></div>';
-
-    const agreementCheck = document.getElementById("agreementCheck");
-    const privacyCheck = document.getElementById("privacyCheck");
-    const acceptButton = document.getElementById("consentAccept");
-    const syncButton = () => { acceptButton.disabled = !(agreementCheck.checked && privacyCheck.checked); };
-    agreementCheck.addEventListener("change", syncButton);
-    privacyCheck.addEventListener("change", syncButton);
-    acceptButton.addEventListener("click", async () => {
-      acceptButton.disabled = true;
-      acceptButton.textContent = "Сохраняем согласие…";
-      document.getElementById("consentError").textContent = "";
-      try {
-        const accepted = await fetch(window.PODARIS_API_URL("/api/consent/accept"), {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            initData,
-            agreementAccepted: agreementCheck.checked,
-            privacyAccepted: privacyCheck.checked,
-            agreementVersion: result.versions.agreement,
-            privacyVersion: result.versions.privacy
-          })
-        });
-        const data = await accepted.json().catch(() => ({}));
-        if (accepted.status === 409 && data.error === "legal_documents_updated") {
-          window.location.reload();
-          return;
-        }
-        if (!accepted.ok || !data.accepted) throw new Error(data.error || "Не удалось сохранить согласие.");
-        overlay.remove();
-        await loadGiftData();
-        if (result.isAdmin) {
-        document.getElementById("adminEntry")?.classList.add("visible");
-        document.getElementById("adminMaxId").textContent = result.user?.id || "—";
-      }
-        const acceptedUser = result.user || {};
-        const acceptedName = [acceptedUser.firstName, acceptedUser.lastName].filter(Boolean).join(" ").trim();
-        if (acceptedName) {
-          document.getElementById("profileName").textContent = acceptedName;
-          const profileCardName = document.getElementById("profileCardName");
-          if (profileCardName) profileCardName.textContent = acceptedName;
-        }
-        if (acceptedUser.photoUrl) {
-          const avatar = document.getElementById("avatarImage");
-          avatar.src = acceptedUser.photoUrl; avatar.style.display = "block";
-          document.getElementById("avatarFallback").style.display = "none";
-          const profileAvatar = document.getElementById("profileCardAvatar");
-          if (profileAvatar) { profileAvatar.src = acceptedUser.photoUrl; profileAvatar.style.display = "block"; }
-        }
-        try { await claimGiftFromLaunchLink(apiBase,initData); } catch(error) { window.alert(error.message); }
-      } catch (error) {
-        document.getElementById("consentError").textContent = error.message;
-        acceptButton.textContent = "Повторить";
-        syncButton();
-      }
-    });
-  } catch (error) {
-    showError(error.message || "Ошибка проверки доступа.");
-  }
+  const dialog=overlay.querySelector(".consent-panel"),previousFocus=document.activeElement;
+  const focusable=()=>[...dialog.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),[tabindex]:not([tabindex="-1"])')];
+  const onDialogKeydown=event=>{
+   if(event.key==="Escape"){event.preventDefault();closePrompt(overlay);return;}
+   if(event.key!=="Tab")return;
+   const items=focusable();if(!items.length){event.preventDefault();dialog.focus();return;}
+   const first=items[0],last=items[items.length-1];
+   if(!dialog.contains(document.activeElement)){event.preventDefault();(event.shiftKey?last:first).focus();return;}
+   if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
+   else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+  };
+  document.addEventListener("keydown",onDialogKeydown);
+  promptCleanup=()=>{document.removeEventListener("keydown",onDialogKeydown);if(previousFocus&&previousFocus.isConnected&&typeof previousFocus.focus==="function")previousFocus.focus();};
+  const body=document.getElementById("consentBody");
+  [["Пользовательское соглашение",result.legal?.agreementUrl],["Политика конфиденциальности",result.legal?.privacyUrl]].forEach(([label,href])=>{
+   const link=document.createElement("a");link.className="consent-doc";link.target="_blank";link.rel="noopener";link.textContent=label;
+   const safe=(()=>{try{const u=new URL(href);return u.protocol==="https:"?u.href:"";}catch{return "";}})();if(safe)link.href=safe;
+   const hint=document.createElement("span");hint.textContent=safe?"Открыть ↗":"Недоступно";link.append(hint);body.append(link);
+  });
+  body.insertAdjacentHTML("beforeend",'<label class="consent-check"><input type="checkbox" id="agreementCheck"><span>Я прочитал(а) и принимаю Пользовательское соглашение.</span></label><label class="consent-check"><input type="checkbox" id="privacyCheck"><span>Я прочитал(а) и принимаю Политику конфиденциальности.</span></label>');
+  const agreement=document.getElementById("agreementCheck"),privacy=document.getElementById("privacyCheck"),accept=document.getElementById("consentAccept"),sync=()=>{accept.disabled=!(agreement.checked&&privacy.checked);};
+  agreement.addEventListener("change",sync);privacy.addEventListener("change",sync);
+  document.getElementById("consentLater").addEventListener("click",()=>closePrompt(overlay));overlay.addEventListener("click",e=>{if(e.target===overlay)closePrompt(overlay);});
+  (body.querySelector("a[href]")||agreement).focus();
+  accept.addEventListener("click",async()=>{
+   accept.disabled=true;accept.textContent="Сохраняем согласие…";document.getElementById("consentError").textContent="";
+   try{
+    const response=await fetch(window.PODARIS_API_URL("/api/consent/accept"),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({initData,agreementAccepted:agreement.checked,privacyAccepted:privacy.checked,agreementVersion:result.versions.agreement,privacyVersion:result.versions.privacy})});
+    const data=await response.json().catch(()=>({}));if(response.status===409&&data.error==="legal_documents_updated"){window.location.reload();return;}if(!response.ok||!data.accepted)throw new Error(data.error||"Не удалось сохранить согласие.");
+    window.podarisConsentAccepted=true;closePrompt(overlay);banner.hidden=true;applyUserProfile(result.user);
+    if(result.isAdmin){document.getElementById("adminEntry")?.classList.add("visible");document.getElementById("adminMaxId").textContent=result.user?.id||"—";}
+    await loadGiftData();try{await claimGiftFromLaunchLink(apiBase,initData);}catch(error){window.alert(error.message);}
+   }catch(error){document.getElementById("consentError").textContent=error.message;accept.textContent="Повторить";sync();}
+  });
+  return false;
+ }
+ window.requirePodarisConsent=()=>openConsentPrompt();bannerAction?.addEventListener("click",openConsentPrompt);
+ if(!apiBase||!initData){showBanner(true);if(bannerAction)bannerAction.textContent="Проверить";const auth=document.getElementById("profileAuthInline");if(auth)auth.textContent="Откройте приложение через MAX";return;}
+ try{await fetchConsentStatus();}catch(error){console.warn("[consent status]",error);showBanner(true);}
+ try{await loadGiftData();}catch(error){console.warn("[initial gift list]",error);}
+ try{await claimGiftFromLaunchLink(apiBase,initData);}catch(error){console.warn("[incoming gift preview]",error);}
 })();
 
 </script>
