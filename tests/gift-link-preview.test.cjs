@@ -67,7 +67,7 @@ test("reports an already received gift without creating a preview", () => {
 });
 
 test("rejects unavailable gifts and malformed identifiers", () => {
-  const unavailable = buildReadOnlyGiftLinkPreview(makeGift({ status: "kept" }), giftId, userId);
+  const unavailable = buildReadOnlyGiftLinkPreview(makeGift({ status: "kept", recipientId: "99999" }), giftId, userId);
   const malformed = buildReadOnlyGiftLinkPreview(makeGift(), "not-a-gift-id", userId);
 
   assert.equal(unavailable.statusCode, 409);
