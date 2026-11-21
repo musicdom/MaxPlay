@@ -10,7 +10,8 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "register:webhook": "node scripts/register-max-webhook.mjs",
-    "check": "node --check handler.cjs && node --check server.js && node --check handler.js && node --check scripts/register-max-webhook.mjs && node scripts/check-inline-js.mjs"
+    "check": "node --check handler.cjs && node --check server.js && node --check handler.js && node --check scripts/register-max-webhook.mjs && node scripts/check-inline-js.mjs && npm test",
+    "test": "node --test tests/*.test.cjs"
   },
   "dependencies": {
     "dotenv": "^16.4.7",
