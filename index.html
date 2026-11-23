@@ -8,7 +8,7 @@
 <style>
 :root{--bg:#f5f7ff;--paper:#fff;--ink:#17172b;--muted:#777b96;--line:#e8eaff;--red:#5634f5;--red2:#4020d9;--soft:#eeebff;--serif:ui-serif,Georgia,serif;--sans:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#e9e4de;color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}button,input,textarea{font:inherit}button{cursor:pointer;-webkit-tap-highlight-color:transparent}
-.app{max-width:520px;min-height:100vh;margin:auto;background:var(--bg);padding:0 17px calc(28px + env(safe-area-inset-bottom));}
+.app{max-width:520px;min-height:100vh;min-height:100dvh;margin:auto;background:var(--bg);padding:0 17px calc(28px + env(safe-area-inset-bottom));}
 .header{height:57px;display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--line);font-weight:800;font-size:14px;letter-spacing:-.5px}
 .header-mark{color:var(--red);margin-right:7px;font-size:17px}
 .screen{display:none;animation:fade .2s ease}.screen.active{display:block}@keyframes fade{from{opacity:.5;transform:translateY(4px)}to{opacity:1;transform:none}}
