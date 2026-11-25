@@ -22,3 +22,12 @@ if (new Set(labels).size !== labels.length) {
 }
 
 console.log("Accessibility OK: " + labels.length + " shop purchase buttons have unique accessible names");
+
+
+const allButtons = [...html.matchAll(/<button\b[^>]*>/gi)];
+const buttonsWithoutType = allButtons.filter(([tag]) => !/\btype\s*=\s*["'](?:button|submit|reset)["']/i.test(tag));
+if (buttonsWithoutType.length) {
+  throw new Error("Every static button must declare an explicit type (button, submit or reset); missing on " + buttonsWithoutType.length + " button(s)");
+}
+
+console.log("Button semantics OK: all " + allButtons.length + " static buttons declare an explicit type");
