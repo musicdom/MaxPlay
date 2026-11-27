@@ -11,13 +11,13 @@ if (start < 0 || end < 0) {
 
 const block = html.slice(start, end);
 const checks = [
-  ["HTTPS-only URL validation", /url\\.protocol !== "https:"/.test(block)],
-  ["Reject URL credentials", /url\\.username \\|\\| url\\.password/.test(block)],
-  ["Assign href through the DOM API", /link\\.href = url/.test(block)],
-  ["Open links with noopener and noreferrer", /link\\.rel = "noopener noreferrer"/.test(block)],
-  ["Build consent content with replaceChildren", /consentBody\\.replaceChildren\\(/.test(block)],
-  ["Avoid HTML string injection in the consent block", !/innerHTML\\s*=/.test(block)],
-  ["Use textContent for document action labels", /action\\.textContent = "Открыть ↗"/.test(block)]
+  ["HTTPS-only URL validation", block.includes('url.protocol !== "https:"')],
+  ["Reject URL credentials", block.includes("url.username || url.password")],
+  ["Assign href through the DOM API", block.includes("link.href = url")],
+  ["Open links with noopener and noreferrer", block.includes('link.rel = "noopener noreferrer"')],
+  ["Build consent content with replaceChildren", block.includes("consentBody.replaceChildren(")],
+  ["Avoid HTML string injection in the consent block", !block.includes("innerHTML")],
+  ["Use textContent for document action labels", block.includes('action.textContent = "Открыть ↗"')]
 ];
 
 const failed = checks.filter(([, passed]) => !passed);
