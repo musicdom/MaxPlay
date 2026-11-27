@@ -1338,18 +1338,75 @@ async function claimGiftFromLaunchLink(apiBase,initData){
       return;
     }
 
-    const agreementUrl = result.legal?.agreementUrl || "https://musicdom.github.io/MaxPlay/legal/user-agreement.html";
-    const privacyUrl = result.legal?.privacyUrl || "https://musicdom.github.io/MaxPlay/legal/privacy-policy.html";
+    function safeLegalDocumentUrl(value, fallback) {
+      try {
+        const candidate = typeof value === "string" && value.trim() ? value.trim() : fallback;
+        const url = new URL(candidate, window.location.href);
+        if (url.protocol !== "https:" || url.username || url.password) return fallback;
+        return url.href;
+      } catch {
+        return fallback;
+      }
+    }
+
+    function createLegalDocumentLink(url, label) {
+      const link = document.createElement("a");
+      link.className = "consent-doc";
+      link.href = url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.append(document.createTextNode(label + " "));
+      const action = document.createElement("span");
+      action.textContent = "Открыть ↗";
+      link.append(action);
+      return link;
+    }
+
+    function createConsentCheckbox(id, copy) {
+      const label = document.createElement("label");
+      label.className = "consent-check";
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.id = id;
+      const text = document.createElement("span");
+      text.textContent = copy;
+      label.append(checkbox, text);
+      return label;
+    }
+
+    const agreementUrl = safeLegalDocumentUrl(
+      result.legal?.agreementUrl,
+      "https://musicdom.github.io/MaxPlay/legal/user-agreement.html"
+    );
+    const privacyUrl = safeLegalDocumentUrl(
+      result.legal?.privacyUrl,
+      "https://musicdom.github.io/MaxPlay/legal/privacy-policy.html"
+    );
     document.getElementById("consentTitle").textContent = "Перед началом";
     document.getElementById("consentIntro").textContent = "Для использования ЛовиДай необходимо принять оба документа. MAX передаёт доступные данные профиля: MAX ID, имя, фамилию, username, язык и фото профиля. Телефон и дополнительные контактные сведения запрашиваются отдельно и только по вашему желанию.";
-    document.getElementById("consentBody").className = "";
-    document.getElementById("consentBody").innerHTML =
-      '<a class="consent-doc" href="' + agreementUrl + '" target="_blank" rel="noopener">Пользовательское соглашение <span>Открыть ↗</span></a>' +
-      '<a class="consent-doc" href="' + privacyUrl + '" target="_blank" rel="noopener">Политика конфиденциальности <span>Открыть ↗</span></a>' +
-      '<label class="consent-check"><input type="checkbox" id="agreementCheck"><span>Я прочитал(а) и принимаю Пользовательское соглашение.</span></label>' +
-      '<label class="consent-check"><input type="checkbox" id="privacyCheck"><span>Я прочитал(а) и принимаю Политику конфиденциальности.</span></label>' +
-      '<button type="button" class="consent-accept" id="consentAccept" disabled>Принимаю и продолжить</button>' +
-      '<div class="consent-error" id="consentError" aria-live="polite"></div>';
+    const consentBody = document.getElementById("consentBody");
+    consentBody.className = "";
+
+    const acceptButton = document.createElement("button");
+    acceptButton.type = "button";
+    acceptButton.className = "consent-accept";
+    acceptButton.id = "consentAccept";
+    acceptButton.disabled = true;
+    acceptButton.textContent = "Принимаю и продолжить";
+
+    const consentError = document.createElement("div");
+    consentError.className = "consent-error";
+    consentError.id = "consentError";
+    consentError.setAttribute("aria-live", "polite");
+
+    consentBody.replaceChildren(
+      createLegalDocumentLink(agreementUrl, "Пользовательское соглашение"),
+      createLegalDocumentLink(privacyUrl, "Политика конфиденциальности"),
+      createConsentCheckbox("agreementCheck", "Я прочитал(а) и принимаю Пользовательское соглашение."),
+      createConsentCheckbox("privacyCheck", "Я прочитал(а) и принимаю Политику конфиденциальности."),
+      acceptButton,
+      consentError
+    );
 
     const agreementCheck = document.getElementById("agreementCheck");
     const privacyCheck = document.getElementById("privacyCheck");
