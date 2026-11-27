@@ -1387,12 +1387,12 @@ async function claimGiftFromLaunchLink(apiBase,initData){
     const consentBody = document.getElementById("consentBody");
     consentBody.className = "";
 
-    const acceptButton = document.createElement("button");
-    acceptButton.type = "button";
-    acceptButton.className = "consent-accept";
-    acceptButton.id = "consentAccept";
-    acceptButton.disabled = true;
-    acceptButton.textContent = "Принимаю и продолжить";
+    const acceptControl = document.createElement("button");
+    acceptControl.type = "button";
+    acceptControl.className = "consent-accept";
+    acceptControl.id = "consentAccept";
+    acceptControl.disabled = true;
+    acceptControl.textContent = "Принимаю и продолжить";
 
     const consentError = document.createElement("div");
     consentError.className = "consent-error";
@@ -1404,7 +1404,7 @@ async function claimGiftFromLaunchLink(apiBase,initData){
       createLegalDocumentLink(privacyUrl, "Политика конфиденциальности"),
       createConsentCheckbox("agreementCheck", "Я прочитал(а) и принимаю Пользовательское соглашение."),
       createConsentCheckbox("privacyCheck", "Я прочитал(а) и принимаю Политику конфиденциальности."),
-      acceptButton,
+      acceptControl,
       consentError
     );
 
